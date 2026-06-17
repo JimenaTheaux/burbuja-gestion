@@ -1,14 +1,14 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
-import { auth } from './auth'
-import { requireAuth } from './middleware/auth'
-import clientesRouter   from './routes/clientes'
-import productosRouter  from './routes/productos'
-import usuariosRouter   from './routes/usuarios'
-import pedidosRouter    from './routes/pedidos'
-import produccionRouter from './routes/produccion'
-import dashboardRouter  from './routes/dashboard'
+import { auth } from './auth.js'
+import { requireAuth } from './middleware/auth.js'
+import clientesRouter   from './routes/clientes.js'
+import productosRouter  from './routes/productos.js'
+import usuariosRouter   from './routes/usuarios.js'
+import pedidosRouter    from './routes/pedidos.js'
+import produccionRouter from './routes/produccion.js'
+import dashboardRouter  from './routes/dashboard.js'
 
 const app = new Hono().basePath('/api')
 

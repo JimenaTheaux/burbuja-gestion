@@ -1,8 +1,8 @@
 import { Hono } from 'hono'
 import { eq, desc, and, inArray } from 'drizzle-orm'
-import { db } from '../../db'
-import { pedidos, pedidoItems, pedidoHistorial, clientes, productos, perfiles } from '../../db/schema'
-import { auth } from '../auth'
+import { db } from '../../db/index.js'
+import { pedidos, pedidoItems, pedidoHistorial, clientes, productos, perfiles } from '../../db/schema.js'
+import { auth } from '../auth.js'
 
 const router = new Hono()
 

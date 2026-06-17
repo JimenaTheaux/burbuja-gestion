@@ -1,9 +1,9 @@
 import { Hono } from 'hono'
 import { eq } from 'drizzle-orm'
-import { db } from '../../db'
-import { perfiles } from '../../db/schema'
+import { db } from '../../db/index.js'
+import { perfiles } from '../../db/schema.js'
 import { neon } from '@neondatabase/serverless'
-import { auth } from '../auth'
+import { auth } from '../auth.js'
 
 const router = new Hono()
 const sql = neon(process.env.DATABASE_URL!)
