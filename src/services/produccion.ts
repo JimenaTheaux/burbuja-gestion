@@ -4,48 +4,49 @@ import type { EstadoPedido } from '@/types'
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
+// snake_case — coincide con columnas de Supabase
 export interface ItemProduccion {
-  pedidoId:     string
-  productoId:   string
-  cantidad:     string
-  bidonNuevo:   boolean
+  pedido_id:    string
+  producto_id:  string
+  cantidad:     number
+  bidon_nuevo:  boolean
   nombre:       string | null
   fragancia:    string | null
-  presentacion: string | null
+  presentacion: number | null
 }
 
 export interface PedidoProduccion {
   id:               string
   numero:           number
   estado:           EstadoPedido
-  fechaProduccion:  string | null
-  notasProduccion:  string | null
-  direccionEntrega: string | null
-  createdAt:        string
-  updatedAt:        string
-  clienteId:        string
-  clienteNombre:    string | null
-  items:            ItemProduccion[]
+  fecha_produccion: string | null
+  notas_produccion: string | null
+  direccion_entrega: string | null
+  created_at:       string
+  updated_at:       string
+  cliente_id:       string
+  clientes:         { nombre: string } | null
+  pedido_items:     ItemProduccion[]
 }
 
 export interface PedidoListoHoy {
-  id:              string
-  numero:          number
-  estado:          EstadoPedido
-  fechaProduccion: string | null
-  notasProduccion: string | null
-  updatedAt:       string
-  clienteNombre:   string | null
+  id:               string
+  numero:           number
+  estado:           EstadoPedido
+  fecha_produccion: string | null
+  notas_produccion: string | null
+  updated_at:       string
+  clientes:         { nombre: string } | null
 }
 
 export interface ResumenProduccion {
-  productoId:      string
-  nombreProducto:  string | null
-  presentacion:    string | null
-  unidadMedida:    string | null
-  fechaProduccion: string | null
-  totalCantidad:   number
-  totalBidonNuevo: number
+  producto_id:      string
+  nombre_producto:  string | null
+  presentacion:     number | null
+  unidad_medida:    string | null
+  fecha_produccion: string | null
+  total_cantidad:   number
+  total_bidon_nuevo: number
 }
 
 export interface DashboardData {
@@ -101,26 +102,26 @@ export const usePedidosProduccion = (fecha?: string) =>
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (data ?? []).map((row: any): PedidoProduccion => ({
-        id:               row.id,
-        numero:           row.numero,
-        estado:           row.estado,
-        fechaProduccion:  row.fecha_produccion,
-        notasProduccion:  row.notas_produccion,
-        direccionEntrega: row.direccion_entrega,
-        createdAt:        row.created_at,
-        updatedAt:        row.updated_at,
-        clienteId:        row.cliente_id,
-        clienteNombre:    row.clientes?.nombre ?? null,
+        id:                row.id,
+        numero:            row.numero,
+        estado:            row.estado,
+        fecha_produccion:  row.fecha_produccion,
+        notas_produccion:  row.notas_produccion,
+        direccion_entrega: row.direccion_entrega,
+        created_at:        row.created_at,
+        updated_at:        row.updated_at,
+        cliente_id:        row.cliente_id,
+        clientes:          row.clientes ?? null,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        items: (row.pedido_items ?? []).map((item: any): ItemProduccion => ({
-          pedidoId:    item.pedido_id,
-          productoId:  item.producto_id,
-          cantidad:    String(item.cantidad),
-          bidonNuevo:  item.bidon_nuevo ?? false,
-          nombre:      item.productos?.nombre      ?? null,
-          fragancia:   item.productos?.fragancia   ?? null,
+        pedido_items: (row.pedido_items ?? []).map((item: any): ItemProduccion => ({
+          pedido_id:    item.pedido_id,
+          producto_id:  item.producto_id,
+          cantidad:     Number(item.cantidad),
+          bidon_nuevo:  item.bidon_nuevo ?? false,
+          nombre:       item.productos?.nombre      ?? null,
+          fragancia:    item.productos?.fragancia   ?? null,
           presentacion: item.productos?.presentacion != null
-            ? String(item.productos.presentacion) : null,
+            ? Number(item.productos.presentacion) : null,
         })),
       }))
     },
@@ -143,13 +144,13 @@ export const usePedidosListosHoy = () => {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (data ?? []).map((row: any): PedidoListoHoy => ({
-        id:              row.id,
-        numero:          row.numero,
-        estado:          row.estado,
-        fechaProduccion: row.fecha_produccion,
-        notasProduccion: row.notas_produccion,
-        updatedAt:       row.updated_at,
-        clienteNombre:   row.clientes?.nombre ?? null,
+        id:               row.id,
+        numero:           row.numero,
+        estado:           row.estado,
+        fecha_produccion: row.fecha_produccion,
+        notas_produccion: row.notas_produccion,
+        updated_at:       row.updated_at,
+        clientes:         row.clientes ?? null,
       }))
     },
     refetchInterval: 30_000,
@@ -190,25 +191,25 @@ export const useResumenProduccion = (fecha?: string) => {
           const existing   = mapa.get(prodId)
 
           if (existing) {
-            existing.totalCantidad   += cantidad
-            if (esBidon) existing.totalBidonNuevo += cantidad
+            existing.total_cantidad    += cantidad
+            if (esBidon) existing.total_bidon_nuevo += cantidad
           } else {
             mapa.set(prodId, {
-              productoId:      prodId,
-              nombreProducto:  item.productos?.nombre          ?? null,
-              presentacion:    item.productos?.presentacion != null
-                ? String(item.productos.presentacion) : null,
-              unidadMedida:    item.productos?.unidad_medida   ?? null,
-              fechaProduccion: pedido.fecha_produccion         ?? null,
-              totalCantidad:   cantidad,
-              totalBidonNuevo: esBidon ? cantidad : 0,
+              producto_id:       prodId,
+              nombre_producto:   item.productos?.nombre          ?? null,
+              presentacion:      item.productos?.presentacion != null
+                ? Number(item.productos.presentacion) : null,
+              unidad_medida:     item.productos?.unidad_medida   ?? null,
+              fecha_produccion:  pedido.fecha_produccion         ?? null,
+              total_cantidad:    cantidad,
+              total_bidon_nuevo: esBidon ? cantidad : 0,
             })
           }
         }
       }
 
       return Array.from(mapa.values()).sort((a, b) =>
-        (a.nombreProducto ?? '').localeCompare(b.nombreProducto ?? '')
+        (a.nombre_producto ?? '').localeCompare(b.nombre_producto ?? '')
       )
     },
   })

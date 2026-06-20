@@ -2,34 +2,20 @@ import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tansta
 import { supabase } from '@/lib/supabase'
 import type { Producto, CategoriaProducto } from '@/types'
 
-// ─── Helper de transformación ─────────────────────────────────────────────────
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function toProducto(row: any): Producto & { categoriaNombre?: string } {
-  return {
-    id:              row.id,
-    codigo:          row.codigo          ?? null,
-    nombre:          row.nombre,
-    fragancia:       row.fragancia       ?? null,
-    categoriaId:     row.categoria_id    ?? null,
-    unidadMedida:    row.unidad_medida   ?? 'litros',
-    presentacion:    String(row.presentacion),
-    precioMinorista: String(row.precio_minorista),
-    precioMayorista: String(row.precio_mayorista),
-    activo:          row.activo,
-    createdAt:       row.created_at,
-    updatedAt:       row.updated_at,
-    categoria:       row.categorias_producto
-      ? { id: row.categorias_producto.id, nombre: row.categorias_producto.nombre }
-      : undefined,
-    categoriaNombre: row.categorias_producto?.nombre,
-  }
-}
-
-// ─── Query keys ───────────────────────────────────────────────────────────────
-
 const KEY     = ['productos']
 const CAT_KEY = ['categorias']
+
+// Supabase devuelve NUMERIC como string — parseamos a number para coincidir con el tipo
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function parseProducto(row: any): Producto {
+  return {
+    ...row,
+    presentacion:     Number(row.presentacion),
+    precio_minorista: Number(row.precio_minorista),
+    precio_mayorista: Number(row.precio_mayorista),
+    categorias_producto: row.categorias_producto ?? null,
+  } as Producto
+}
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
 
@@ -37,7 +23,7 @@ export const useProductos = (q?: string, categoriaId?: string) =>
   useQuery({
     queryKey:        [...KEY, q, categoriaId],
     placeholderData: keepPreviousData,
-    staleTime:       1000 * 60 * 5,      // 5 min — catálogo estable
+    staleTime:       1000 * 60 * 5,
     queryFn: async () => {
       let query = supabase
         .from('productos')
@@ -50,14 +36,14 @@ export const useProductos = (q?: string, categoriaId?: string) =>
 
       const { data, error } = await query
       if (error) throw new Error(error.message)
-      return (data ?? []).map(toProducto)
+      return (data ?? []).map(parseProducto)
     },
   })
 
 export const useCategorias = () =>
   useQuery({
     queryKey:  CAT_KEY,
-    staleTime: 1000 * 60 * 30,   // 30 min — categorías raramente cambian
+    staleTime: 1000 * 60 * 30,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('categorias_producto')
@@ -72,24 +58,25 @@ export const useCategorias = () =>
 export const useCrearProducto = () => {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async (data: Partial<Producto>) => {
-      const { data: created, error } = await supabase
+    mutationFn: async (payload: Omit<Producto, 'id' | 'created_at' | 'updated_at' | 'categorias_producto'>) => {
+      const { data, error } = await supabase
         .from('productos')
         .insert({
-          nombre:           data.nombre,
-          fragancia:        data.fragancia        || null,
-          categoria_id:     data.categoriaId      || null,
-          unidad_medida:    data.unidadMedida      ?? 'litros',
-          presentacion:     parseFloat(data.presentacion ?? '0'),
-          precio_minorista: parseFloat(data.precioMinorista ?? '0'),
-          precio_mayorista: parseFloat(data.precioMayorista ?? '0'),
-          activo:           data.activo            ?? true,
+          nombre:           payload.nombre,
+          fragancia:        payload.fragancia     || null,
+          categoria_id:     payload.categoria_id  || null,
+          unidad_medida:    payload.unidad_medida  ?? 'litros',
+          presentacion:     payload.presentacion,
+          precio_minorista: payload.precio_minorista,
+          precio_mayorista: payload.precio_mayorista,
+          activo:           payload.activo ?? true,
+          codigo:           payload.codigo || null,
         })
         .select('*, categorias_producto(id, nombre)')
-        .maybeSingle()
+        .single()
 
       if (error) throw new Error(error.message)
-      return toProducto(created!)
+      return parseProducto(data)
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
   })
@@ -98,26 +85,27 @@ export const useCrearProducto = () => {
 export const useEditarProducto = () => {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async ({ id, ...data }: Partial<Producto> & { id: string }) => {
+    mutationFn: async ({ id, ...payload }: Partial<Producto> & { id: string }) => {
       const patch: Record<string, unknown> = {}
-      if (data.nombre          !== undefined) patch.nombre           = data.nombre
-      if (data.fragancia       !== undefined) patch.fragancia        = data.fragancia       || null
-      if (data.categoriaId     !== undefined) patch.categoria_id     = data.categoriaId     || null
-      if (data.unidadMedida    !== undefined) patch.unidad_medida    = data.unidadMedida
-      if (data.presentacion    !== undefined) patch.presentacion     = parseFloat(data.presentacion)
-      if (data.precioMinorista !== undefined) patch.precio_minorista = parseFloat(data.precioMinorista)
-      if (data.precioMayorista !== undefined) patch.precio_mayorista = parseFloat(data.precioMayorista)
-      if (data.activo          !== undefined) patch.activo           = data.activo
+      if (payload.nombre           !== undefined) patch.nombre           = payload.nombre
+      if (payload.fragancia        !== undefined) patch.fragancia        = payload.fragancia    || null
+      if (payload.categoria_id     !== undefined) patch.categoria_id     = payload.categoria_id || null
+      if (payload.unidad_medida    !== undefined) patch.unidad_medida    = payload.unidad_medida
+      if (payload.presentacion     !== undefined) patch.presentacion     = payload.presentacion
+      if (payload.precio_minorista !== undefined) patch.precio_minorista = payload.precio_minorista
+      if (payload.precio_mayorista !== undefined) patch.precio_mayorista = payload.precio_mayorista
+      if (payload.activo           !== undefined) patch.activo           = payload.activo
+      if (payload.codigo           !== undefined) patch.codigo           = payload.codigo || null
 
-      const { data: updated, error } = await supabase
+      const { data, error } = await supabase
         .from('productos')
         .update(patch)
         .eq('id', id)
         .select('*, categorias_producto(id, nombre)')
-        .maybeSingle()
+        .single()
 
       if (error) throw new Error(error.message)
-      return toProducto(updated!)
+      return parseProducto(data)
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
   })
@@ -131,7 +119,7 @@ export const useCrearCategoria = () => {
         .from('categorias_producto')
         .insert({ nombre })
         .select('id, nombre')
-        .maybeSingle()
+        .single()
 
       if (error) throw new Error(error.message)
       return data as CategoriaProducto
