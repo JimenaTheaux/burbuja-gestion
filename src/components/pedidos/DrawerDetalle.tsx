@@ -140,7 +140,12 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
   return (
     <>
       <Sheet open={open} onOpenChange={v => { if (!v) onClose() }}>
-        <SheetContent side="right" style={{ width: '100%', maxWidth: 500, overflowY: 'auto' }}>
+        <SheetContent
+          side="right"
+          style={{ width: '100%', maxWidth: 500, overflowY: 'auto' }}
+          onPointerDownOutside={e => { if (confirmando || anulando) e.preventDefault() }}
+          onInteractOutside={e => { if (confirmando || anulando) e.preventDefault() }}
+        >
           <SheetHeader>
             <SheetTitle>{p ? `P-${String(p.numero).padStart(5, '0')}` : 'Detalle de pedido'}</SheetTitle>
           </SheetHeader>
