@@ -54,6 +54,7 @@ export interface PedidoPendienteCobro {
   numero:          number
   clienteNombre:   string
   fechaProduccion: string | null
+  fechaCobro:      string | null
   totalPedido:     number
   createdAt:       string
 }
@@ -274,7 +275,7 @@ async function fallbackDashboard(hoy: string): Promise<DashboardData> {
       .not('estado', 'in', `(${ESTADOS_TERMINALES.join(',')})`),
     supabase
       .from('pedidos')
-      .select('id, numero, total_calculado, total_manual, forma_cobro, monto_cobrado, estado_pago, fecha_produccion, created_at, clientes(nombre)')
+      .select('id, numero, total_calculado, total_manual, forma_cobro, monto_cobrado, estado_pago, fecha_produccion, fecha_cobro, created_at, clientes(nombre)')
       .eq('estado', 'cerrado')
       .eq('estado_pago', 'pendiente')
       .order('fecha_produccion', { ascending: true }),
@@ -334,6 +335,7 @@ async function fallbackDashboard(hoy: string): Promise<DashboardData> {
         numero:          p.numero,
         clienteNombre:   p.clientes?.nombre ?? '—',
         fechaProduccion: p.fecha_produccion,
+        fechaCobro:      p.fecha_cobro ?? null,
         totalPedido:     parseFloat(p.total_manual ?? p.total_calculado ?? '0') || 0,
         createdAt:       p.created_at,
       })),

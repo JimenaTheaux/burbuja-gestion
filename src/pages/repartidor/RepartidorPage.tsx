@@ -30,9 +30,10 @@ function CardRepartidor({ pedido, isOnline, addAction, onSaved }: {
   const [confEmerg,   setConfEmerg]   = useState(false)
 
   // Form entrega / cierre
-  const [forma,  setForma]  = useState<'efectivo' | 'transferencia' | 'pendiente'>('efectivo')
-  const [monto,  setMonto]  = useState(String(Math.round(Number(totalPedido(pedido)))))
-  const [notas,  setNotas]  = useState('')
+  const [forma,      setForma]      = useState<'efectivo' | 'transferencia' | 'pendiente'>('efectivo')
+  const [monto,      setMonto]      = useState(String(Math.round(Number(totalPedido(pedido)))))
+  const [notas,      setNotas]      = useState('')
+  const [fechaCobro, setFechaCobro] = useState(() => new Date().toISOString().split('T')[0])
 
   // Form falla
   const [motivo, setMotivo] = useState('')
@@ -91,6 +92,7 @@ function CardRepartidor({ pedido, isOnline, addAction, onSaved }: {
           montoCobrado: monto || undefined,
           estadoPago,
           notasEntrega: notas.trim() || undefined,
+          fechaCobro:   forma !== 'pendiente' ? fechaCobro : undefined,
         })
         onSaved('Cierre guardado offline — se enviará al reconectar')
         setFormEntrega(false)
@@ -103,6 +105,7 @@ function CardRepartidor({ pedido, isOnline, addAction, onSaved }: {
         monto_cobrado: monto || undefined,
         estado_pago:   estadoPago,
         notas_entrega: notas.trim() || undefined,
+        fecha_cobro:   forma !== 'pendiente' ? fechaCobro : undefined,
       })
       onSaved('Pedido cerrado correctamente')
       setFormEntrega(false)
@@ -244,6 +247,27 @@ function CardRepartidor({ pedido, isOnline, addAction, onSaved }: {
                   { value: 'pendiente',     label: 'Pendiente', color: '#F9A825' },
                 ]}
               />
+
+              {forma !== 'pendiente' && (
+                <div>
+                  <span style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase' as const, letterSpacing: '0.07em', color: '#4A5568', display: 'block', marginBottom: 6 }}>
+                    Fecha de cobro
+                  </span>
+                  <input
+                    type="date"
+                    value={fechaCobro}
+                    onChange={e => setFechaCobro(e.target.value)}
+                    style={{
+                      width: '100%', height: 44, padding: '0 10px',
+                      border: '1px solid rgba(105,105,105,0.4)',
+                      borderRadius: 10, fontSize: 14, fontFamily: 'Inter, sans-serif',
+                      outline: 'none', boxSizing: 'border-box' as const,
+                    }}
+                    onFocus={e => (e.target.style.borderColor = '#1B9ED6')}
+                    onBlur={e  => (e.target.style.borderColor = 'rgba(105,105,105,0.4)')}
+                  />
+                </div>
+              )}
 
               <FloatInput
                 label={forma === 'pendiente' ? 'Monto cobrado (opcional)' : 'Monto cobrado *'}

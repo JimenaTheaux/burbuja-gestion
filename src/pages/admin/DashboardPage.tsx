@@ -19,12 +19,14 @@ Chart.register(...registerables)
 interface PedidoRow {
   id:               string
   estado:           EstadoPedido
-  estado_pago:      string | null
-  forma_cobro:      string | null
-  monto_cobrado:    string | null
-  total_calculado:  string
-  total_manual:     string | null
   fecha_produccion: string | null
+}
+
+interface CobroRow {
+  id:            string
+  forma_cobro:   string | null
+  monto_cobrado: string | null
+  fecha_cobro:   string | null
 }
 
 // ─── Date helpers ─────────────────────────────────────────────────────────────
@@ -52,13 +54,14 @@ function addDays(dateStr: string, days: number): string {
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
 
+// Pedidos por fecha_produccion — para conteos y panel de estados
 function usePedidosPeriodo(inicio: string, fin: string) {
   return useQuery({
     queryKey: ['pedidos', 'dash-periodo', inicio, fin],
     queryFn:  async () => {
       const { data, error } = await supabase
         .from('pedidos')
-        .select('id, estado, estado_pago, forma_cobro, monto_cobrado, total_calculado, total_manual, fecha_produccion')
+        .select('id, estado, fecha_produccion')
         .gte('fecha_produccion', inicio)
         .lte('fecha_produccion', fin)
       if (error) throw new Error(error.message)
@@ -69,13 +72,33 @@ function usePedidosPeriodo(inicio: string, fin: string) {
   })
 }
 
-type EvolItem = {
-  monto_cobrado:    string | null
-  fecha_produccion: string | null
-  estado_pago:      string | null
-  forma_cobro:      string | null
+// Cobros por fecha_cobro — para KPIs de dinero
+function useCobrosperiodo(inicio: string, fin: string) {
+  return useQuery({
+    queryKey: ['pedidos', 'dash-cobros', inicio, fin],
+    queryFn:  async () => {
+      const { data, error } = await supabase
+        .from('pedidos')
+        .select('id, forma_cobro, monto_cobrado, fecha_cobro')
+        .eq('estado', 'cerrado')
+        .gte('fecha_cobro', inicio)
+        .lte('fecha_cobro', fin)
+      if (error) throw new Error(error.message)
+      return (data ?? []) as CobroRow[]
+    },
+    refetchInterval: 30_000,
+    staleTime:       0,
+  })
 }
 
+type EvolItem = {
+  monto_cobrado: string | null
+  fecha_cobro:   string | null
+  estado_pago:   string | null
+  forma_cobro:   string | null
+}
+
+// Chart: cubre período actual + mes anterior, filtrado por fecha_cobro
 function useEvolucionRango(desde: string, hasta: string) {
   const mesAnteriorDesde = restarUnMes(desde)
   return useQuery({
@@ -83,10 +106,10 @@ function useEvolucionRango(desde: string, hasta: string) {
     queryFn:  async () => {
       const { data, error } = await supabase
         .from('pedidos')
-        .select('monto_cobrado, fecha_produccion, estado_pago, forma_cobro')
+        .select('monto_cobrado, fecha_cobro, estado_pago, forma_cobro')
         .eq('estado', 'cerrado')
-        .gte('fecha_produccion', mesAnteriorDesde)
-        .lte('fecha_produccion', hasta)
+        .gte('fecha_cobro', mesAnteriorDesde)
+        .lte('fecha_cobro', hasta)
       if (error) throw new Error(error.message)
       return (data ?? []) as EvolItem[]
     },
@@ -103,17 +126,22 @@ function esCobrado(p: { estado: string; estado_pago: string | null; forma_cobro:
   return p.estado_pago == null && !!p.forma_cobro && p.forma_cobro !== 'pendiente'
 }
 
+// Pedidos por fecha_produccion: conteos y distribución de estados
 function calcKPIs(pedidos: PedidoRow[]) {
-  const cobrados   = pedidos.filter(esCobrado)
-  const totalCob   = cobrados.reduce((a, p) => a + (Number(p.monto_cobrado) || 0), 0)
-  const totalEf    = cobrados.filter(p => p.forma_cobro === 'efectivo')
-                             .reduce((a, p) => a + (Number(p.monto_cobrado) || 0), 0)
-  const totalTr    = cobrados.filter(p => p.forma_cobro === 'transferencia')
-                             .reduce((a, p) => a + (Number(p.monto_cobrado) || 0), 0)
   const pendCierre = pedidos.filter(p => !['cerrado', 'anulado'].includes(p.estado)).length
   const porEstado: Record<string, number> = {}
   for (const p of pedidos) porEstado[p.estado] = (porEstado[p.estado] || 0) + 1
-  return { totalCob, totalEf, totalTr, pendCierre, porEstado, count: pedidos.length }
+  return { pendCierre, porEstado, count: pedidos.length }
+}
+
+// Cobros por fecha_cobro: totales de dinero
+function calcCobrosKPI(cobros: CobroRow[]) {
+  const totalCob = cobros.reduce((a, p) => a + (Number(p.monto_cobrado) || 0), 0)
+  const totalEf  = cobros.filter(p => p.forma_cobro === 'efectivo')
+                         .reduce((a, p) => a + (Number(p.monto_cobrado) || 0), 0)
+  const totalTr  = cobros.filter(p => p.forma_cobro === 'transferencia')
+                         .reduce((a, p) => a + (Number(p.monto_cobrado) || 0), 0)
+  return { totalCob, totalEf, totalTr }
 }
 
 function calcEvolucionRango(pedidosTodos: EvolItem[], desde: string, hasta: string) {
@@ -126,9 +154,9 @@ function calcEvolucionRango(pedidosTodos: EvolItem[], desde: string, hasta: stri
 
   const byDia: Record<string, number> = {}
   for (const p of pedidosTodos) {
-    if (!p.fecha_produccion || !p.monto_cobrado) continue
+    if (!p.fecha_cobro || !p.monto_cobrado) continue
     if (!esCobrado({ estado: 'cerrado', estado_pago: p.estado_pago, forma_cobro: p.forma_cobro })) continue
-    byDia[p.fecha_produccion] = (byDia[p.fecha_produccion] || 0) + Number(p.monto_cobrado)
+    byDia[p.fecha_cobro] = (byDia[p.fecha_cobro] || 0) + Number(p.monto_cobrado)
   }
 
   const labels:   string[] = []
@@ -260,11 +288,12 @@ function FilaPendiente({ p, onCobrado }: {
   onCobrado: (msg: string) => void
 }) {
   const editarCobro = useEditarCobro()
-  const [abierto, setAbierto] = useState(false)
-  const [forma,   setForma]   = useState<'efectivo' | 'transferencia'>('efectivo')
-  const [monto,   setMonto]   = useState(String(Math.round(p.totalPedido)))
-  const [loading, setLoading] = useState(false)
-  const [error,   setError]   = useState<string | null>(null)
+  const [abierto,    setAbierto]    = useState(false)
+  const [forma,      setForma]      = useState<'efectivo' | 'transferencia'>('efectivo')
+  const [monto,      setMonto]      = useState(String(Math.round(p.totalPedido)))
+  const [fechaCobro, setFechaCobro] = useState(() => new Date().toISOString().split('T')[0])
+  const [loading,    setLoading]    = useState(false)
+  const [error,      setError]      = useState<string | null>(null)
   const montoRef = useRef<HTMLInputElement>(null)
   const btnRef   = useRef<HTMLButtonElement>(null)
 
@@ -275,6 +304,7 @@ function FilaPendiente({ p, onCobrado }: {
   const handleAbrir = () => {
     setMonto(String(Math.round(p.totalPedido)))
     setForma('efectivo')
+    setFechaCobro(new Date().toISOString().split('T')[0])
     setError(null)
     setAbierto(true)
   }
@@ -283,7 +313,13 @@ function FilaPendiente({ p, onCobrado }: {
     if (!monto.trim()) { setError('Ingresá el monto cobrado'); return }
     setLoading(true); setError(null)
     try {
-      await editarCobro.mutateAsync({ id: p.id, forma_cobro: forma, monto_cobrado: monto, estado_pago: 'cobrado' })
+      await editarCobro.mutateAsync({
+        id:          p.id,
+        forma_cobro: forma,
+        monto_cobrado: monto,
+        estado_pago: 'cobrado',
+        fecha_cobro: fechaCobro,
+      })
       onCobrado(`P-${String(p.numero).padStart(5, '0')} marcado como cobrado`)
     } catch {
       setError('No se pudo guardar. Intentá de nuevo.')
@@ -326,6 +362,11 @@ function FilaPendiente({ p, onCobrado }: {
               Prod: {new Date(p.fechaProduccion + 'T00:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })}
             </p>
           )}
+          <p style={{ margin: '2px 0 0', fontSize: 12, color: '#4A5568' }}>
+            Cobro: {p.fechaCobro
+              ? new Date(p.fechaCobro + 'T00:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })
+              : 'Sin fecha'}
+          </p>
         </div>
 
         <div style={{ flexShrink: 0, textAlign: 'right' }}>
@@ -383,6 +424,25 @@ function FilaPendiente({ p, onCobrado }: {
                 </button>
               ))}
             </div>
+          </div>
+
+          <div>
+            <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#4A5568' }}>
+              Fecha de cobro
+            </p>
+            <input
+              type="date"
+              value={fechaCobro}
+              onChange={e => setFechaCobro(e.target.value)}
+              style={{
+                width: '100%', height: 44, padding: '0 10px',
+                border: '1px solid rgba(105,105,105,0.4)',
+                borderRadius: 10, fontSize: 14, fontFamily: 'Inter, sans-serif',
+                outline: 'none', boxSizing: 'border-box',
+              }}
+              onFocus={e => (e.target.style.borderColor = '#1B9ED6')}
+              onBlur={e  => (e.target.style.borderColor = 'rgba(105,105,105,0.4)')}
+            />
           </div>
 
           <div>
@@ -530,14 +590,18 @@ export default function DashboardPage() {
   const [hasta,     setHasta]    = useState<string>(fmtDate(new Date()))
   const [sheetPend, setSheetPend] = useState(false)
 
+  // Pedidos por fecha_produccion (conteos, estados)
   const { data: pedidos,    isLoading } = usePedidosPeriodo(desde, hasta)
-  const { data: pedidosPrev }           = usePedidosPeriodo(restarUnMes(desde), restarUnMes(hasta))
+  // Cobros por fecha_cobro (totales de dinero)
+  const { data: cobros }                = useCobrosperiodo(desde, hasta)
+  const { data: cobrosPrev }            = useCobrosperiodo(restarUnMes(desde), restarUnMes(hasta))
   const { data: dashData, refetch }     = useDashboard()
   const { data: evolData }              = useEvolucionRango(desde, hasta)
 
-  const kpi        = pedidos     ? calcKPIs(pedidos)     : null
-  const kpiPrev    = pedidosPrev ? calcKPIs(pedidosPrev) : null
-  const delta      = kpi && kpiPrev ? deltaCalc(kpi.totalCob, kpiPrev.totalCob) : null
+  const kpi        = pedidos    ? calcKPIs(pedidos)       : null
+  const kpiCobros  = cobros     ? calcCobrosKPI(cobros)   : null
+  const kpiCobrosPrev = cobrosPrev ? calcCobrosKPI(cobrosPrev) : null
+  const delta      = kpiCobros && kpiCobrosPrev ? deltaCalc(kpiCobros.totalCob, kpiCobrosPrev.totalCob) : null
   const evolucion  = evolData ? calcEvolucionRango(evolData, desde, hasta) : null
   const pendientes = dashData?.pendientes
 
@@ -660,11 +724,11 @@ export default function DashboardPage() {
       {/* ── KPIs — 3 columnas ── */}
       <div className="grid grid-cols-3 gap-3">
 
-        {/* KPI 1 — Total cobrado */}
+        {/* KPI 1 — Total cobrado (filtrado por fecha_cobro) */}
         <div style={card}>
           <span style={labelSt}>Total cobrado</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, lineHeight: 1 }}>
-            <span style={valorSt}>{pesos(kpi?.totalCob ?? 0)}</span>
+            <span style={valorSt}>{pesos(kpiCobros?.totalCob ?? 0)}</span>
             {delta !== null && (
               <span style={{
                 fontSize: 10, fontWeight: 500, borderRadius: 99, padding: '1px 6px',
@@ -677,11 +741,11 @@ export default function DashboardPage() {
             )}
           </div>
           <p style={subSt}>
-            Ef. {pesos(kpi?.totalEf ?? 0)} · Tr. {pesos(kpi?.totalTr ?? 0)}
+            Ef. {pesos(kpiCobros?.totalEf ?? 0)} · Tr. {pesos(kpiCobros?.totalTr ?? 0)}
           </p>
         </div>
 
-        {/* KPI 2 — Pedidos */}
+        {/* KPI 2 — Pedidos (filtrado por fecha_produccion) */}
         <div style={card}>
           <span style={labelSt}>Pedidos</span>
           <span style={valorSt}>{kpi?.count ?? 0}</span>
@@ -728,7 +792,7 @@ export default function DashboardPage() {
       {/* ── Panel inferior — 2 columnas ── */}
       <div className="grid md:grid-cols-2 grid-cols-1 gap-3">
 
-        {/* Panel izquierdo — Evolución de ventas */}
+        {/* Panel izquierdo — Evolución de cobros (por fecha_cobro) */}
         <div style={{ background: '#fff', border: '0.5px solid #D1D5DB', borderRadius: 10, overflow: 'hidden' }}>
           <div style={{ padding: '12px 16px', borderBottom: '0.5px solid #F4F6F8' }}>
             <span style={{ fontSize: 12, fontWeight: 500, color: '#1A2B3C', letterSpacing: '-0.3px' }}>
@@ -737,7 +801,7 @@ export default function DashboardPage() {
           </div>
           <div style={{ padding: '14px 16px' }}>
             <span style={{ fontSize: 20, fontWeight: 500, color: '#1A2B3C', letterSpacing: '-0.5px' }}>
-              {pesos(kpi?.totalCob ?? 0)}
+              {pesos(kpiCobros?.totalCob ?? 0)}
             </span>
             {/* Leyenda custom */}
             <div style={{ display: 'flex', gap: 14, marginTop: 10, marginBottom: 8 }}>
@@ -765,7 +829,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Panel derecho — Estado de pedidos */}
+        {/* Panel derecho — Estado de pedidos (por fecha_produccion) */}
         <div style={{ background: '#fff', border: '0.5px solid #D1D5DB', borderRadius: 10, overflow: 'hidden' }}>
           <div style={{ padding: '12px 16px', borderBottom: '0.5px solid #F4F6F8' }}>
             <span style={{ fontSize: 12, fontWeight: 500, color: '#1A2B3C', letterSpacing: '-0.3px' }}>

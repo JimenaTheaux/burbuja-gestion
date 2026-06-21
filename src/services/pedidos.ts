@@ -155,7 +155,7 @@ export const usePedidoDetalle = (id: string | null) =>
           .from('pedidos')
           .select(`
             id, numero, estado, tipo_precio, direccion_entrega, fecha_produccion,
-            total_calculado, total_manual, costo_envio, forma_cobro, monto_cobrado,
+            total_calculado, total_manual, costo_envio, forma_cobro, monto_cobrado, fecha_cobro,
             notas_produccion, notas_internas, notas_entrega, motivo_falla,
             motivo_anulacion, created_at, updated_at, cliente_id,
             clientes!inner(nombre, direccion, tipo_cliente, telefono)
@@ -410,13 +410,14 @@ export const useCerrarPedido = () => {
   const usuario = useAuthStore(s => s.usuario)
 
   return useMutation({
-    mutationFn: async ({ id, estadoActual, forma_cobro, monto_cobrado, estado_pago, notas_entrega }: {
+    mutationFn: async ({ id, estadoActual, forma_cobro, monto_cobrado, estado_pago, notas_entrega, fecha_cobro }: {
       id:              string
       estadoActual:    EstadoPedido
       forma_cobro:     'efectivo' | 'transferencia' | 'pendiente'
       monto_cobrado?:  string
       estado_pago:     'cobrado' | 'pendiente'
       notas_entrega?:  string
+      fecha_cobro?:    string
     }) => {
       const { error } = await supabase.rpc('cerrar_pedido', {
         p_pedido_id:       id,
@@ -428,6 +429,16 @@ export const useCerrarPedido = () => {
         p_usuario_id:      usuario?.id ?? null,
       })
       if (error) throw new Error(error.message)
+
+      const fechaCobroFinal = forma_cobro === 'pendiente'
+        ? null
+        : (fecha_cobro ?? new Date().toISOString().split('T')[0])
+
+      const { error: fechaErr } = await supabase
+        .from('pedidos')
+        .update({ fecha_cobro: fechaCobroFinal })
+        .eq('id', id)
+      if (fechaErr) throw new Error(fechaErr.message)
     },
 
     onMutate: async ({ id }) => {
@@ -451,11 +462,12 @@ export const useCerrarPedido = () => {
 export const useEditarCobro = () => {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async ({ id, forma_cobro, monto_cobrado, estado_pago }: {
+    mutationFn: async ({ id, forma_cobro, monto_cobrado, estado_pago, fecha_cobro }: {
       id:              string
       forma_cobro:     string
       monto_cobrado?:  string
       estado_pago?:    'cobrado' | 'pendiente'
+      fecha_cobro?:    string
     }) => {
       const patch: Record<string, unknown> = {
         forma_cobro,
@@ -463,6 +475,11 @@ export const useEditarCobro = () => {
         updated_at:    new Date().toISOString(),
       }
       if (estado_pago !== undefined) patch.estado_pago = estado_pago
+      if (fecha_cobro !== undefined) {
+        patch.fecha_cobro = forma_cobro === 'pendiente'
+          ? null
+          : (fecha_cobro || new Date().toISOString().split('T')[0])
+      }
 
       const { error } = await supabase
         .from('pedidos')

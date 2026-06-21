@@ -12,8 +12,9 @@ export interface OfflineAction {
   formaCobro?:  string
   montoCobrado?: string
   // cerrarPedido
-  estadoPago?:  'cobrado' | 'pendiente'
+  estadoPago?:   'cobrado' | 'pendiente'
   notasEntrega?: string
+  fechaCobro?:   string
   timestamp:    number
 }
 

@@ -11,7 +11,7 @@ import type { EstadoPedido } from '@/types'
 export type AddActionInput =
   | { type: 'cambiarEstado'; pedidoId: string; estadoNuevo: EstadoPedido; notas?: string }
   | { type: 'editarCobro';   pedidoId: string; formaCobro: string; montoCobrado?: string }
-  | { type: 'cerrarPedido';  pedidoId: string; formaCobro: string; montoCobrado?: string; estadoPago: 'cobrado' | 'pendiente'; notasEntrega?: string }
+  | { type: 'cerrarPedido';  pedidoId: string; formaCobro: string; montoCobrado?: string; estadoPago: 'cobrado' | 'pendiente'; notasEntrega?: string; fechaCobro?: string }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
@@ -66,6 +66,9 @@ export function useOffline() {
                 monto_cobrado: action.montoCobrado ? parseFloat(action.montoCobrado) : null,
                 estado_pago:   action.estadoPago,
                 notas_entrega: action.notasEntrega ?? null,
+                fecha_cobro:   action.formaCobro === 'pendiente'
+                  ? null
+                  : (action.fechaCobro ?? new Date().toISOString().split('T')[0]),
                 updated_at:    new Date().toISOString(),
               })
               .eq('id', action.pedidoId)

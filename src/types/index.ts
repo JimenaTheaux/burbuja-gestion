@@ -114,6 +114,7 @@ export interface Pedido {
   total_manual:     number | null
   forma_cobro:      FormaCobro | null
   monto_cobrado:    number | null
+  fecha_cobro:      string | null
   estado_pago:      'cobrado' | 'pendiente' | null
   notas_entrega:    string | null
   motivo_falla:     string | null

@@ -143,11 +143,12 @@ Se abre en un drawer/sheet lateral (50% desktop, 100% mobile) con fondo oscureci
 - Se abre mini-form inline en la card del pedido
 - Campos:
   - Forma de cobro (radio: Efectivo / Transferencia / Pendiente de cobro)
+  - Fecha de cobro (date input, default hoy; visible solo si forma ≠ pendiente)
   - Monto cobrado (obligatorio si forma ≠ pendiente; vacío/cero si es pendiente)
   - Observaciones (opcional)
 - Estado de pago se deriva automáticamente:
-  - si forma = pendiente → estado_pago = 'pendiente'
-  - si forma = efectivo o transferencia → estado_pago = 'cobrado'
+  - si forma = pendiente → estado_pago = 'pendiente', fecha_cobro = null
+  - si forma = efectivo o transferencia → estado_pago = 'cobrado', fecha_cobro = fecha seleccionada
 - Botón "Confirmar y cerrar pedido" (primary, 48px)
 - Al confirmar: pedido pasa a estado CERRADO (no a entregado)
 - Badge en la card pasa a CERRADO visualmente
@@ -188,9 +189,12 @@ Cards KPI:
 - Pedidos con estado_pago=pendiente resaltados con alerta visual
 
 ### F5.4 — Dashboard de ventas (KPIs)
-- Filtros de fecha: hoy, esta semana, este mes, rango personalizado
-- Cantidad total de pedidos, monto total facturado, monto total cobrado, pedidos anulados
-- Visualización básica (tabla o gráfico de área simple)
+- Selector de rango personalizado: inputs date [Desde] [Hasta]; default = primer día del mes → hoy
+- **Pedidos** (count, pendientes de cierre, panel de estados): filtrados por `fecha_produccion`
+- **Cobros** (total cobrado, efectivo, transferencia, delta vs mes anterior): filtrados por `fecha_cobro`
+  - Esto permite ver "hice 10 pedidos esta semana pero cobré algunos de la semana pasada"
+  - Registros sin `fecha_cobro` (pendientes o datos legacy) no aparecen en los KPIs de cobro
+- Gráfico de evolución: cobros agrupados por `fecha_cobro`, comparado con el mismo rango del mes anterior
 
 ---
 

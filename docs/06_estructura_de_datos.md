@@ -162,6 +162,7 @@ CREATE TABLE pedidos (
   total_manual NUMERIC(10,2),
   forma_cobro TEXT CHECK (forma_cobro IN ('efectivo', 'transferencia', 'pendiente')),
   monto_cobrado NUMERIC(10,2),
+  fecha_cobro DATE,                        -- fecha en que ingresó el dinero (null si pendiente)
   notas_entrega TEXT,
   motivo_falla TEXT,
   motivo_anulacion TEXT,
@@ -200,6 +201,7 @@ export type Pedido = {
   total_manual: number | null
   forma_cobro: 'efectivo' | 'transferencia' | 'pendiente' | null
   monto_cobrado: number | null
+  fecha_cobro: string | null   // fecha en que ingresó el dinero; null si pendiente
   estado_pago: 'cobrado' | 'pendiente' | null   // se deriva de forma_cobro al cerrar
   notas_entrega: string | null
   motivo_falla: string | null
@@ -413,7 +415,7 @@ await supabase
 const { data: pendientes } = await supabase
   .from('pedidos')
   .select(`
-    id, numero, fecha_produccion, total_calculado, total_manual,
+    id, numero, fecha_produccion, fecha_cobro, total_calculado, total_manual,
     forma_cobro, monto_cobrado, estado_pago, created_at,
     clientes(nombre)
   `)
@@ -422,22 +424,28 @@ const { data: pendientes } = await supabase
   .order('fecha_produccion', { ascending: true })
 ```
 
-### KPIs del dashboard (una query por métrica)
-```typescript
-// Contar por estado — usar .select con count
-const { count: enProduccion } = await supabase
-  .from('pedidos')
-  .select('*', { count: 'exact', head: true })
-  .eq('estado', 'en_produccion')
-  .eq('fecha_produccion', hoy)
+### KPIs del dashboard — dos fechas distintas
 
-// Total cobrado hoy
+> **fecha_produccion** → cuándo se produce/entrega el pedido  
+> **fecha_cobro** → cuándo ingresó el dinero (null si pendiente de cobro)  
+> Los KPIs de pedidos (conteos, estados) se filtran por `fecha_produccion`.  
+> Los KPIs de cobros (total cobrado, efectivo, transferencia) se filtran por `fecha_cobro`.
+
+```typescript
+// Pedidos del período (por fecha de producción)
+const { data: pedidos } = await supabase
+  .from('pedidos')
+  .select('id, estado, fecha_produccion')
+  .gte('fecha_produccion', desde)
+  .lte('fecha_produccion', hasta)
+
+// Cobros del período (por fecha de cobro)
 const { data: cobros } = await supabase
   .from('pedidos')
-  .select('monto_cobrado, forma_cobro')
-  .eq('fecha_produccion', hoy)
-  .in('estado', ['entregado', 'cerrado'])
-  .not('monto_cobrado', 'is', null)
+  .select('id, forma_cobro, monto_cobrado, fecha_cobro')
+  .eq('estado', 'cerrado')
+  .gte('fecha_cobro', desde)   // registros con fecha_cobro null no aparecen
+  .lte('fecha_cobro', hasta)
 ```
 
 ---

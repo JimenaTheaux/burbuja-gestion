@@ -30,7 +30,6 @@ const TRANSICIONES_ADMIN: Partial<Record<EstadoPedido, EstadoPedido[]>> = {
   entrega_fallida: ['listo_reparto', 'en_reparto', 'cerrado'],
 }
 
-// Etiqueta de acción para la transición primaria
 const ACCION_LABEL: Partial<Record<EstadoPedido, string>> = {
   borrador:        'Confirmar pedido',
   confirmado:      'Enviar a producción',
@@ -90,6 +89,19 @@ interface Props {
   onSaved:  (msg: string) => void
 }
 
+const inputFechaStyle: React.CSSProperties = {
+  width: '100%', height: 44, padding: '0 10px',
+  border: '1px solid rgba(105,105,105,0.4)',
+  borderRadius: 10, fontSize: 14, fontFamily: 'Inter, sans-serif',
+  outline: 'none', boxSizing: 'border-box',
+}
+
+const labelUpperStyle: React.CSSProperties = {
+  fontSize: 11, color: '#4A5568', fontWeight: 600,
+  display: 'block', marginBottom: 6,
+  textTransform: 'uppercase', letterSpacing: '0.06em',
+}
+
 export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Props) {
   const { data: pedido, isLoading } = usePedidoDetalle(pedidoId)
   const cambiarEstado = useCambiarEstado()
@@ -100,17 +112,19 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
   const usuario = useAuthStore(s => s.usuario)
   const isAdmin = usuario?.rol === 'admin' || usuario?.rol === 'superadmin'
 
-  const [confirmando,   setConfirmando]   = useState<EstadoPedido | null>(null)
-  const [anulando,      setAnulando]      = useState(false)
-  const [editandoCobro, setEditandoCobro] = useState(false)
-  const [cobroForma,    setCobroForma]    = useState('')
-  const [cobroMonto,    setCobroMonto]    = useState('')
+  const [confirmando,      setConfirmando]      = useState<EstadoPedido | null>(null)
+  const [anulando,         setAnulando]         = useState(false)
+  const [editandoCobro,    setEditandoCobro]    = useState(false)
+  const [cobroForma,       setCobroForma]       = useState('')
+  const [cobroMonto,       setCobroMonto]       = useState('')
+  const [cobroFechaCobro,  setCobroFechaCobro]  = useState('')
 
   // Flujo "Cerrar venta" con form de cobro inline
-  const [cerrando,      setCerrando]      = useState(false)
-  const [cerrarForma,   setCerrarForma]   = useState<'efectivo' | 'transferencia' | 'pendiente'>('efectivo')
-  const [cerrarMonto,   setCerrarMonto]   = useState('')
-  const [cerrarError,   setCerrarError]   = useState<string | null>(null)
+  const [cerrando,         setCerrando]         = useState(false)
+  const [cerrarForma,      setCerrarForma]      = useState<'efectivo' | 'transferencia' | 'pendiente'>('efectivo')
+  const [cerrarMonto,      setCerrarMonto]      = useState('')
+  const [cerrarFechaCobro, setCerrarFechaCobro] = useState(() => new Date().toISOString().split('T')[0])
+  const [cerrarError,      setCerrarError]      = useState<string | null>(null)
   const cerrarBtnRef = useRef<HTMLButtonElement>(null)
 
   // Pre-llenar cobro al abrir el form de cierre
@@ -122,6 +136,7 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
           ? String(p.monto_cobrado)
           : String(Math.round(Number(totalPedido(p))))
       )
+      setCerrarFechaCobro(new Date().toISOString().split('T')[0])
       setCerrarError(null)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -157,7 +172,12 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
   const handleGuardarCobro = async () => {
     if (!pedido) return
     try {
-      await editarCobro.mutateAsync({ id: pedido.id, forma_cobro: cobroForma, monto_cobrado: cobroMonto || undefined })
+      await editarCobro.mutateAsync({
+        id:          pedido.id,
+        forma_cobro: cobroForma,
+        monto_cobrado: cobroMonto || undefined,
+        fecha_cobro: cobroFechaCobro || undefined,
+      })
       onSaved('Cobro actualizado')
       setEditandoCobro(false)
     } catch (e) {
@@ -180,6 +200,7 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
         forma_cobro:   cerrarForma,
         monto_cobrado: cerrarMonto.trim() || undefined,
         estado_pago:   estadoPago,
+        fecha_cobro:   cerrarForma !== 'pendiente' ? cerrarFechaCobro : undefined,
       })
       onSaved('Pedido cerrado correctamente')
       setCerrando(false)
@@ -289,7 +310,12 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
                     <p style={{ margin: 0, fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#4A5568' }}>Cobro</p>
                     {!editandoCobro && (
                       <button type="button"
-                        onClick={() => { setCobroForma(p.forma_cobro ?? 'pendiente'); setCobroMonto(p.monto_cobrado != null ? String(p.monto_cobrado) : ''); setEditandoCobro(true) }}
+                        onClick={() => {
+                          setCobroForma(p.forma_cobro ?? 'pendiente')
+                          setCobroMonto(p.monto_cobrado != null ? String(p.monto_cobrado) : '')
+                          setCobroFechaCobro(p.fecha_cobro ?? new Date().toISOString().split('T')[0])
+                          setEditandoCobro(true)
+                        }}
                         style={{ fontSize: 12, color: '#0D5C8A', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
                         Editar
                       </button>
@@ -310,11 +336,19 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
                             : '—'}
                         </span>
                       </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: 13, color: '#4A5568' }}>Fecha de cobro</span>
+                        <span style={{ fontSize: 13, fontWeight: 600 }}>
+                          {p.fecha_cobro
+                            ? new Date(p.fecha_cobro + 'T00:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' })
+                            : '—'}
+                        </span>
+                      </div>
                     </div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                       <div>
-                        <label style={{ fontSize: 11, color: '#4A5568', fontWeight: 600, display: 'block', marginBottom: 4 }}>Forma de cobro</label>
+                        <label style={labelUpperStyle}>Forma de cobro</label>
                         <select value={cobroForma} onChange={e => setCobroForma(e.target.value)}
                           style={{ width: '100%', padding: '10px 12px', border: '1px solid #D1D5DB', borderRadius: 10, fontSize: 14, fontFamily: 'Inter, sans-serif', outline: 'none' }}>
                           <option value="efectivo">Efectivo</option>
@@ -323,10 +357,23 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
                         </select>
                       </div>
                       <div>
-                        <label style={{ fontSize: 11, color: '#4A5568', fontWeight: 600, display: 'block', marginBottom: 4 }}>Monto cobrado</label>
+                        <label style={labelUpperStyle}>Monto cobrado</label>
                         <input type="number" value={cobroMonto} onChange={e => setCobroMonto(e.target.value)} placeholder="0.00"
                           style={{ width: '100%', padding: '10px 12px', border: '1px solid #D1D5DB', borderRadius: 10, fontSize: 14, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
                       </div>
+                      {cobroForma !== 'pendiente' && (
+                        <div>
+                          <label style={labelUpperStyle}>Fecha de cobro</label>
+                          <input
+                            type="date"
+                            value={cobroFechaCobro}
+                            onChange={e => setCobroFechaCobro(e.target.value)}
+                            style={inputFechaStyle}
+                            onFocus={e => (e.target.style.borderColor = '#1B9ED6')}
+                            onBlur={e  => (e.target.style.borderColor = 'rgba(105,105,105,0.4)')}
+                          />
+                        </div>
+                      )}
                       <div style={{ display: 'flex', gap: 8 }}>
                         <button type="button" onClick={handleGuardarCobro} disabled={editarCobro.isPending}
                           style={{ flex: 1, background: '#0D5C8A', color: '#fff', border: 'none', borderRadius: 10, padding: '10px', fontSize: 14, fontWeight: 600, cursor: 'pointer', minHeight: 40, opacity: editarCobro.isPending ? 0.6 : 1 }}>
@@ -372,7 +419,7 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
                   <Printer size={14} /> Generar documento
                 </button>
 
-                {/* ── Form cerrar venta (siempre disponible cuando cerrando=true) ── */}
+                {/* ── Form cerrar venta ── */}
                 {cerrando ? (
                   <div style={{
                     background: '#F4F6F8', borderRadius: 14, padding: 16,
@@ -396,9 +443,7 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
 
                     {/* Forma de cobro */}
                     <div>
-                      <label style={{ fontSize: 11, color: '#4A5568', fontWeight: 600, display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                        Forma de cobro
-                      </label>
+                      <label style={labelUpperStyle}>Forma de cobro</label>
                       <div style={{ display: 'flex', gap: 8 }}>
                         {(['efectivo', 'transferencia', 'pendiente'] as const).map(f => (
                           <button
@@ -419,9 +464,24 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
                       </div>
                     </div>
 
+                    {/* Fecha de cobro */}
+                    {cerrarForma !== 'pendiente' && (
+                      <div>
+                        <label style={labelUpperStyle}>Fecha de cobro</label>
+                        <input
+                          type="date"
+                          value={cerrarFechaCobro}
+                          onChange={e => setCerrarFechaCobro(e.target.value)}
+                          style={inputFechaStyle}
+                          onFocus={e => (e.target.style.borderColor = '#1B9ED6')}
+                          onBlur={e  => (e.target.style.borderColor = 'rgba(105,105,105,0.4)')}
+                        />
+                      </div>
+                    )}
+
                     {/* Monto cobrado */}
                     <div>
-                      <label style={{ fontSize: 11, color: '#4A5568', fontWeight: 600, display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                      <label style={labelUpperStyle}>
                         Monto cobrado {cerrarForma !== 'pendiente' ? '*' : '(opcional)'}
                       </label>
                       <input
@@ -482,7 +542,7 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
                   </div>
                 ) : (
                   <>
-                    {/* Botón primario — primera transición lógica */}
+                    {/* Botón primario */}
                     {transiciones.length > 0 && (() => {
                       const primary   = transiciones[0]
                       const cfg       = ESTADO_CONFIG[primary]
