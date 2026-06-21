@@ -16,9 +16,6 @@ Chart.register(...registerables)
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Periodo   = 'hoy' | 'semana' | 'mes'
-type RangoEvol = '3m'  | '6m'     | '1a'
-
 interface PedidoRow {
   id:               string
   estado:           EstadoPedido
@@ -32,53 +29,31 @@ interface PedidoRow {
 
 // ─── Date helpers ─────────────────────────────────────────────────────────────
 
-const MESES_LABEL = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
-
 function fmtDate(d: Date): string {
   return d.toISOString().split('T')[0]
 }
 
-function getRango(periodo: Periodo): { inicio: string; fin: string } {
+function primerDiaMes(): string {
   const hoy = new Date()
-  if (periodo === 'hoy') {
-    const s = fmtDate(hoy)
-    return { inicio: s, fin: s }
-  }
-  if (periodo === 'semana') {
-    const dow  = hoy.getDay()
-    const diff = dow === 0 ? -6 : 1 - dow
-    const lun  = new Date(hoy); lun.setDate(hoy.getDate() + diff)
-    const dom  = new Date(lun); dom.setDate(lun.getDate() + 6)
-    return { inicio: fmtDate(lun), fin: fmtDate(dom) }
-  }
-  const pri = new Date(hoy.getFullYear(), hoy.getMonth(), 1)
-  const ult = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0)
-  return { inicio: fmtDate(pri), fin: fmtDate(ult) }
+  return fmtDate(new Date(hoy.getFullYear(), hoy.getMonth(), 1))
 }
 
-function getRangoPrevio(periodo: Periodo): { inicio: string; fin: string } {
-  const hoy = new Date()
-  if (periodo === 'hoy') {
-    const ayer = new Date(hoy); ayer.setDate(hoy.getDate() - 1)
-    const s = fmtDate(ayer)
-    return { inicio: s, fin: s }
-  }
-  if (periodo === 'semana') {
-    const { inicio } = getRango('semana')
-    const fp = new Date(inicio); fp.setDate(fp.getDate() - 1)
-    const ip = new Date(fp);    ip.setDate(fp.getDate() - 6)
-    return { inicio: fmtDate(ip), fin: fmtDate(fp) }
-  }
-  const pri = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1)
-  const ult = new Date(hoy.getFullYear(), hoy.getMonth(), 0)
-  return { inicio: fmtDate(pri), fin: fmtDate(ult) }
+function restarUnMes(fecha: string): string {
+  const d = new Date(fecha + 'T12:00:00')
+  d.setMonth(d.getMonth() - 1)
+  return d.toISOString().split('T')[0]
+}
+
+function addDays(dateStr: string, days: number): string {
+  const d = new Date(dateStr + 'T12:00:00')
+  d.setDate(d.getDate() + days)
+  return d.toISOString().split('T')[0]
 }
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
 
 function usePedidosPeriodo(inicio: string, fin: string) {
   return useQuery({
-    // Prefix ['pedidos'] para que los mutations de pedidos invaliden este cache
     queryKey: ['pedidos', 'dash-periodo', inicio, fin],
     queryFn:  async () => {
       const { data, error } = await supabase
@@ -94,42 +69,34 @@ function usePedidosPeriodo(inicio: string, fin: string) {
   })
 }
 
-function useEvolucion(range: RangoEvol) {
-  const mesesN = range === '3m' ? 3 : range === '6m' ? 6 : 12
-  const hoy    = new Date()
-  const iniRef = new Date(hoy.getFullYear() - 1, hoy.getMonth() - mesesN + 1, 1)
-  const inicio = fmtDate(iniRef)
-  const fin    = fmtDate(hoy)
+type EvolItem = {
+  monto_cobrado:    string | null
+  fecha_produccion: string | null
+  estado_pago:      string | null
+  forma_cobro:      string | null
+}
 
+function useEvolucionRango(desde: string, hasta: string) {
+  const mesAnteriorDesde = restarUnMes(desde)
   return useQuery({
-    // Prefix ['pedidos'] para que los mutations de pedidos invaliden este cache
-    queryKey: ['pedidos', 'dash-evolucion', range],
+    queryKey: ['pedidos', 'dash-evolucion-rango', desde, hasta],
     queryFn:  async () => {
-      // Sin filtrar por estado_pago en Supabase — lo hacemos client-side
-      // para incluir registros legacy donde estado_pago es null
       const { data, error } = await supabase
         .from('pedidos')
         .select('monto_cobrado, fecha_produccion, estado_pago, forma_cobro')
         .eq('estado', 'cerrado')
-        .gte('fecha_produccion', inicio)
-        .lte('fecha_produccion', fin)
+        .gte('fecha_produccion', mesAnteriorDesde)
+        .lte('fecha_produccion', hasta)
       if (error) throw new Error(error.message)
-      return (data ?? []) as {
-        monto_cobrado:    string | null
-        fecha_produccion: string | null
-        estado_pago:      string | null
-        forma_cobro:      string | null
-      }[]
+      return (data ?? []) as EvolItem[]
     },
-    refetchInterval: 60_000,
+    refetchInterval: 30_000,
     staleTime:       0,
   })
 }
 
 // ─── Calculation helpers ──────────────────────────────────────────────────────
 
-// Compat legacy: estado_pago puede ser null en registros viejos;
-// en ese caso se infiere de forma_cobro (igual que useDashboard fallback).
 function esCobrado(p: { estado: string; estado_pago: string | null; forma_cobro: string | null }): boolean {
   if (p.estado !== 'cerrado') return false
   if (p.estado_pago === 'cobrado') return true
@@ -149,41 +116,53 @@ function calcKPIs(pedidos: PedidoRow[]) {
   return { totalCob, totalEf, totalTr, pendCierre, porEstado, count: pedidos.length }
 }
 
-function calcEvolucion(
-  pedidos: { monto_cobrado: string | null; fecha_produccion: string | null; estado_pago: string | null; forma_cobro: string | null }[],
-  range:   RangoEvol
-) {
-  const mesesN = range === '3m' ? 3 : range === '6m' ? 6 : 12
-  const hoy = new Date()
-  const anio = hoy.getFullYear()
-  const mes  = hoy.getMonth()
+function calcEvolucionRango(pedidosTodos: EvolItem[], desde: string, hasta: string) {
+  const mesAnteriorDesde = restarUnMes(desde)
 
-  const labels:     string[] = []
-  const keysActual: string[] = []
-  const keysPrev:   string[] = []
+  const dDesde    = new Date(desde + 'T12:00:00')
+  const dHasta    = new Date(hasta + 'T12:00:00')
+  const totalDays = Math.round((dHasta.getTime() - dDesde.getTime()) / 86_400_000) + 1
+  const porDia    = totalDays <= 31
 
-  for (let i = mesesN - 1; i >= 0; i--) {
-    const d  = new Date(anio,     mes - i, 1)
-    const dp = new Date(anio - 1, mes - i, 1)
-    labels.push(MESES_LABEL[d.getMonth()])
-    keysActual.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`)
-    keysPrev.push(`${dp.getFullYear()}-${String(dp.getMonth() + 1).padStart(2, '0')}`)
-  }
-
-  const byKey: Record<string, number> = {}
-  for (const p of pedidos) {
+  const byDia: Record<string, number> = {}
+  for (const p of pedidosTodos) {
     if (!p.fecha_produccion || !p.monto_cobrado) continue
     if (!esCobrado({ estado: 'cerrado', estado_pago: p.estado_pago, forma_cobro: p.forma_cobro })) continue
-    const d   = new Date(p.fecha_produccion + 'T12:00:00')
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-    byKey[key] = (byKey[key] || 0) + Number(p.monto_cobrado)
+    byDia[p.fecha_produccion] = (byDia[p.fecha_produccion] || 0) + Number(p.monto_cobrado)
   }
 
-  const anioActual = keysActual.map(k => byKey[k] || 0)
-  const anioPrev   = keysPrev.map(k   => byKey[k] || 0)
-  const totalPer   = anioActual.reduce((a, b) => a + b, 0)
+  const labels:   string[] = []
+  const actual:   number[] = []
+  const anterior: number[] = []
 
-  return { labels, anioActual, anioPrev, totalPer }
+  if (porDia) {
+    for (let i = 0; i < totalDays; i++) {
+      const keyA = addDays(desde, i)
+      const keyP = addDays(mesAnteriorDesde, i)
+      const dA   = new Date(keyA + 'T12:00:00')
+      labels.push(`${String(dA.getDate()).padStart(2, '0')}/${String(dA.getMonth() + 1).padStart(2, '0')}`)
+      actual.push(byDia[keyA] || 0)
+      anterior.push(byDia[keyP] || 0)
+    }
+  } else {
+    const chunkSize = 7
+    const numChunks = Math.ceil(totalDays / chunkSize)
+    for (let i = 0; i < numChunks; i++) {
+      const startA = addDays(desde, i * chunkSize)
+      const startP = addDays(mesAnteriorDesde, i * chunkSize)
+      const dA     = new Date(startA + 'T12:00:00')
+      labels.push(`${String(dA.getDate()).padStart(2, '0')}/${String(dA.getMonth() + 1).padStart(2, '0')}`)
+      let sumA = 0, sumP = 0
+      for (let j = 0; j < chunkSize; j++) {
+        sumA += byDia[addDays(startA, j)] || 0
+        sumP += byDia[addDays(startP, j)] || 0
+      }
+      actual.push(sumA)
+      anterior.push(sumP)
+    }
+  }
+
+  return { labels, actual, anterior }
 }
 
 function pesos(n: number): string {
@@ -195,49 +174,12 @@ function deltaCalc(cur: number, prev: number): number | null {
   return Math.round(((cur - prev) / prev) * 100)
 }
 
-// ─── PeriodoSelector ──────────────────────────────────────────────────────────
-
-function PeriodoSelector({ opciones, valor, onChange }: {
-  opciones: { label: string; value: string }[]
-  valor:    string
-  onChange: (v: string) => void
-}) {
-  return (
-    <div style={{
-      display: 'flex', alignItems: 'center',
-      background: '#F4F6F8', border: '0.5px solid #D1D5DB',
-      borderRadius: 8, padding: 2, height: 32, gap: 1,
-    }}>
-      {opciones.map(({ label, value }) => (
-        <button
-          key={value}
-          onClick={() => onChange(value)}
-          style={{
-            height: 26, padding: '0 10px',
-            fontSize: 11,
-            fontWeight: valor === value ? 500 : 400,
-            color:      valor === value ? '#0D5C8A' : '#4A5568',
-            background: valor === value ? '#fff' : 'transparent',
-            border:     valor === value ? '0.5px solid #D1D5DB' : 'none',
-            borderRadius: 6, cursor: 'pointer',
-            fontFamily: 'Inter, sans-serif',
-            transition: 'all 0.15s',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {label}
-        </button>
-      ))}
-    </div>
-  )
-}
-
 // ─── GraficoLinea ─────────────────────────────────────────────────────────────
 
-function GraficoLinea({ labels, anioActual, anioPrev }: {
-  labels:     string[]
-  anioActual: number[]
-  anioPrev:   number[]
+function GraficoLinea({ labels, actual, anterior }: {
+  labels:   string[]
+  actual:   number[]
+  anterior: number[]
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const chartRef  = useRef<Chart | null>(null)
@@ -255,7 +197,8 @@ function GraficoLinea({ labels, anioActual, anioPrev }: {
         labels,
         datasets: [
           {
-            data:                 anioActual,
+            label:                'Período actual',
+            data:                 actual,
             borderColor:          '#0D5C8A',
             borderWidth:          1.5,
             pointRadius:          2,
@@ -264,7 +207,8 @@ function GraficoLinea({ labels, anioActual, anioPrev }: {
             fill:                 false,
           },
           {
-            data:        anioPrev,
+            label:       'Mes anterior',
+            data:        anterior,
             borderColor: '#D1D5DB',
             borderWidth: 1,
             pointRadius: 0,
@@ -283,7 +227,8 @@ function GraficoLinea({ labels, anioActual, anioPrev }: {
           legend: { display: false },
           tooltip: {
             callbacks: {
-              label: (c: TooltipItem<'line'>) => ` $${(c.parsed.y ?? 0).toLocaleString('es-AR', { minimumFractionDigits: 0 })}`,
+              label: (c: TooltipItem<'line'>) =>
+                ` ${c.dataset.label}: $${(c.parsed.y ?? 0).toLocaleString('es-AR', { minimumFractionDigits: 0 })}`,
             },
           },
         },
@@ -299,7 +244,7 @@ function GraficoLinea({ labels, anioActual, anioPrev }: {
     } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
 
     return () => { chartRef.current?.destroy(); chartRef.current = null }
-  }, [labels, anioActual, anioPrev])
+  }, [labels, actual, anterior])
 
   return (
     <div style={{ height: 100, position: 'relative' }}>
@@ -581,29 +526,41 @@ const ESTADOS_PANEL: EstadoPedido[] = [
 export default function DashboardPage() {
   const navigate = useNavigate()
 
-  const [periodo,    setPeriodo]    = useState<Periodo>('hoy')
-  const [rangoEvol,  setRangoEvol]  = useState<RangoEvol>('6m')
-  const [periodoEst, setPeriodoEst] = useState<'hoy' | 'semana'>('hoy')
-  const [sheetPend,  setSheetPend]  = useState(false)
+  const [desde,     setDesde]    = useState<string>(primerDiaMes())
+  const [hasta,     setHasta]    = useState<string>(fmtDate(new Date()))
+  const [sheetPend, setSheetPend] = useState(false)
 
-  const rango     = getRango(periodo)
-  const rangoPrev = getRangoPrevio(periodo)
-  const rangoEst  = getRango(periodoEst)
-
-  const { data: pedidos,    isLoading } = usePedidosPeriodo(rango.inicio, rango.fin)
-  const { data: pedidosPrev }           = usePedidosPeriodo(rangoPrev.inicio, rangoPrev.fin)
-  const { data: pedidosEst }            = usePedidosPeriodo(rangoEst.inicio, rangoEst.fin)
+  const { data: pedidos,    isLoading } = usePedidosPeriodo(desde, hasta)
+  const { data: pedidosPrev }           = usePedidosPeriodo(restarUnMes(desde), restarUnMes(hasta))
   const { data: dashData, refetch }     = useDashboard()
-  const { data: evolData }              = useEvolucion(rangoEvol)
+  const { data: evolData }              = useEvolucionRango(desde, hasta)
 
-  const kpi      = pedidos     ? calcKPIs(pedidos)     : null
-  const kpiPrev  = pedidosPrev ? calcKPIs(pedidosPrev) : null
-  const kpiEst   = pedidosEst  ? calcKPIs(pedidosEst)  : null
-  const delta    = kpi && kpiPrev ? deltaCalc(kpi.totalCob, kpiPrev.totalCob) : null
-  const evolucion = evolData ? calcEvolucion(evolData, rangoEvol) : null
+  const kpi        = pedidos     ? calcKPIs(pedidos)     : null
+  const kpiPrev    = pedidosPrev ? calcKPIs(pedidosPrev) : null
+  const delta      = kpi && kpiPrev ? deltaCalc(kpi.totalCob, kpiPrev.totalCob) : null
+  const evolucion  = evolData ? calcEvolucionRango(evolData, desde, hasta) : null
   const pendientes = dashData?.pendientes
 
-  const todayStr = new Date().toISOString().split('T')[0]
+  const todayStr = fmtDate(new Date())
+
+  const fechaDisplay = (() => {
+    const f = new Date().toLocaleDateString('es-AR', {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+    })
+    return f.charAt(0).toUpperCase() + f.slice(1)
+  })()
+
+  const handleDesde = (val: string) => {
+    if (!val) return
+    if (val > hasta) { setDesde(hasta); setHasta(val) }
+    else setDesde(val)
+  }
+
+  const handleHasta = (val: string) => {
+    if (!val) return
+    if (val < desde) { setDesde(val); setHasta(desde) }
+    else setHasta(val)
+  }
 
   if (isLoading) {
     return (
@@ -611,10 +568,12 @@ export default function DashboardPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: 48 }}>
           <Skeleton style={{ height: 14, width: 72, borderRadius: 4 }} />
           <div style={{ display: 'flex', gap: 8 }}>
-            <Skeleton style={{ height: 32, width: 150, borderRadius: 8 }} />
+            <Skeleton style={{ height: 32, width: 120, borderRadius: 6 }} />
+            <Skeleton style={{ height: 32, width: 120, borderRadius: 6 }} />
             <Skeleton style={{ height: 32, width: 112, borderRadius: 6 }} />
           </div>
         </div>
+        <Skeleton style={{ height: 14, width: 200, borderRadius: 4 }} />
         <div className="grid grid-cols-3 gap-3">
           {[1,2,3].map(i => <Skeleton key={i} style={{ height: 88, borderRadius: 10 }} />)}
         </div>
@@ -653,14 +612,31 @@ export default function DashboardPage() {
           Dashboard
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <PeriodoSelector
-            opciones={[
-              { label: 'Hoy',    value: 'hoy'    },
-              { label: 'Semana', value: 'semana' },
-              { label: 'Mes',    value: 'mes'    },
-            ]}
-            valor={periodo}
-            onChange={v => setPeriodo(v as Periodo)}
+          <input
+            type="date"
+            value={desde}
+            onChange={e => handleDesde(e.target.value)}
+            style={{
+              height: 32, border: '0.5px solid #D1D5DB', borderRadius: 6,
+              padding: '0 10px', fontSize: 11, fontFamily: 'Inter, sans-serif',
+              color: '#1A2B3C', background: '#fff', outline: 'none',
+              boxSizing: 'border-box',
+            }}
+            onFocus={e => (e.target.style.borderColor = '#1B9ED6')}
+            onBlur={e  => (e.target.style.borderColor = '#D1D5DB')}
+          />
+          <input
+            type="date"
+            value={hasta}
+            onChange={e => handleHasta(e.target.value)}
+            style={{
+              height: 32, border: '0.5px solid #D1D5DB', borderRadius: 6,
+              padding: '0 10px', fontSize: 11, fontFamily: 'Inter, sans-serif',
+              color: '#1A2B3C', background: '#fff', outline: 'none',
+              boxSizing: 'border-box',
+            }}
+            onFocus={e => (e.target.style.borderColor = '#1B9ED6')}
+            onBlur={e  => (e.target.style.borderColor = '#D1D5DB')}
           />
           <button
             onClick={() => window.open(`/print/listado?fecha=${todayStr}`, '_blank')}
@@ -675,6 +651,11 @@ export default function DashboardPage() {
           </button>
         </div>
       </div>
+
+      {/* ── Fecha del día ── */}
+      <p style={{ margin: 0, fontSize: 12, fontWeight: 400, color: '#4A5568' }}>
+        {fechaDisplay}
+      </p>
 
       {/* ── KPIs — 3 columnas ── */}
       <div className="grid grid-cols-3 gap-3">
@@ -749,51 +730,34 @@ export default function DashboardPage() {
 
         {/* Panel izquierdo — Evolución de ventas */}
         <div style={{ background: '#fff', border: '0.5px solid #D1D5DB', borderRadius: 10, overflow: 'hidden' }}>
-          {/* Header */}
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '12px 16px', borderBottom: '0.5px solid #F4F6F8',
-          }}>
+          <div style={{ padding: '12px 16px', borderBottom: '0.5px solid #F4F6F8' }}>
             <span style={{ fontSize: 12, fontWeight: 500, color: '#1A2B3C', letterSpacing: '-0.3px' }}>
               Evolución de ventas
             </span>
-            <PeriodoSelector
-              opciones={[
-                { label: '3m', value: '3m' },
-                { label: '6m', value: '6m' },
-                { label: '1a', value: '1a' },
-              ]}
-              valor={rangoEvol}
-              onChange={v => setRangoEvol(v as RangoEvol)}
-            />
           </div>
-          {/* Cuerpo */}
           <div style={{ padding: '14px 16px' }}>
             <span style={{ fontSize: 20, fontWeight: 500, color: '#1A2B3C', letterSpacing: '-0.5px' }}>
-              {pesos(evolucion?.totalPer ?? 0)}
+              {pesos(kpi?.totalCob ?? 0)}
             </span>
-            <p style={{ ...subSt, marginTop: 2 }}>
-              Últimos {rangoEvol === '3m' ? '3' : rangoEvol === '6m' ? '6' : '12'} meses
-            </p>
             {/* Leyenda custom */}
             <div style={{ display: 'flex', gap: 14, marginTop: 10, marginBottom: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                 <div style={{ width: 8, height: 8, borderRadius: 2, background: '#0D5C8A' }} />
-                <span style={{ fontSize: 10, color: '#4A5568' }}>Este año</span>
+                <span style={{ fontSize: 10, color: '#4A5568' }}>Período actual</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                 <div style={{
                   width: 14, height: 2, borderRadius: 1,
                   background: 'repeating-linear-gradient(90deg, #D1D5DB 0, #D1D5DB 3px, transparent 3px, transparent 6px)',
                 }} />
-                <span style={{ fontSize: 10, color: '#4A5568' }}>Año anterior</span>
+                <span style={{ fontSize: 10, color: '#4A5568' }}>Mes anterior</span>
               </div>
             </div>
             {evolucion ? (
               <GraficoLinea
                 labels={evolucion.labels}
-                anioActual={evolucion.anioActual}
-                anioPrev={evolucion.anioPrev}
+                actual={evolucion.actual}
+                anterior={evolucion.anterior}
               />
             ) : (
               <div style={{ height: 100, background: '#F4F6F8', borderRadius: 6 }} />
@@ -803,27 +767,14 @@ export default function DashboardPage() {
 
         {/* Panel derecho — Estado de pedidos */}
         <div style={{ background: '#fff', border: '0.5px solid #D1D5DB', borderRadius: 10, overflow: 'hidden' }}>
-          {/* Header */}
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '12px 16px', borderBottom: '0.5px solid #F4F6F8',
-          }}>
+          <div style={{ padding: '12px 16px', borderBottom: '0.5px solid #F4F6F8' }}>
             <span style={{ fontSize: 12, fontWeight: 500, color: '#1A2B3C', letterSpacing: '-0.3px' }}>
               Estado de pedidos
             </span>
-            <PeriodoSelector
-              opciones={[
-                { label: 'Hoy',    value: 'hoy'    },
-                { label: 'Semana', value: 'semana' },
-              ]}
-              valor={periodoEst}
-              onChange={v => setPeriodoEst(v as 'hoy' | 'semana')}
-            />
           </div>
-          {/* Filas por estado */}
           <div>
             {(() => {
-              const porEst   = kpiEst?.porEstado ?? {}
+              const porEst   = kpi?.porEstado ?? {}
               const visible  = ESTADOS_PANEL.filter(e =>
                 e === 'entrega_fallida' ? (porEst[e] ?? 0) > 0 : true
               )
