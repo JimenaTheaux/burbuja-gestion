@@ -30,11 +30,8 @@ export const useUsuarios = () =>
   useQuery({
     queryKey: KEY,
     queryFn: async () => {
-      // Perfiles via cliente normal — RLS permite a admins ver todos (ver SQL en docs).
-      const { data: perfiles, error } = await supabase
-        .from('perfiles')
-        .select('id, nombre, rol, activo, created_at, updated_at')
-        .order('nombre')
+      // RPC con SECURITY DEFINER — bypasea RLS para devolver todos los perfiles.
+      const { data: perfiles, error } = await supabase.rpc('get_all_perfiles')
 
       if (error) throw new Error(error.message)
 
