@@ -8,19 +8,19 @@ const SELECT = 'id, nombre, telefono, direccion, tipo_cliente, notas, activo, cr
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
 
-export const useClientes = (q?: string) =>
+export const useClientes = (q?: string, activo: boolean | null = true) =>
   useQuery({
-    queryKey:        [...KEY, q],
+    queryKey:        [...KEY, q, activo],
     placeholderData: keepPreviousData,
     staleTime:       1000 * 60 * 2,
     queryFn: async () => {
       let query = supabase
         .from('clientes')
         .select(SELECT)
-        .eq('activo', true)
         .order('nombre', { ascending: true })
 
-      if (q) query = query.ilike('nombre', `%${q}%`)
+      if (activo !== null) query = query.eq('activo', activo)
+      if (q)               query = query.ilike('nombre', `%${q}%`)
 
       const { data, error } = await query
       if (error) throw new Error(error.message)

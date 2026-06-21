@@ -2,15 +2,13 @@ import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Search, Edit2, Package, Tag } from 'lucide-react'
+import { Plus, Search, Edit2 } from 'lucide-react'
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle,
 } from '@/components/ui/sheet'
 import { Skeleton }       from '@/components/ui/skeleton'
 import { FloatInput }     from '@/components/common/FloatInput'
 import { ButtonGroup }    from '@/components/common/ButtonGroup'
-import { BadgeActivo }    from '@/components/common/BadgeEstado'
-import { EmptyState }     from '@/components/common/EmptyState'
 import { ToastContainer } from '@/components/common/ToastContainer'
 import { useToast }       from '@/hooks/useToast'
 import {
@@ -19,7 +17,6 @@ import {
 } from '@/services/productos'
 import { useDebounce } from '@/hooks/useDebounce'
 import type { Producto } from '@/types'
-
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -45,8 +42,8 @@ interface DrawerProps {
 }
 
 function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
-  const crear  = useCrearProducto()
-  const editar = useEditarProducto()
+  const crear    = useCrearProducto()
+  const editar   = useEditarProducto()
   const crearCat = useCrearCategoria()
   const { data: categorias } = useCategorias()
   const [catText, setCatText] = useState('')
@@ -109,7 +106,6 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
     }
   }
 
-  // Resetear el form cada vez que se abre con datos distintos
   useEffect(() => {
     if (!open) return
     reset({
@@ -123,7 +119,6 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
     })
   }, [open, producto])
 
-  // Sincronizar catText con el nombre de la categoría seleccionada
   useEffect(() => {
     if (!open) { setCatText(''); setCatDrop(false); setCatErr(''); return }
     if (producto?.categoria_id && categorias) {
@@ -299,80 +294,87 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
   )
 }
 
-// ─── Card de producto ─────────────────────────────────────────────────────────
+// ─── Badges ───────────────────────────────────────────────────────────────────
 
-type ProductoConCat = Producto
-
-function ProductoCard({ producto, onEdit }: { producto: ProductoConCat; onEdit: () => void }) {
-  const presentacionLabel = producto.presentacion === 0.5 ? '500 ml' : `${producto.presentacion} L`
-
+function BadgeActivo({ activo }: { activo: boolean }) {
   return (
-    <div style={{
-      background: '#fff', borderRadius: 20, padding: '16px 20px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-      display: 'flex', alignItems: 'flex-start', gap: 12,
+    <span style={{
+      backgroundColor: activo ? '#E8F8F0' : '#F0F0F0',
+      color:           activo ? '#145A32' : '#9A9A9A',
+      fontSize: 9, fontWeight: 500, padding: '2px 8px', borderRadius: 99,
+      display: 'inline-block', whiteSpace: 'nowrap',
     }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
-          <span style={{ fontWeight: 600, fontSize: 15, color: '#1A2B3C' }}>
-            {producto.nombre}
-            {producto.fragancia && (
-              <span style={{ fontWeight: 400, color: '#4A5568', fontSize: 13 }}> — {producto.fragancia}</span>
-            )}
-          </span>
-          <BadgeActivo activo={producto.activo ?? true} />
-        </div>
+      {activo ? 'ACTIVO' : 'INACTIVO'}
+    </span>
+  )
+}
 
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-          {/* Presentación */}
-          <span style={{ fontSize: 12, color: '#4A5568', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <Package size={12} /> {presentacionLabel}
-          </span>
+// ─── Shimmer ──────────────────────────────────────────────────────────────────
 
-          {/* Categoría */}
-          {producto.categorias_producto?.nombre && (
-            <span style={{ fontSize: 12, color: '#4A5568', display: 'flex', alignItems: 'center', gap: 4 }}>
-              <Tag size={12} /> {producto.categorias_producto.nombre}
-            </span>
-          )}
+function ShimmerRow() {
+  return (
+    <tr>
+      {[160, 90, 55, 90, 90, 55, 28].map((w, i) => (
+        <td key={i} style={{ padding: '10px 14px', borderBottom: '0.5px solid #F4F6F8' }}>
+          <Skeleton style={{ height: 13, width: w, borderRadius: 6 }} />
+        </td>
+      ))}
+    </tr>
+  )
+}
 
-          {/* Precios */}
-          <span style={{ fontSize: 12, fontWeight: 600, color: '#0D5C8A' }}>
-            Min: ${Number(producto.precio_minorista).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
-          </span>
-          <span style={{ fontSize: 12, fontWeight: 600, color: '#1B9ED6' }}>
-            May: ${Number(producto.precio_mayorista).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
-          </span>
-        </div>
+function ShimmerCard() {
+  return (
+    <div style={{ background: '#fff', borderRadius: 12, border: '0.5px solid #D1D5DB', padding: '12px 16px', marginBottom: 6 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+        <Skeleton style={{ height: 13, width: 140, borderRadius: 6 }} />
+        <Skeleton style={{ height: 18, width: 56, borderRadius: 99 }} />
       </div>
-
-      <button onClick={onEdit} style={{
-        background: 'transparent', border: 'none', cursor: 'pointer',
-        color: '#4A5568', padding: 6, borderRadius: 8,
-        display: 'flex', alignItems: 'center', flexShrink: 0,
-      }} title="Editar">
-        <Edit2 size={16} />
-      </button>
+      <Skeleton style={{ height: 11, width: 160, borderRadius: 6, marginBottom: 4 }} />
+      <Skeleton style={{ height: 11, width: 130, borderRadius: 6 }} />
     </div>
   )
+}
+
+// ─── Tipos ────────────────────────────────────────────────────────────────────
+
+type ActivoFiltro = 'todos' | 'activo' | 'inactivo'
+
+const ACTIVO_MAP: Record<ActivoFiltro, boolean | null> = {
+  todos: null, activo: true, inactivo: false,
+}
+
+const ACTIVO_LABELS: Record<ActivoFiltro, string> = {
+  todos: 'Todos', activo: 'Activos', inactivo: 'Inactivos',
+}
+
+function presentacionLabel(p: number) {
+  return p === 0.5 ? '500 ml' : `${p} L`
 }
 
 // ─── Página principal ─────────────────────────────────────────────────────────
 
 export default function ProductosPage() {
-  const [q, setQ]               = useState('')
-  const [catFiltro, setCat]     = useState('')
-  const [drawerOpen, setDrawer] = useState(false)
-  const [selected, setSelected] = useState<ProductoConCat | null>(null)
+  const [q, setQ]                 = useState('')
+  const [catFiltro, setCat]       = useState('')
+  const [activoFiltro, setActivo] = useState<ActivoFiltro>('activo')
+  const [drawerOpen, setDrawer]   = useState(false)
+  const [selected, setSelected]   = useState<Producto | null>(null)
   const { toasts, show, dismiss } = useToast()
 
   const qDebounced = useDebounce(q, 300)
-  const { data: productos, isLoading } = useProductos(qDebounced || undefined, catFiltro || undefined)
-  const { data: categorias }           = useCategorias()
 
-  const handleEdit  = (p: ProductoConCat) => { setSelected(p); setDrawer(true) }
-  const handleNew   = ()                   => { setSelected(null); setDrawer(true) }
-  const handleClose = ()                   => { setDrawer(false); setSelected(null) }
+  // Fetch por texto y activo; categoría se filtra localmente
+  const { data: allProductos, isLoading } = useProductos(qDebounced || undefined, undefined, ACTIVO_MAP[activoFiltro])
+  const { data: categorias }              = useCategorias()
+
+  const productos = catFiltro
+    ? allProductos?.filter(p => p.categoria_id === catFiltro)
+    : allProductos
+
+  const handleEdit  = (p: Producto) => { setSelected(p); setDrawer(true) }
+  const handleNew   = ()             => { setSelected(null); setDrawer(true) }
+  const handleClose = ()             => { setDrawer(false); setSelected(null) }
 
   const handleSaved = (msg: string) => {
     if (msg.endsWith('|error')) show(msg.replace('|error', ''), 'error')
@@ -381,73 +383,274 @@ export default function ProductosPage() {
 
   return (
     <div>
+      <style>{`
+        .prd-table { width: 100%; border-collapse: collapse; }
+        .prd-table tbody tr { transition: background 0.1s; cursor: default; }
+        .prd-table tbody tr:hover { background: #F9FAFB !important; }
+        .prd-edit-btn:focus-visible { outline: 2px solid #1B9ED6; outline-offset: 2px; }
+        .prd-card:focus-visible { outline: 2px solid #1B9ED6; outline-offset: 2px; }
+        @media (max-width: 1023px) { .prd-desktop { display: none !important; } }
+        @media (min-width: 1024px) { .prd-mobile  { display: none !important; } }
+      `}</style>
+
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
-        <h1 className="section-title">Productos</h1>
-        <button onClick={handleNew} style={{
-          background: '#0D5C8A', color: '#fff', border: 'none',
-          borderRadius: 10, padding: '10px 16px', minHeight: 40,
-          fontSize: 14, fontWeight: 600, cursor: 'pointer',
-          display: 'flex', alignItems: 'center', gap: 6,
-        }}>
-          <Plus size={16} /> Nuevo producto
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+        <h1 style={{ fontSize: 16, fontWeight: 500, color: '#1A2B3C', margin: 0 }}>Productos</h1>
+        <button
+          onClick={handleNew}
+          style={{
+            background: '#0D5C8A', color: '#fff', border: 'none',
+            borderRadius: 8, height: 36, padding: '0 14px',
+            fontSize: 12, fontWeight: 500, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: 5,
+          }}
+        >
+          <Plus size={13} /> Nuevo producto
         </button>
       </div>
 
-      {/* Filtros */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
-        <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
-          <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#4A5568' }} />
+      {/* Buscador + categoría + pills */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
+        <div role="search" style={{ position: 'relative', flex: 1, minWidth: 180 }}>
+          <label htmlFor="prd-search" className="sr-only">Buscar productos</label>
+          <Search
+            size={14}
+            style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#4A5568', pointerEvents: 'none' }}
+          />
           <input
+            id="prd-search"
             value={q}
             onChange={e => setQ(e.target.value)}
-            placeholder="Buscar por nombre…"
-            style={{ width: '100%', padding: '10px 10px 10px 36px', border: '1px solid #D1D5DB', borderRadius: 10, fontSize: 14, outline: 0, background: '#fff' }}
+            placeholder="Buscar por nombre..."
+            style={{
+              width: '100%', height: 36, padding: '0 12px 0 32px',
+              border: '0.5px solid #D1D5DB', borderRadius: 8,
+              fontSize: 13, outline: 0, background: '#fff',
+              boxSizing: 'border-box', fontFamily: 'Inter, sans-serif',
+            }}
+            onFocus={e => (e.target.style.borderColor = '#1B9ED6')}
+            onBlur={e  => (e.target.style.borderColor = '#D1D5DB')}
           />
         </div>
 
         <select
           value={catFiltro}
           onChange={e => setCat(e.target.value)}
-          style={{ padding: '10px 12px', border: '1px solid #D1D5DB', borderRadius: 10, fontSize: 14, background: '#fff', cursor: 'pointer' }}
+          style={{
+            height: 36, padding: '0 10px',
+            border: '0.5px solid #D1D5DB', borderRadius: 8,
+            fontSize: 12, color: '#1A2B3C', background: '#fff',
+            cursor: 'pointer', outline: 0,
+          }}
         >
           <option value="">Todas las categorías</option>
           {categorias?.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
         </select>
+
+        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+          {(['todos', 'activo', 'inactivo'] as ActivoFiltro[]).map(v => {
+            const isActive = activoFiltro === v
+            return (
+              <button
+                key={v}
+                onClick={() => setActivo(v)}
+                style={{
+                  height: 32, padding: '0 12px', borderRadius: 99,
+                  border: `1px solid ${isActive ? '#0D5C8A' : '#D1D5DB'}`,
+                  background: isActive ? '#0D5C8A' : '#fff',
+                  color: isActive ? '#fff' : '#4A5568',
+                  fontSize: 12, fontWeight: isActive ? 500 : 400,
+                  cursor: 'pointer', whiteSpace: 'nowrap',
+                  transition: 'all 0.1s',
+                }}
+              >
+                {ACTIVO_LABELS[v]}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
-      {/* Lista */}
-      {isLoading ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {[1,2,3].map(i => <Skeleton key={i} style={{ height: 80, borderRadius: 20 }} />)}
+      {/* ── DESKTOP ─────────────────────────────────────────────────────────── */}
+      <div className="prd-desktop">
+        <div style={{ background: '#fff', borderRadius: 12, border: '0.5px solid #D1D5DB', overflow: 'hidden' }}>
+          <table className="prd-table" aria-label="Listado de productos">
+            <thead>
+              <tr style={{ background: '#F4F6F8', borderBottom: '0.5px solid #D1D5DB' }}>
+                {['Producto', 'Categoría', 'Presentación', 'Precio min.', 'Precio may.', 'Estado', 'Acciones'].map((h, i) => (
+                  <th
+                    key={h}
+                    scope="col"
+                    style={{
+                      padding: '8px 14px',
+                      fontSize: 10, fontWeight: 500, textTransform: 'uppercase',
+                      letterSpacing: '0.06em', color: '#4A5568',
+                      textAlign: i === 6 ? 'right' : 'left',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                Array.from({ length: 4 }).map((_, i) => <ShimmerRow key={i} />)
+              ) : !productos?.length ? (
+                <tr>
+                  <td colSpan={7}>
+                    <p style={{ padding: '32px', textAlign: 'center', fontSize: 13, color: '#4A5568', margin: 0 }}>
+                      No se encontraron productos
+                    </p>
+                  </td>
+                </tr>
+              ) : (
+                productos.map(p => (
+                  <tr key={p.id} style={{ background: '#fff' }}>
+                    <th
+                      scope="row"
+                      style={{
+                        padding: '0 14px', height: 48,
+                        fontSize: 13, fontWeight: 500, color: '#1A2B3C',
+                        textAlign: 'left', borderBottom: '0.5px solid #F4F6F8',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {p.nombre}
+                      {p.fragancia && (
+                        <span style={{ fontWeight: 400, color: '#4A5568', fontSize: 12 }}> — {p.fragancia}</span>
+                      )}
+                    </th>
+                    <td style={{ padding: '0 14px', height: 48, fontSize: 12, color: p.categorias_producto?.nombre ? '#4A5568' : '#D1D5DB', borderBottom: '0.5px solid #F4F6F8', whiteSpace: 'nowrap' }}>
+                      {p.categorias_producto?.nombre ?? '—'}
+                    </td>
+                    <td style={{ padding: '0 14px', height: 48, fontSize: 12, color: '#1A2B3C', borderBottom: '0.5px solid #F4F6F8', whiteSpace: 'nowrap' }}>
+                      {presentacionLabel(p.presentacion)}
+                    </td>
+                    <td style={{ padding: '0 14px', height: 48, borderBottom: '0.5px solid #F4F6F8', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: 9, color: '#4A5568', marginRight: 3 }}>Min</span>
+                      <span style={{ fontSize: 12, fontWeight: 500, color: '#4A5568' }}>
+                        ${Number(p.precio_minorista).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                      </span>
+                    </td>
+                    <td style={{ padding: '0 14px', height: 48, borderBottom: '0.5px solid #F4F6F8', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: 9, color: '#4A5568', marginRight: 3 }}>May</span>
+                      <span style={{ fontSize: 12, fontWeight: 500, color: '#0D5C8A' }}>
+                        ${Number(p.precio_mayorista).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                      </span>
+                    </td>
+                    <td style={{ padding: '0 14px', height: 48, borderBottom: '0.5px solid #F4F6F8', whiteSpace: 'nowrap' }}>
+                      <BadgeActivo activo={p.activo ?? true} />
+                    </td>
+                    <td style={{ padding: '0 14px', height: 48, borderBottom: '0.5px solid #F4F6F8', textAlign: 'right' }}>
+                      <button
+                        onClick={() => handleEdit(p)}
+                        className="prd-edit-btn"
+                        aria-label={`Editar producto ${p.nombre}`}
+                        style={{
+                          width: 28, height: 28,
+                          background: 'transparent',
+                          border: '0.5px solid #D1D5DB',
+                          borderRadius: 6,
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          cursor: 'pointer', color: '#4A5568',
+                          transition: 'background 0.1s',
+                        }}
+                        onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = '#F4F6F8')}
+                        onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = 'transparent')}
+                      >
+                        <Edit2 size={13} />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+
+          {!isLoading && !!productos?.length && (
+            <div style={{ padding: '10px 14px', borderTop: '0.5px solid #F4F6F8' }}>
+              <span style={{ fontSize: 12, color: '#4A5568' }}>
+                {productos.length} {productos.length === 1 ? 'producto' : 'productos'}
+              </span>
+            </div>
+          )}
         </div>
-      ) : !productos?.length ? (
-        <EmptyState
-          icon={Package}
-          title={q || catFiltro ? 'Sin resultados' : 'No hay productos aún'}
-          message={q || catFiltro ? 'Probá con otro filtro' : 'Creá el primer producto del catálogo.'}
-          action={
-            !(q || catFiltro) ? (
-              <button onClick={handleNew} style={{
-                background: '#0D5C8A', color: '#fff', border: 'none',
-                borderRadius: 10, padding: '10px 20px', fontSize: 14,
-                fontWeight: 600, cursor: 'pointer', minHeight: 44,
-              }}>
-                + Nuevo producto
-              </button>
-            ) : undefined
-          }
-        />
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {productos.map(p => (
-            <ProductoCard key={p.id} producto={p} onEdit={() => handleEdit(p)} />
-          ))}
-          <p style={{ fontSize: 12, color: '#4A5568', textAlign: 'center', marginTop: 4 }}>
-            {productos.length} {productos.length === 1 ? 'producto' : 'productos'}
+      </div>
+
+      {/* ── MOBILE ──────────────────────────────────────────────────────────── */}
+      <div className="prd-mobile">
+        {isLoading ? (
+          Array.from({ length: 4 }).map((_, i) => <ShimmerCard key={i} />)
+        ) : !productos?.length ? (
+          <p style={{ padding: '32px', textAlign: 'center', fontSize: 13, color: '#4A5568', margin: 0 }}>
+            No se encontraron productos
           </p>
-        </div>
-      )}
+        ) : (
+          <>
+            {productos.map(p => (
+              <div
+                key={p.id}
+                className="prd-card"
+                role="button"
+                tabIndex={0}
+                onClick={() => handleEdit(p)}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleEdit(p) } }}
+                aria-label={`Editar producto ${p.nombre}`}
+                style={{
+                  background: '#fff', borderRadius: 12, border: '0.5px solid #D1D5DB',
+                  padding: '12px 16px', marginBottom: 6,
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  cursor: 'pointer', transition: 'background 0.1s',
+                }}
+                onMouseEnter={e => ((e.currentTarget as HTMLDivElement).style.background = '#F9FAFB')}
+                onMouseLeave={e => ((e.currentTarget as HTMLDivElement).style.background = '#fff')}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  {/* Línea 1 */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
+                    <span style={{ fontWeight: 500, fontSize: 13, color: '#1A2B3C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, marginRight: 8 }}>
+                      {p.nombre}
+                    </span>
+                    <BadgeActivo activo={p.activo ?? true} />
+                  </div>
+                  {/* Línea 2 */}
+                  <p style={{ fontSize: 12, color: '#4A5568', margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {presentacionLabel(p.presentacion)}
+                    {p.categorias_producto?.nombre ? ` · ${p.categorias_producto.nombre}` : ''}
+                  </p>
+                  {/* Línea 3 */}
+                  <p style={{ fontSize: 11, color: '#4A5568', margin: 0 }}>
+                    Min ${Number(p.precio_minorista).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                    {' · '}
+                    <span style={{ color: '#0D5C8A' }}>
+                      May ${Number(p.precio_mayorista).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                    </span>
+                  </p>
+                </div>
+                <button
+                  onClick={e => e.stopPropagation()}
+                  className="prd-edit-btn"
+                  aria-hidden="true"
+                  tabIndex={-1}
+                  style={{
+                    width: 36, height: 36, flexShrink: 0,
+                    background: 'transparent', border: '0.5px solid #D1D5DB', borderRadius: 6,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer', color: '#4A5568',
+                  }}
+                >
+                  <Edit2 size={14} />
+                </button>
+              </div>
+            ))}
+            <p style={{ fontSize: 12, color: '#4A5568', textAlign: 'center', padding: '12px 0', margin: 0 }}>
+              {productos.length} {productos.length === 1 ? 'producto' : 'productos'}
+            </p>
+          </>
+        )}
+      </div>
 
       <ProductoDrawer key={selected?.id ?? 'new'} open={drawerOpen} onClose={handleClose} producto={selected} onSaved={handleSaved} />
       <ToastContainer toasts={toasts} dismiss={dismiss} />

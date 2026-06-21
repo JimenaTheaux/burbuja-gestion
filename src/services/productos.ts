@@ -19,20 +19,20 @@ function parseProducto(row: any): Producto {
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
 
-export const useProductos = (q?: string, categoriaId?: string) =>
+export const useProductos = (q?: string, categoriaId?: string, activo: boolean | null = true) =>
   useQuery({
-    queryKey:        [...KEY, q, categoriaId],
+    queryKey:        [...KEY, q, categoriaId, activo],
     placeholderData: keepPreviousData,
     staleTime:       1000 * 60 * 5,
     queryFn: async () => {
       let query = supabase
         .from('productos')
         .select('*, categorias_producto(id, nombre)')
-        .eq('activo', true)
         .order('nombre', { ascending: true })
 
-      if (categoriaId) query = query.eq('categoria_id', categoriaId)
-      if (q)           query = query.ilike('nombre', `%${q}%`)
+      if (activo !== null) query = query.eq('activo', activo)
+      if (categoriaId)     query = query.eq('categoria_id', categoriaId)
+      if (q)               query = query.ilike('nombre', `%${q}%`)
 
       const { data, error } = await query
       if (error) throw new Error(error.message)
