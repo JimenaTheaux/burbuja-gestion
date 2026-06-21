@@ -52,7 +52,7 @@ export const useUsuarios = () =>
         rol:        p.rol as Rol,
         activo:     p.activo,
         created_at: p.created_at,
-        updatedAt:  p.updated_at,
+        updatedAt:  p.created_at,
         email:      emailMap.get(p.id) ?? '',
       }))
     },
