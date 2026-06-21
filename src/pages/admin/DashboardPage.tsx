@@ -78,7 +78,8 @@ function getRangoPrevio(periodo: Periodo): { inicio: string; fin: string } {
 
 function usePedidosPeriodo(inicio: string, fin: string) {
   return useQuery({
-    queryKey: ['dash-periodo', inicio, fin],
+    // Prefix ['pedidos'] para que los mutations de pedidos invaliden este cache
+    queryKey: ['pedidos', 'dash-periodo', inicio, fin],
     queryFn:  async () => {
       const { data, error } = await supabase
         .from('pedidos')
@@ -89,6 +90,7 @@ function usePedidosPeriodo(inicio: string, fin: string) {
       return (data ?? []) as PedidoRow[]
     },
     refetchInterval: 30_000,
+    staleTime:       0,
   })
 }
 
@@ -100,26 +102,42 @@ function useEvolucion(range: RangoEvol) {
   const fin    = fmtDate(hoy)
 
   return useQuery({
-    queryKey: ['dash-evolucion', range],
+    // Prefix ['pedidos'] para que los mutations de pedidos invaliden este cache
+    queryKey: ['pedidos', 'dash-evolucion', range],
     queryFn:  async () => {
+      // Sin filtrar por estado_pago en Supabase — lo hacemos client-side
+      // para incluir registros legacy donde estado_pago es null
       const { data, error } = await supabase
         .from('pedidos')
-        .select('monto_cobrado, fecha_produccion')
-        .eq('estado',      'cerrado')
-        .eq('estado_pago', 'cobrado')
+        .select('monto_cobrado, fecha_produccion, estado_pago, forma_cobro')
+        .eq('estado', 'cerrado')
         .gte('fecha_produccion', inicio)
         .lte('fecha_produccion', fin)
       if (error) throw new Error(error.message)
-      return (data ?? []) as { monto_cobrado: string | null; fecha_produccion: string | null }[]
+      return (data ?? []) as {
+        monto_cobrado:    string | null
+        fecha_produccion: string | null
+        estado_pago:      string | null
+        forma_cobro:      string | null
+      }[]
     },
     refetchInterval: 60_000,
+    staleTime:       0,
   })
 }
 
 // ─── Calculation helpers ──────────────────────────────────────────────────────
 
+// Compat legacy: estado_pago puede ser null en registros viejos;
+// en ese caso se infiere de forma_cobro (igual que useDashboard fallback).
+function esCobrado(p: { estado: string; estado_pago: string | null; forma_cobro: string | null }): boolean {
+  if (p.estado !== 'cerrado') return false
+  if (p.estado_pago === 'cobrado') return true
+  return p.estado_pago == null && !!p.forma_cobro && p.forma_cobro !== 'pendiente'
+}
+
 function calcKPIs(pedidos: PedidoRow[]) {
-  const cobrados   = pedidos.filter(p => p.estado === 'cerrado' && p.estado_pago === 'cobrado')
+  const cobrados   = pedidos.filter(esCobrado)
   const totalCob   = cobrados.reduce((a, p) => a + (Number(p.monto_cobrado) || 0), 0)
   const totalEf    = cobrados.filter(p => p.forma_cobro === 'efectivo')
                              .reduce((a, p) => a + (Number(p.monto_cobrado) || 0), 0)
@@ -132,7 +150,7 @@ function calcKPIs(pedidos: PedidoRow[]) {
 }
 
 function calcEvolucion(
-  pedidos: { monto_cobrado: string | null; fecha_produccion: string | null }[],
+  pedidos: { monto_cobrado: string | null; fecha_produccion: string | null; estado_pago: string | null; forma_cobro: string | null }[],
   range:   RangoEvol
 ) {
   const mesesN = range === '3m' ? 3 : range === '6m' ? 6 : 12
@@ -155,6 +173,7 @@ function calcEvolucion(
   const byKey: Record<string, number> = {}
   for (const p of pedidos) {
     if (!p.fecha_produccion || !p.monto_cobrado) continue
+    if (!esCobrado({ estado: 'cerrado', estado_pago: p.estado_pago, forma_cobro: p.forma_cobro })) continue
     const d   = new Date(p.fecha_produccion + 'T12:00:00')
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
     byKey[key] = (byKey[key] || 0) + Number(p.monto_cobrado)
