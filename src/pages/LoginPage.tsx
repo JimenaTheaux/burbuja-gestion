@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import type { Rol } from '@/types'
 
@@ -119,7 +119,7 @@ export default function LoginPage() {
                 onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.color = '#0D5C8A')}
                 onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.color = '#4A5568')}
               >
-                <i className={mostrarPassword ? 'ti ti-eye-off' : 'ti ti-eye'} style={{ fontSize: 16 }} />
+                {mostrarPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
 
