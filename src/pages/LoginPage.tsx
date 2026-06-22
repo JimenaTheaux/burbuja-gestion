@@ -14,10 +14,11 @@ const RUTA_POR_ROL: Record<Rol, string> = {
 export default function LoginPage() {
   const navigate              = useNavigate()
   const { login, usuario, cargando } = useAuth()
-  const [email,    setEmail]    = useState('')
-  const [password, setPassword] = useState('')
-  const [loading,  setLoading]  = useState(false)
-  const [error,    setError]    = useState('')
+  const [email,            setEmail]            = useState('')
+  const [password,         setPassword]         = useState('')
+  const [loading,          setLoading]          = useState(false)
+  const [error,            setError]            = useState('')
+  const [mostrarPassword,  setMostrarPassword]  = useState(false)
 
   const emailRef    = useRef<HTMLInputElement>(null)
   const passwordRef = useRef<HTMLInputElement>(null)
@@ -88,19 +89,39 @@ export default function LoginPage() {
               <span>Email</span>
             </label>
 
-            <label className="form-label">
-              <input
-                ref={passwordRef}
-                className="input"
-                type="password"
-                placeholder=" "
-                autoComplete="current-password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                disabled={loading}
-              />
-              <span>Contraseña</span>
-            </label>
+            <div style={{ position: 'relative' }}>
+              <label className="form-label">
+                <input
+                  ref={passwordRef}
+                  className="input"
+                  type={mostrarPassword ? 'text' : 'password'}
+                  placeholder=" "
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  disabled={loading}
+                  style={{ paddingRight: 44 }}
+                />
+                <span>Contraseña</span>
+              </label>
+              <button
+                type="button"
+                tabIndex={0}
+                onClick={() => setMostrarPassword(prev => !prev)}
+                aria-label={mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                style={{
+                  position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+                  width: 32, height: 32,
+                  background: 'transparent', border: 'none', cursor: 'pointer',
+                  color: '#4A5568',
+                  padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+                onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.color = '#0D5C8A')}
+                onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.color = '#4A5568')}
+              >
+                <i className={mostrarPassword ? 'ti ti-eye-off' : 'ti ti-eye'} style={{ fontSize: 16 }} />
+              </button>
+            </div>
 
             {error && (
               <div style={{
