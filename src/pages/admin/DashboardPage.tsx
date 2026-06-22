@@ -18,10 +18,17 @@ Chart.register(...registerables)
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+interface PedidoItemRow {
+  cantidad:    number
+  producto_id: string
+  productos?:  { nombre: string; presentacion: number } | null
+}
+
 interface PedidoRow {
   id:               string
   estado:           EstadoPedido
   fecha_produccion: string | null
+  pedido_items?:    PedidoItemRow[]
 }
 
 interface CobroRow {
@@ -63,7 +70,7 @@ function usePedidosPeriodo(inicio: string, fin: string) {
     queryFn:  async () => {
       const { data, error } = await supabase
         .from('pedidos')
-        .select('id, estado, fecha_produccion')
+        .select('id, estado, fecha_produccion, pedido_items(cantidad, producto_id, productos(nombre, presentacion))')
         .gte('fecha_produccion', inicio)
         .lte('fecha_produccion', fin)
       if (error) throw new Error(error.message)
@@ -193,6 +200,30 @@ function calcEvolucionRango(pedidosTodos: EvolItem[], desde: string, hasta: stri
   }
 
   return { labels, actual, anterior }
+}
+
+function fmtRango(desde: string, hasta: string): string {
+  const opts: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'short' }
+  const d = new Date(desde + 'T12:00:00').toLocaleDateString('es-AR', opts)
+  const h = new Date(hasta + 'T12:00:00').toLocaleDateString('es-AR', opts)
+  return `${d} — ${h}`
+}
+
+function calcTopProductos(pedidos: PedidoRow[]) {
+  const acc: Record<string, { nombre: string; presentacion: number; total: number }> = {}
+  for (const p of pedidos) {
+    if (p.estado !== 'cerrado') continue
+    for (const item of p.pedido_items ?? []) {
+      const key = item.producto_id
+      if (!acc[key]) acc[key] = {
+        nombre:       item.productos?.nombre       ?? '—',
+        presentacion: item.productos?.presentacion ?? 0,
+        total:        0,
+      }
+      acc[key].total += Number(item.cantidad)
+    }
+  }
+  return Object.values(acc).sort((a, b) => b.total - a.total).slice(0, 5)
 }
 
 function pesos(n: number): string {
@@ -907,6 +938,62 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* ── Top 5 productos más vendidos ── */}
+      {(() => {
+        const top5 = pedidos ? calcTopProductos(pedidos) : []
+        const maxU  = top5[0]?.total ?? 1
+
+        return (
+          <div style={{ background: '#fff', border: '0.5px solid #D1D5DB', borderRadius: 10, overflow: 'hidden' }}>
+            <div style={{ padding: '10px 16px', borderBottom: '0.5px solid #F4F6F8', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 12, fontWeight: 500, color: '#1A2B3C' }}>Productos más vendidos</span>
+              <span style={{ fontSize: 10, color: '#4A5568' }}>{fmtRango(desde, hasta)}</span>
+            </div>
+            {top5.length === 0 ? (
+              <p style={{ fontSize: 12, color: '#4A5568', textAlign: 'center', padding: 16, margin: 0 }}>
+                Sin ventas en el período seleccionado
+              </p>
+            ) : top5.map((prod, i) => (
+              <div
+                key={prod.nombre + prod.presentacion}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '8px 16px',
+                  borderBottom: i < top5.length - 1 ? '0.5px solid #F4F6F8' : 'none',
+                }}
+              >
+                <span style={{ fontSize: 11, fontWeight: 500, color: '#4A5568', minWidth: 16 }}>
+                  {i + 1}
+                </span>
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center' }}>
+                  <span style={{ fontSize: 12, fontWeight: 500, color: '#1A2B3C', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {prod.nombre}
+                  </span>
+                  {prod.presentacion > 0 && (
+                    <span style={{
+                      marginLeft: 6, fontSize: 9, color: '#4A5568',
+                      background: '#F4F6F8', padding: '1px 5px', borderRadius: 4,
+                      flexShrink: 0,
+                    }}>
+                      {prod.presentacion} L
+                    </span>
+                  )}
+                </div>
+                <span style={{ fontSize: 12, fontWeight: 500, color: '#0D5C8A', minWidth: 60, textAlign: 'right' }}>
+                  {prod.total} u.
+                </span>
+                <div style={{ width: 80, height: 3, borderRadius: 99, background: '#F4F6F8', flexShrink: 0 }}>
+                  <div style={{
+                    width: `${(prod.total / maxU) * 100}%`,
+                    height: '100%', borderRadius: 99, background: '#0D5C8A',
+                  }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      })()}
 
       {/* ── Sheet pendientes ── */}
       {pendientes && (
