@@ -132,30 +132,25 @@ function CardHistorial({ pedido }: { pedido: any }) {
           </span>
         </div>
 
-        {/* Line 3: forma de cobro o motivo falla */}
-        {pedido.estado === 'entrega_fallida' ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <IconX size={13} color="#D32F2F" style={{ flexShrink: 0 }} />
-            <span style={{
-              fontSize: 12, color: '#4A5568',
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-              maxWidth: '70vw',
-            }}>
-              {pedido.motivo_falla ?? 'Entrega fallida'}
-            </span>
-          </div>
-        ) : pedido.forma_cobro ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            {formaIcon}
-            <span style={{ fontSize: 12, color: '#4A5568' }}>
-              {pedido.forma_cobro}
-              {pedido.monto_cobrado
-                ? ` — $${Number(pedido.monto_cobrado).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`
-                : ''
-              }
-            </span>
-          </div>
-        ) : null}
+        {/* Line 3: dirección (izq) · spacer · forma de cobro o falla (der) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {pedido.clientes?.direccion
+            ? <span style={{ fontSize: 12, fontWeight: 500, color: '#1A2B3C' }}>{pedido.clientes.direccion}</span>
+            : <span style={{ fontSize: 11, fontStyle: 'italic', color: '#D1D5DB' }}>Sin dirección</span>
+          }
+          <div style={{ flex: 1 }} />
+          {pedido.estado === 'entrega_fallida' ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+              <IconX size={13} color="#D32F2F" />
+              <span style={{ fontSize: 11, color: '#D32F2F' }}>fallida</span>
+            </div>
+          ) : pedido.forma_cobro ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+              {formaIcon}
+              <span style={{ fontSize: 11, color: '#4A5568' }}>{pedido.forma_cobro}</span>
+            </div>
+          ) : null}
+        </div>
       </div>
 
       {/* Ítems expandidos */}
