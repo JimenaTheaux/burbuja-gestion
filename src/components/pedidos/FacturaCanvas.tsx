@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import type { PedidoDetalle } from '@/services/pedidos'
 import { totalPedido } from '@/types'
 
@@ -98,54 +99,66 @@ export function FacturaCanvas({ pedido }: { pedido: PedidoDetalle }) {
       <div style={{ height: 1, background: '#E5E7EB', marginBottom: 16 }} />
 
       {/* Tabla de ítems */}
-      <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 16 }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, marginBottom: 16 }}>
         <thead>
-          <tr style={{ background: '#F4F6F8' }}>
-            {['Producto', 'Cant.', 'Precio unit.', 'Subtotal'].map((h, i) => (
-              <th
-                key={h}
-                style={{
-                  padding: '8px 10px',
-                  fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
-                  letterSpacing: '0.06em', color: '#4A5568',
-                  textAlign: i === 0 ? 'left' : 'right',
-                  borderBottom: '1px solid #E5E7EB',
-                }}
-              >
-                {h}
-              </th>
-            ))}
+          <tr style={{ borderBottom: '0.5px solid #D1D5DB' }}>
+            <th style={{
+              textAlign: 'left', padding: '4px 6px', fontWeight: 600,
+              color: '#4A5568', fontSize: 9, textTransform: 'uppercase',
+              letterSpacing: '0.06em', width: '45%',
+            }}>Producto</th>
+            <th style={{
+              textAlign: 'center', padding: '4px 6px', fontWeight: 600,
+              color: '#4A5568', fontSize: 9, textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+            }}>Cant.</th>
+            <th style={{
+              textAlign: 'right', padding: '4px 6px', fontWeight: 600,
+              color: '#4A5568', fontSize: 9, textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+            }}>P. Unit.</th>
+            <th style={{
+              textAlign: 'right', padding: '4px 6px', fontWeight: 600,
+              color: '#4A5568', fontSize: 9, textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+            }}>Subtotal</th>
           </tr>
         </thead>
         <tbody>
-          {(pedido.pedido_items ?? []).map((item, idx) => (
-            <tr key={item.id} style={{ background: idx % 2 === 0 ? '#ffffff' : '#F9FAFB' }}>
-              <td style={{ padding: '9px 10px', fontSize: 12, borderBottom: '1px solid #F0F0F0' }}>
-                <span>{item.productos?.nombre ?? '—'}</span>
-                {item.productos?.presentacion && (
-                  <span style={{ color: '#4A5568', marginLeft: 4 }}>({item.productos.presentacion}L)</span>
-                )}
-                {item.bidon_nuevo && (
-                  <span style={{
-                    marginLeft: 6, fontSize: 9, fontWeight: 700,
-                    background: '#FFF3E0', color: '#F57C00',
-                    padding: '2px 6px', borderRadius: 99,
-                    display: 'inline-block',
-                  }}>
-                    BIDÓN NUEVO
-                  </span>
-                )}
-              </td>
-              <td style={{ padding: '9px 10px', fontSize: 12, textAlign: 'right', borderBottom: '1px solid #F0F0F0' }}>
-                {item.cantidad}
-              </td>
-              <td style={{ padding: '9px 10px', fontSize: 12, textAlign: 'right', borderBottom: '1px solid #F0F0F0' }}>
-                {fmtMonto(item.precio_unitario)}
-              </td>
-              <td style={{ padding: '9px 10px', fontSize: 12, fontWeight: 600, textAlign: 'right', borderBottom: '1px solid #F0F0F0', color: '#0D5C8A' }}>
-                {fmtMonto(item.cantidad * item.precio_unitario)}
-              </td>
-            </tr>
+          {(pedido.pedido_items ?? []).map((item) => (
+            <Fragment key={item.id}>
+              <tr>
+                <td style={{ padding: '5px 6px', verticalAlign: 'top', borderBottom: item.bidon_nuevo ? 'none' : '0.5px solid #F0F0F0' }}>
+                  <div style={{ fontSize: 11, fontWeight: 500, color: '#1A2B3C' }}>
+                    {item.productos?.nombre ?? '—'}
+                    {item.productos?.presentacion ? ` — ${item.productos.presentacion}L` : ''}
+                  </div>
+                </td>
+                <td style={{ textAlign: 'center', padding: '5px 6px', verticalAlign: 'top', borderBottom: item.bidon_nuevo ? 'none' : '0.5px solid #F0F0F0' }}>
+                  {item.cantidad}
+                </td>
+                <td style={{ textAlign: 'right', padding: '5px 6px', verticalAlign: 'top', borderBottom: item.bidon_nuevo ? 'none' : '0.5px solid #F0F0F0' }}>
+                  {fmtMonto(item.precio_unitario)}
+                </td>
+                <td style={{ textAlign: 'right', padding: '5px 6px', fontWeight: 500, verticalAlign: 'top', borderBottom: item.bidon_nuevo ? 'none' : '0.5px solid #F0F0F0', color: '#0D5C8A' }}>
+                  {fmtMonto(item.cantidad * item.precio_unitario)}
+                </td>
+              </tr>
+              {item.bidon_nuevo && (
+                <tr>
+                  <td colSpan={4} style={{ padding: '0 6px 6px 14px', borderBottom: '0.5px solid #F0F0F0' }}>
+                    <span style={{
+                      fontSize: 9, fontWeight: 600,
+                      background: '#FFF3E0', color: '#E65100',
+                      padding: '1px 6px', borderRadius: 99,
+                      display: 'inline-block',
+                    }}>
+                      Bidón nuevo
+                    </span>
+                  </td>
+                </tr>
+              )}
+            </Fragment>
           ))}
         </tbody>
       </table>

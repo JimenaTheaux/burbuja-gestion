@@ -225,6 +225,9 @@ Cards KPI:
 - Búsqueda por nombre, filtro por categoría
 - Indicador activo / inactivo
 - Botón "+ Nuevo producto" abre drawer lateral
+- Gestión de categorías: editar nombre y borrar desde drawer accesible en la vista de productos.
+  Borrar una categoría no afecta los productos — quedan sin categoría.
+  No se puede borrar una categoría si tiene productos activos asociados.
 
 ### F7.2 — Crear / editar producto (en drawer)
 - Categoría, nombre (obligatorio), fragancia
@@ -238,6 +241,10 @@ Cards KPI:
 - Al crear pedido, sistema precarga según tipo de cliente
 - Admin puede editar precio por ítem en el pedido sin afectar el catálogo
 - Cambiar precios en ABM no modifica pedidos ya existentes
+
+**Borrar producto:**
+- Disponible si el producto no tiene pedidos asociados. Si tiene historial de pedidos, solo se puede inactivar.
+- Cambiar el precio de un producto NO modifica pedidos existentes — cada ítem de pedido conserva el `precio_unitario` snapshot del momento de creación.
 
 ---
 

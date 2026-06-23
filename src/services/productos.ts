@@ -127,3 +127,70 @@ export const useCrearCategoria = () => {
     onSuccess: () => qc.invalidateQueries({ queryKey: CAT_KEY }),
   })
 }
+
+export const useEditarCategoria = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, nombre }: { id: string; nombre: string }) => {
+      const { data, error } = await supabase
+        .from('categorias_producto')
+        .update({ nombre })
+        .eq('id', id)
+        .select('id, nombre')
+        .single()
+
+      if (error) throw new Error(error.message)
+      return data as CategoriaProducto
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: CAT_KEY })
+      qc.invalidateQueries({ queryKey: KEY })
+    },
+  })
+}
+
+export const useBorrarCategoria = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      // Bloquear si hay productos activos en esta categoría
+      const { count, error: countErr } = await supabase
+        .from('productos')
+        .select('id', { count: 'exact', head: true })
+        .eq('categoria_id', id)
+        .eq('activo', true)
+
+      if (countErr) throw new Error(countErr.message)
+      if (count && count > 0) throw new Error('HAS_ACTIVE_PRODUCTS')
+
+      // Desasociar productos inactivos que referencian esta categoría
+      await supabase.from('productos').update({ categoria_id: null }).eq('categoria_id', id)
+
+      const { error } = await supabase.from('categorias_producto').delete().eq('id', id)
+      if (error) throw new Error(error.message)
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: CAT_KEY })
+      qc.invalidateQueries({ queryKey: KEY })
+    },
+  })
+}
+
+export const useBorrarProducto = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { count, error: countErr } = await supabase
+        .from('pedido_items')
+        .select('id', { count: 'exact', head: true })
+        .eq('producto_id', id)
+
+      if (countErr) throw new Error(countErr.message)
+      if (count && count > 0) throw new Error('HAS_ORDERS')
+
+      const { error } = await supabase.from('productos').delete().eq('id', id)
+      if (error) throw new Error(error.message)
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+  })
+}

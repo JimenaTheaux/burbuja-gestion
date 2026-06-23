@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Search, Edit2, Package } from 'lucide-react'
+import { Plus, Search, Edit2, Package, MoreHorizontal, Eye, EyeOff, Trash2, Pencil } from 'lucide-react'
 import { Skeleton }       from '@/components/ui/skeleton'
 import { Drawer }         from '@/components/common/Drawer'
 import { FloatInput }     from '@/components/common/FloatInput'
@@ -12,6 +13,7 @@ import { useToast }       from '@/hooks/useToast'
 import {
   useProductos, useCategorias,
   useCrearProducto, useEditarProducto, useCrearCategoria,
+  useEditarCategoria, useBorrarCategoria, useBorrarProducto,
 } from '@/services/productos'
 import { useDebounce } from '@/hooks/useDebounce'
 import type { Producto } from '@/types'
@@ -367,6 +369,363 @@ function presentacionLabel(p: number) {
   return p === 0.5 ? '500 ml' : `${p} L`
 }
 
+// ─── Gestión de categorías ────────────────────────────────────────────────────
+
+interface CatDrawerProps {
+  open:    boolean
+  onClose: () => void
+  onMsg:   (msg: string) => void
+}
+
+function CategoriasDrawer({ open, onClose, onMsg }: CatDrawerProps) {
+  const { data: categorias, isLoading } = useCategorias()
+  const crear  = useCrearCategoria()
+  const editar = useEditarCategoria()
+  const borrar = useBorrarCategoria()
+
+  const [editId,     setEditId]     = useState<string | null>(null)
+  const [editNombre, setEditNombre] = useState('')
+  const [deleteId,   setDeleteId]   = useState<string | null>(null)
+  const [newNombre,  setNewNombre]  = useState('')
+  const [showNew,    setShowNew]    = useState(false)
+
+  const resetAll = () => { setEditId(null); setDeleteId(null); setShowNew(false); setNewNombre('') }
+
+  useEffect(() => { if (!open) resetAll() }, [open])
+
+  const handleSaveEdit = async () => {
+    if (!editId || !editNombre.trim()) return
+    try {
+      await editar.mutateAsync({ id: editId, nombre: editNombre.trim() })
+      setEditId(null)
+      onMsg('Categoría actualizada')
+    } catch {
+      onMsg('Error al actualizar la categoría|error')
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    try {
+      await borrar.mutateAsync(id)
+      setDeleteId(null)
+      onMsg('Categoría eliminada')
+    } catch (e) {
+      setDeleteId(null)
+      if (e instanceof Error && e.message === 'HAS_ACTIVE_PRODUCTS')
+        onMsg('No se puede borrar. Tiene productos activos asociados.|error')
+      else
+        onMsg('Error al borrar la categoría|error')
+    }
+  }
+
+  const handleCrear = async () => {
+    if (!newNombre.trim()) return
+    try {
+      await crear.mutateAsync(newNombre.trim())
+      setNewNombre(''); setShowNew(false)
+      onMsg('Categoría creada')
+    } catch {
+      onMsg('Error al crear la categoría|error')
+    }
+  }
+
+  const footer = (
+    <button
+      type="button"
+      onClick={onClose}
+      className="btn-press"
+      style={{ background: 'transparent', color: '#4A5568', border: 'none', height: 40, width: '100%', fontSize: 14, cursor: 'pointer' }}
+    >
+      Cerrar
+    </button>
+  )
+
+  const inputStyle: CSSProperties = {
+    flex: 1, height: 32, padding: '0 10px',
+    border: '1.5px solid #1B9ED6', borderRadius: 6,
+    fontSize: 13, outline: 0, fontFamily: 'Inter, sans-serif', boxSizing: 'border-box',
+  }
+  const btnIconStyle: CSSProperties = {
+    width: 32, height: 32, background: 'transparent', border: 'none',
+    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6,
+  }
+
+  return (
+    <Drawer open={open} onClose={onClose} title="Gestionar categorías" footer={footer}>
+      {/* Nueva categoría */}
+      {showNew ? (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center' }}>
+          <input
+            autoFocus
+            value={newNombre}
+            onChange={e => setNewNombre(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') handleCrear()
+              if (e.key === 'Escape') { setShowNew(false); setNewNombre('') }
+            }}
+            placeholder="Nombre de categoría"
+            style={{ ...inputStyle, height: 36 }}
+          />
+          <button
+            onClick={handleCrear}
+            disabled={crear.isPending || !newNombre.trim()}
+            style={{
+              height: 36, padding: '0 14px', background: '#0D5C8A', color: '#fff',
+              border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600,
+              cursor: crear.isPending ? 'not-allowed' : 'pointer', flexShrink: 0,
+            }}
+          >
+            {crear.isPending ? '…' : 'Crear'}
+          </button>
+          <button
+            onClick={() => { setShowNew(false); setNewNombre('') }}
+            style={{ ...btnIconStyle, border: '0.5px solid #D1D5DB', width: 36, height: 36, flexShrink: 0 }}
+          >
+            ✗
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={() => setShowNew(true)}
+          className="btn-press"
+          style={{
+            width: '100%', height: 40, background: '#F4F6F8',
+            border: '0.5px dashed #1B9ED6', borderRadius: 10,
+            color: '#1B9ED6', fontSize: 13, fontWeight: 600,
+            cursor: 'pointer', marginBottom: 12,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+          }}
+        >
+          <Plus size={14} /> Nueva categoría
+        </button>
+      )}
+
+      {/* Lista */}
+      {isLoading ? (
+        <div style={{ padding: 24, textAlign: 'center', color: '#4A5568', fontSize: 13 }}>Cargando…</div>
+      ) : !categorias?.length ? (
+        <div style={{ padding: 24, textAlign: 'center', color: '#4A5568', fontSize: 13 }}>No hay categorías aún</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {categorias.map(cat => (
+            <div key={cat.id} style={{ background: '#fff', borderRadius: 10, border: '0.5px solid #D1D5DB', overflow: 'hidden' }}>
+              {editId === cat.id ? (
+                <div style={{ display: 'flex', gap: 8, padding: '8px 12px', alignItems: 'center' }}>
+                  <input
+                    autoFocus
+                    value={editNombre}
+                    onChange={e => setEditNombre(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') handleSaveEdit()
+                      if (e.key === 'Escape') setEditId(null)
+                    }}
+                    style={inputStyle}
+                  />
+                  <button
+                    onClick={handleSaveEdit}
+                    disabled={editar.isPending || !editNombre.trim()}
+                    style={{
+                      height: 32, padding: '0 10px', background: '#0D5C8A', color: '#fff',
+                      border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                      cursor: editar.isPending ? 'not-allowed' : 'pointer', flexShrink: 0,
+                    }}
+                  >
+                    ✓
+                  </button>
+                  <button
+                    onClick={() => setEditId(null)}
+                    style={{ ...btnIconStyle, border: '0.5px solid #D1D5DB', flexShrink: 0 }}
+                  >
+                    ✗
+                  </button>
+                </div>
+              ) : deleteId === cat.id ? (
+                <div style={{ padding: '10px 14px' }}>
+                  <p style={{ margin: '0 0 10px', fontSize: 13, color: '#1A2B3C' }}>
+                    ¿Borrar <strong>{cat.nombre}</strong>?{' '}
+                    <span style={{ color: '#4A5568' }}>Los productos quedarán sin categoría.</span>
+                  </p>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      onClick={() => handleDelete(cat.id)}
+                      disabled={borrar.isPending}
+                      style={{
+                        flex: 1, height: 36, background: '#D32F2F', color: '#fff',
+                        border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600,
+                        cursor: borrar.isPending ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      {borrar.isPending ? 'Borrando…' : 'Sí, borrar'}
+                    </button>
+                    <button
+                      onClick={() => setDeleteId(null)}
+                      style={{
+                        flex: 1, height: 36, background: 'transparent', color: '#4A5568',
+                        border: '0.5px solid #D1D5DB', borderRadius: 8, fontSize: 13, cursor: 'pointer',
+                      }}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', padding: '0 8px 0 14px', height: 48 }}>
+                  <span style={{ flex: 1, fontSize: 13, color: '#1A2B3C' }}>{cat.nombre}</span>
+                  <button
+                    onClick={() => { setEditId(cat.id); setEditNombre(cat.nombre); setDeleteId(null) }}
+                    aria-label={`Editar ${cat.nombre}`}
+                    style={{ ...btnIconStyle, color: '#4A5568' }}
+                    onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = '#F4F6F8')}
+                    onMouseLeave={e => ((e.currentTarget as HTMLElement).style.background = 'transparent')}
+                  >
+                    <Pencil size={14} />
+                  </button>
+                  <button
+                    onClick={() => { setDeleteId(cat.id); setEditId(null) }}
+                    aria-label={`Borrar ${cat.nombre}`}
+                    style={{ ...btnIconStyle, color: '#9A9A9A' }}
+                    onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = '#FDECEA')}
+                    onMouseLeave={e => ((e.currentTarget as HTMLElement).style.background = 'transparent')}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </Drawer>
+  )
+}
+
+// ─── Action sheet — acciones rápidas sobre producto ───────────────────────────
+
+type ActionStep = 'menu' | 'confirm-toggle' | 'confirm-delete'
+
+interface ActionSheetProps {
+  product:  Producto | null
+  step:     ActionStep
+  onClose:  () => void
+  onStep:   (s: ActionStep) => void
+  onToggle: () => Promise<void>
+  onDelete: () => Promise<void>
+  toggling: boolean
+  deleting: boolean
+}
+
+function ProductActionSheet({ product, step, onClose, onStep, onToggle, onDelete, toggling, deleting }: ActionSheetProps) {
+  if (!product) return null
+
+  const sheetBtn = (onClick: () => void, disabled: boolean, style: CSSProperties, children: ReactNode) => (
+    <button onClick={onClick} disabled={disabled} className="btn-press" style={{ width: '100%', height: 48, border: 'none', borderRadius: 10, fontSize: 14, cursor: disabled ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 10, padding: '0 16px', ...style }}>
+      {children}
+    </button>
+  )
+
+  return (
+    <>
+      <div
+        onClick={onClose}
+        aria-hidden="true"
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 300 }}
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        style={{
+          position: 'fixed', bottom: 0, left: 0, right: 0,
+          background: '#fff',
+          borderRadius: '16px 16px 0 0',
+          zIndex: 301,
+          padding: '20px 16px',
+          paddingBottom: 'max(20px, env(safe-area-inset-bottom))',
+          maxWidth: 480, margin: '0 auto',
+          animation: 'slideUp 0.22s ease',
+        }}
+      >
+        {step === 'menu' && (
+          <>
+            <p style={{ margin: '0 0 16px', fontSize: 13, fontWeight: 600, color: '#1A2B3C' }}>
+              {product.nombre}
+              {product.fragancia && <span style={{ fontWeight: 400, color: '#4A5568' }}> — {product.fragancia}</span>}
+            </p>
+            {sheetBtn(
+              () => onStep('confirm-toggle'), false,
+              { background: '#F4F6F8', color: '#1A2B3C', marginBottom: 4 },
+              <>
+                {product.activo ? <EyeOff size={16} color="#4A5568" /> : <Eye size={16} color="#4A5568" />}
+                {product.activo ? 'Inactivar producto' : 'Activar producto'}
+              </>
+            )}
+            <div style={{ height: 1, background: '#F0F0F0', margin: '8px 0' }} />
+            {sheetBtn(
+              () => onStep('confirm-delete'), false,
+              { background: '#FFF5F5', color: '#D32F2F', fontWeight: 600, marginBottom: 8 },
+              <><Trash2 size={16} /> Borrar producto</>
+            )}
+            <button onClick={onClose} style={{ width: '100%', height: 44, background: 'transparent', color: '#4A5568', border: 'none', fontSize: 14, cursor: 'pointer' }}>
+              Cancelar
+            </button>
+          </>
+        )}
+
+        {step === 'confirm-toggle' && (
+          <>
+            <p style={{ margin: '0 0 6px', fontSize: 14, fontWeight: 600, color: '#1A2B3C' }}>
+              {product.activo ? `¿Inactivar "${product.nombre}"?` : `¿Activar "${product.nombre}"?`}
+            </p>
+            {product.activo && (
+              <p style={{ margin: '0 0 16px', fontSize: 13, color: '#4A5568' }}>No aparecerá en nuevos pedidos.</p>
+            )}
+            <div style={{ display: 'flex', gap: 8, marginTop: product.activo ? 0 : 16 }}>
+              <button
+                onClick={onToggle}
+                disabled={toggling}
+                className="btn-press"
+                style={{ flex: 1, height: 44, background: '#0D5C8A', color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: toggling ? 'not-allowed' : 'pointer' }}
+              >
+                {toggling ? '…' : 'Confirmar'}
+              </button>
+              <button
+                onClick={() => onStep('menu')}
+                style={{ flex: 1, height: 44, background: 'transparent', color: '#4A5568', border: '0.5px solid #D1D5DB', borderRadius: 10, fontSize: 14, cursor: 'pointer' }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </>
+        )}
+
+        {step === 'confirm-delete' && (
+          <>
+            <p style={{ margin: '0 0 6px', fontSize: 14, fontWeight: 600, color: '#1A2B3C' }}>
+              ¿Borrar &ldquo;{product.nombre}&rdquo;?
+            </p>
+            <p style={{ margin: '0 0 16px', fontSize: 13, color: '#4A5568' }}>
+              Esta acción no se puede deshacer. Los pedidos existentes no se verán afectados — conservan el precio snapshot.
+            </p>
+            <button
+              onClick={onDelete}
+              disabled={deleting}
+              className="btn-press"
+              style={{ width: '100%', height: 44, background: '#D32F2F', color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: deleting ? 'not-allowed' : 'pointer', marginBottom: 8 }}
+            >
+              {deleting ? 'Borrando…' : 'Sí, borrar'}
+            </button>
+            <button
+              onClick={() => onStep('menu')}
+              style={{ width: '100%', height: 44, background: 'transparent', color: '#4A5568', border: 'none', fontSize: 14, cursor: 'pointer' }}
+            >
+              Cancelar
+            </button>
+          </>
+        )}
+      </div>
+    </>
+  )
+}
+
 // ─── Página principal ─────────────────────────────────────────────────────────
 
 export default function ProductosPage() {
@@ -375,7 +734,43 @@ export default function ProductosPage() {
   const [activoFiltro, setActivo] = useState<ActivoFiltro>('activo')
   const [drawerOpen, setDrawer]   = useState(false)
   const [selected, setSelected]   = useState<Producto | null>(null)
+  const [catDrawer, setCatDrawer] = useState(false)
+  const [actionProduct, setActionProduct] = useState<Producto | null>(null)
+  const [actionStep, setActionStep]       = useState<ActionStep>('menu')
   const { toasts, show, dismiss } = useToast()
+
+  const editarP = useEditarProducto()
+  const borrarP = useBorrarProducto()
+
+  const handleOpenAction = (p: Producto) => { setActionProduct(p); setActionStep('menu') }
+  const handleCloseAction = () => setActionProduct(null)
+
+  const handleToggleProduct = async () => {
+    if (!actionProduct) return
+    try {
+      await editarP.mutateAsync({ id: actionProduct.id, activo: !actionProduct.activo })
+      handleCloseAction()
+    } catch {
+      show('Error al actualizar el producto', 'error')
+      handleCloseAction()
+    }
+  }
+
+  const handleDeleteProduct = async () => {
+    if (!actionProduct) return
+    const nombre = actionProduct.nombre
+    try {
+      await borrarP.mutateAsync(actionProduct.id)
+      handleCloseAction()
+      show(`"${nombre}" eliminado`, 'success')
+    } catch (e) {
+      handleCloseAction()
+      if (e instanceof Error && e.message === 'HAS_ORDERS')
+        show('No se puede borrar. El producto tiene pedidos asociados. Podés inactivarlo en su lugar.', 'error')
+      else
+        show('Error al borrar el producto', 'error')
+    }
+  }
 
   const qDebounced = useDebounce(q, 300)
 
@@ -406,6 +801,7 @@ export default function ProductosPage() {
         .prd-card:focus-visible { outline: 2px solid #1B9ED6; outline-offset: 2px; }
         @media (max-width: 1023px) { .prd-desktop { display: none !important; } }
         @media (min-width: 1024px) { .prd-mobile  { display: none !important; } }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
       `}</style>
 
       {/* Header */}
@@ -449,19 +845,32 @@ export default function ProductosPage() {
           />
         </div>
 
-        <select
-          value={catFiltro}
-          onChange={e => setCat(e.target.value)}
-          style={{
-            height: 36, padding: '0 10px',
-            border: '0.5px solid #D1D5DB', borderRadius: 8,
-            fontSize: 12, color: '#1A2B3C', background: '#fff',
-            cursor: 'pointer', outline: 0,
-          }}
-        >
-          <option value="">Todas las categorías</option>
-          {categorias?.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-        </select>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <select
+            value={catFiltro}
+            onChange={e => setCat(e.target.value)}
+            style={{
+              height: 36, padding: '0 10px',
+              border: '0.5px solid #D1D5DB', borderRadius: 8,
+              fontSize: 12, color: '#1A2B3C', background: '#fff',
+              cursor: 'pointer', outline: 0,
+            }}
+          >
+            <option value="">Todas las categorías</option>
+            {categorias?.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+          </select>
+          <button
+            onClick={() => setCatDrawer(true)}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: '#1B9ED6', fontSize: 11, fontWeight: 500,
+              whiteSpace: 'nowrap', padding: '0 2px',
+              textDecoration: 'underline', textUnderlineOffset: 2,
+            }}
+          >
+            Gestionar
+          </button>
+        </div>
 
         <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
           {(['todos', 'activo', 'inactivo'] as ActivoFiltro[]).map(v => {
@@ -572,7 +981,7 @@ export default function ProductosPage() {
                     <td style={{ padding: '0 14px', height: 48, borderBottom: '0.5px solid #F4F6F8', whiteSpace: 'nowrap' }}>
                       <BadgeActivo activo={p.activo ?? true} />
                     </td>
-                    <td style={{ padding: '0 14px', height: 48, borderBottom: '0.5px solid #F4F6F8', textAlign: 'right' }}>
+                    <td style={{ padding: '0 14px', height: 48, borderBottom: '0.5px solid #F4F6F8', textAlign: 'right', whiteSpace: 'nowrap' }}>
                       <button
                         onClick={() => handleEdit(p)}
                         className="prd-edit-btn"
@@ -590,6 +999,24 @@ export default function ProductosPage() {
                         onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = 'transparent')}
                       >
                         <Edit2 size={13} />
+                      </button>
+                      <button
+                        onClick={() => handleOpenAction(p)}
+                        className="prd-edit-btn"
+                        aria-label={`Más acciones para ${p.nombre}`}
+                        style={{
+                          width: 28, height: 28, marginLeft: 4,
+                          background: 'transparent',
+                          border: '0.5px solid #D1D5DB',
+                          borderRadius: 6,
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          cursor: 'pointer', color: '#4A5568',
+                          transition: 'background 0.1s',
+                        }}
+                        onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = '#F4F6F8')}
+                        onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = 'transparent')}
+                      >
+                        <MoreHorizontal size={13} />
                       </button>
                     </td>
                   </tr>
@@ -670,10 +1097,9 @@ export default function ProductosPage() {
                   </p>
                 </div>
                 <button
-                  onClick={e => e.stopPropagation()}
+                  onClick={e => { e.stopPropagation(); handleOpenAction(p) }}
                   className="prd-edit-btn"
-                  aria-hidden="true"
-                  tabIndex={-1}
+                  aria-label={`Más acciones para ${p.nombre}`}
                   style={{
                     width: 36, height: 36, flexShrink: 0,
                     background: 'transparent', border: '0.5px solid #D1D5DB', borderRadius: 6,
@@ -681,7 +1107,7 @@ export default function ProductosPage() {
                     cursor: 'pointer', color: '#4A5568',
                   }}
                 >
-                  <Edit2 size={14} />
+                  <MoreHorizontal size={14} />
                 </button>
               </div>
             ))}
@@ -693,6 +1119,17 @@ export default function ProductosPage() {
       </div>
 
       <ProductoDrawer key={selected?.id ?? 'new'} open={drawerOpen} onClose={handleClose} producto={selected} onSaved={handleSaved} />
+      <CategoriasDrawer open={catDrawer} onClose={() => setCatDrawer(false)} onMsg={handleSaved} />
+      <ProductActionSheet
+        product={actionProduct}
+        step={actionStep}
+        onClose={handleCloseAction}
+        onStep={setActionStep}
+        onToggle={handleToggleProduct}
+        onDelete={handleDeleteProduct}
+        toggling={editarP.isPending}
+        deleting={borrarP.isPending}
+      />
       <ToastContainer toasts={toasts} dismiss={dismiss} />
     </div>
   )
