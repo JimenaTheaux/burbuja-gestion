@@ -2,11 +2,9 @@ import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Search, Edit2 } from 'lucide-react'
-import {
-  Sheet, SheetContent, SheetHeader, SheetTitle,
-} from '@/components/ui/sheet'
+import { Plus, Search, Edit2, Package } from 'lucide-react'
 import { Skeleton }       from '@/components/ui/skeleton'
+import { Drawer }         from '@/components/common/Drawer'
 import { FloatInput }     from '@/components/common/FloatInput'
 import { ButtonGroup }    from '@/components/common/ButtonGroup'
 import { ToastContainer } from '@/components/common/ToastContainer'
@@ -148,15 +146,48 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
     }
   }
 
+  const footer = (
+    <>
+      <button
+        type="submit"
+        form="producto-form"
+        disabled={saving}
+        className="btn-press"
+        style={{
+          background: saving ? 'rgba(13,92,138,0.5)' : '#0D5C8A', color: '#fff',
+          border: 'none', borderRadius: 10, height: 48, width: '100%',
+          fontSize: 15, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer',
+        }}
+      >
+        {saving ? 'Guardando…' : producto ? 'Guardar cambios' : 'Crear producto'}
+      </button>
+      <button
+        type="button"
+        onClick={onClose}
+        className="btn-press"
+        style={{
+          background: 'transparent', color: '#4A5568',
+          border: 'none', height: 40, width: '100%',
+          fontSize: 14, cursor: 'pointer',
+        }}
+      >
+        Cancelar
+      </button>
+    </>
+  )
+
   return (
-    <Sheet open={open} onOpenChange={v => { if (!v) onClose() }}>
-      <SheetContent side="right">
-        <SheetHeader>
-          <SheetTitle>{producto ? 'Editar producto' : 'Nuevo producto'}</SheetTitle>
-        </SheetHeader>
-
-        <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 24 }}>
-
+    <Drawer
+      open={open}
+      onClose={onClose}
+      title={producto ? 'Editar producto' : 'Nuevo producto'}
+      footer={footer}
+    >
+      <form
+        id="producto-form"
+        onSubmit={handleSubmit(onSubmit)}
+        style={{ display: 'flex', flexDirection: 'column', gap: 14 }}
+      >
           <FloatInput label="Nombre *"  error={errors.nombre?.message}  {...register('nombre')} />
           <FloatInput label="Fragancia" {...register('fragancia')} />
           <FloatInput label="Código (opcional)" {...register('codigo')} />
@@ -246,51 +277,35 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
           />
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <FloatInput label="Precio minorista *" error={errors.precioMinorista?.message} {...register('precioMinorista')} inputMode="decimal" />
-            <FloatInput label="Precio mayorista *" error={errors.precioMayorista?.message} {...register('precioMayorista')} inputMode="decimal" />
+            <FloatInput label="Precio min. *" error={errors.precioMinorista?.message} {...register('precioMinorista')} inputMode="decimal" />
+            <FloatInput label="Precio may. *" error={errors.precioMayorista?.message} {...register('precioMayorista')} inputMode="decimal" />
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
-            <button type="submit" disabled={saving} style={{
-              background: saving ? 'rgba(13,92,138,0.5)' : '#0D5C8A', color: '#fff',
-              border: 'none', borderRadius: 10, padding: '13px 20px', minHeight: 44,
-              fontSize: 15, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer',
-            }}>
-              {saving ? 'Guardando…' : producto ? 'Guardar cambios' : 'Crear producto'}
-            </button>
-            <button type="button" onClick={onClose} style={{
-              background: 'transparent', color: '#0D5C8A', border: '1.5px solid #0D5C8A',
-              borderRadius: 10, padding: '12px 20px', minHeight: 44,
-              fontSize: 15, fontWeight: 600, cursor: 'pointer',
-            }}>
-              Cancelar
-            </button>
-          </div>
-        </form>
-
-        {producto && (
-          <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid #D1D5DB' }}>
-            <button
-              onClick={async () => {
-                await editar.mutateAsync({ id: producto.id, activo: !producto.activo })
-                onSaved(`Producto ${!producto.activo ? 'activado' : 'desactivado'}`)
-                onClose()
-              }}
-              style={{
-                width: '100%',
-                background: producto.activo ? '#FDECEA' : '#E8F8F0',
-                color: producto.activo ? '#D32F2F' : '#2E9E5C',
-                border: `1.5px solid ${producto.activo ? '#D32F2F' : '#2E9E5C'}`,
-                borderRadius: 10, padding: '12px 20px', minHeight: 44,
-                fontSize: 14, fontWeight: 600, cursor: 'pointer',
-              }}
-            >
-              {producto.activo ? 'Desactivar producto' : 'Activar producto'}
-            </button>
-          </div>
-        )}
-      </SheetContent>
-    </Sheet>
+          {producto && (
+            <div style={{ marginTop: 8, paddingTop: 20, borderTop: '1px solid #D1D5DB' }}>
+              <button
+                type="button"
+                onClick={async () => {
+                  await editar.mutateAsync({ id: producto.id, activo: !producto.activo })
+                  onSaved(`Producto ${!producto.activo ? 'activado' : 'desactivado'}`)
+                  onClose()
+                }}
+                className="btn-press"
+                style={{
+                  width: '100%',
+                  background: producto.activo ? '#FDECEA' : '#E8F8F0',
+                  color: producto.activo ? '#D32F2F' : '#2E9E5C',
+                  border: `1.5px solid ${producto.activo ? '#D32F2F' : '#2E9E5C'}`,
+                  borderRadius: 10, padding: '12px 20px', minHeight: 44,
+                  fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                }}
+              >
+                {producto.activo ? 'Desactivar producto' : 'Activar producto'}
+              </button>
+            </div>
+          )}
+      </form>
+    </Drawer>
   )
 }
 
@@ -382,7 +397,7 @@ export default function ProductosPage() {
   }
 
   return (
-    <div>
+    <div style={{ animation: 'fadeSlideIn 0.18s ease' }}>
       <style>{`
         .prd-table { width: 100%; border-collapse: collapse; }
         .prd-table tbody tr { transition: background 0.1s; cursor: default; }
@@ -398,14 +413,15 @@ export default function ProductosPage() {
         <h1 className="section-title">Productos</h1>
         <button
           onClick={handleNew}
+          className="btn-press"
           style={{
             background: '#0D5C8A', color: '#fff', border: 'none',
-            borderRadius: 8, height: 36, padding: '0 14px',
-            fontSize: 12, fontWeight: 500, cursor: 'pointer',
-            display: 'flex', alignItems: 'center', gap: 5,
+            borderRadius: 10, height: 40, padding: '0 16px',
+            fontSize: 13, fontWeight: 600, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: 6,
           }}
         >
-          <Plus size={13} /> Nuevo producto
+          <Plus size={14} /> Nuevo producto
         </button>
       </div>
 
@@ -500,9 +516,22 @@ export default function ProductosPage() {
               ) : !productos?.length ? (
                 <tr>
                   <td colSpan={7}>
-                    <p style={{ padding: '32px', textAlign: 'center', fontSize: 13, color: '#4A5568', margin: 0 }}>
-                      No se encontraron productos
-                    </p>
+                    <div style={{ padding: '48px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                      <Package size={40} strokeWidth={1.2} color="#D1D5DB" />
+                      <p style={{ fontSize: 14, fontWeight: 500, color: '#1A2B3C', margin: 0 }}>Sin productos</p>
+                      <p style={{ fontSize: 12, color: '#4A5568', margin: 0 }}>
+                        {q ? 'No hay productos que coincidan' : 'Agregá productos al catálogo'}
+                      </p>
+                      {!q && (
+                        <button onClick={handleNew} className="btn-press" style={{
+                          marginTop: 4, background: '#0D5C8A', color: '#fff', border: 'none',
+                          borderRadius: 10, padding: '10px 20px', fontSize: 13, fontWeight: 600,
+                          cursor: 'pointer', minHeight: 40,
+                        }}>
+                          + Nuevo producto
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -584,15 +613,28 @@ export default function ProductosPage() {
         {isLoading ? (
           Array.from({ length: 4 }).map((_, i) => <ShimmerCard key={i} />)
         ) : !productos?.length ? (
-          <p style={{ padding: '32px', textAlign: 'center', fontSize: 13, color: '#4A5568', margin: 0 }}>
-            No se encontraron productos
-          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', gap: 12, textAlign: 'center' }}>
+            <Package size={40} strokeWidth={1.2} color="#D1D5DB" />
+            <p style={{ fontSize: 14, fontWeight: 500, color: '#1A2B3C', margin: 0 }}>Sin productos</p>
+            <p style={{ fontSize: 12, color: '#4A5568', margin: 0 }}>
+              {q ? 'No hay productos que coincidan' : 'Agregá productos al catálogo'}
+            </p>
+            {!q && (
+              <button onClick={handleNew} className="btn-press" style={{
+                background: '#0D5C8A', color: '#fff', border: 'none',
+                borderRadius: 10, padding: '12px 24px', fontSize: 14, fontWeight: 600,
+                cursor: 'pointer', minHeight: 44,
+              }}>
+                + Nuevo producto
+              </button>
+            )}
+          </div>
         ) : (
           <>
             {productos.map(p => (
               <div
                 key={p.id}
-                className="prd-card"
+                className="prd-card card-tappable"
                 role="button"
                 tabIndex={0}
                 onClick={() => handleEdit(p)}
@@ -602,10 +644,8 @@ export default function ProductosPage() {
                   background: '#fff', borderRadius: 12, border: '0.5px solid #D1D5DB',
                   padding: '12px 16px', marginBottom: 6,
                   display: 'flex', alignItems: 'center', gap: 10,
-                  cursor: 'pointer', transition: 'background 0.1s',
+                  cursor: 'pointer',
                 }}
-                onMouseEnter={e => ((e.currentTarget as HTMLDivElement).style.background = '#F9FAFB')}
-                onMouseLeave={e => ((e.currentTarget as HTMLDivElement).style.background = '#fff')}
               >
                 <div style={{ flex: 1, minWidth: 0 }}>
                   {/* Línea 1 */}

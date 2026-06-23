@@ -2,11 +2,9 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Search, Edit2 } from 'lucide-react'
-import {
-  Sheet, SheetContent, SheetHeader, SheetTitle,
-} from '@/components/ui/sheet'
+import { Plus, Search, Edit2, Users } from 'lucide-react'
 import { Skeleton }       from '@/components/ui/skeleton'
+import { Drawer }         from '@/components/common/Drawer'
 import { FloatInput }     from '@/components/common/FloatInput'
 import { ButtonGroup }    from '@/components/common/ButtonGroup'
 import { ToastContainer } from '@/components/common/ToastContainer'
@@ -86,69 +84,91 @@ function ClienteDrawer({ open, onClose, cliente, onSaved }: DrawerProps) {
     }
   }
 
+  const footer = (
+    <>
+      <button
+        type="submit"
+        form="cliente-form"
+        disabled={saving}
+        className="btn-press"
+        style={{
+          background: saving ? 'rgba(13,92,138,0.5)' : '#0D5C8A',
+          color: '#fff', border: 'none', borderRadius: 10,
+          height: 48, fontSize: 15, fontWeight: 600,
+          cursor: saving ? 'not-allowed' : 'pointer', width: '100%',
+        }}
+      >
+        {saving ? 'Guardando…' : cliente ? 'Guardar cambios' : 'Crear cliente'}
+      </button>
+      <button
+        type="button"
+        onClick={onClose}
+        className="btn-press"
+        style={{
+          background: 'transparent', color: '#4A5568',
+          border: 'none', height: 40, fontSize: 14,
+          cursor: 'pointer', width: '100%',
+        }}
+      >
+        Cancelar
+      </button>
+    </>
+  )
+
   return (
-    <Sheet open={open} onOpenChange={(v) => { if (!v) onClose() }}>
-      <SheetContent side="right">
-        <SheetHeader>
-          <SheetTitle>{cliente ? 'Editar cliente' : 'Nuevo cliente'}</SheetTitle>
-        </SheetHeader>
+    <Drawer
+      open={open}
+      onClose={onClose}
+      title={cliente ? 'Editar cliente' : 'Nuevo cliente'}
+      footer={footer}
+    >
+      <form
+        id="cliente-form"
+        onSubmit={handleSubmit(onSubmit)}
+        style={{ display: 'flex', flexDirection: 'column', gap: 14 }}
+      >
+        <FloatInput
+          label="Nombre *"
+          error={errors.nombre?.message}
+          autoComplete="name"
+          {...register('nombre')}
+        />
+        <FloatInput
+          label="Teléfono"
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel"
+          {...register('telefono')}
+        />
+        <FloatInput
+          label="Dirección de entrega"
+          autoComplete="street-address"
+          {...register('direccion')}
+        />
 
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 24 }}
-        >
-          <FloatInput label="Nombre *" error={errors.nombre?.message} {...register('nombre')} />
-          <FloatInput label="Teléfono" {...register('telefono')} type="tel" />
-          <FloatInput label="Dirección de entrega" {...register('direccion')} />
+        <ButtonGroup
+          label="Tipo de cliente *"
+          value={tipoVal}
+          onChange={v => setValue('tipo_cliente', v, { shouldValidate: true })}
+          error={errors.tipo_cliente?.message}
+          options={[
+            { value: 'minorista', label: 'Minorista' },
+            { value: 'mayorista', label: 'Mayorista', color: '#1B9ED6' },
+          ]}
+        />
 
-          <ButtonGroup
-            label="Tipo de cliente *"
-            value={tipoVal}
-            onChange={v => setValue('tipo_cliente', v, { shouldValidate: true })}
-            error={errors.tipo_cliente?.message}
-            options={[
-              { value: 'minorista', label: 'Minorista' },
-              { value: 'mayorista', label: 'Mayorista', color: '#1B9ED6' },
-            ]}
-          />
-
-          <FloatInput label="Observaciones" {...register('notas')} />
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
-            <button
-              type="submit"
-              disabled={saving}
-              style={{
-                background:     saving ? 'rgba(13,92,138,0.5)' : '#0D5C8A',
-                color:          '#fff', border: 'none', borderRadius: 10,
-                padding:        '13px 20px', minHeight: 44,
-                fontSize:       15, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer',
-              }}
-            >
-              {saving ? 'Guardando…' : cliente ? 'Guardar cambios' : 'Crear cliente'}
-            </button>
-            <button
-              type="button" onClick={onClose}
-              style={{
-                background: 'transparent', color: '#0D5C8A',
-                border: '1.5px solid #0D5C8A', borderRadius: 10,
-                padding: '12px 20px', minHeight: 44,
-                fontSize: 15, fontWeight: 600, cursor: 'pointer',
-              }}
-            >
-              Cancelar
-            </button>
-          </div>
-        </form>
+        <FloatInput label="Observaciones" {...register('notas')} />
 
         {cliente && (
-          <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid #D1D5DB' }}>
+          <div style={{ marginTop: 8, paddingTop: 20, borderTop: '1px solid #D1D5DB' }}>
             <button
+              type="button"
               onClick={async () => {
                 await editar.mutateAsync({ id: cliente.id, activo: !cliente.activo })
                 onSaved(`Cliente ${!cliente.activo ? 'activado' : 'desactivado'}`)
                 onClose()
               }}
+              className="btn-press"
               style={{
                 width: '100%', background: cliente.activo ? '#FDECEA' : '#E8F8F0',
                 color: cliente.activo ? '#D32F2F' : '#2E9E5C',
@@ -161,8 +181,8 @@ function ClienteDrawer({ open, onClose, cliente, onSaved }: DrawerProps) {
             </button>
           </div>
         )}
-      </SheetContent>
-    </Sheet>
+      </form>
+    </Drawer>
   )
 }
 
@@ -255,7 +275,7 @@ export default function ClientesPage() {
   }
 
   return (
-    <div>
+    <div style={{ animation: 'fadeSlideIn 0.18s ease' }}>
       <style>{`
         .cli-table { width: 100%; border-collapse: collapse; }
         .cli-table tbody tr { transition: background 0.1s; cursor: default; }
@@ -271,14 +291,15 @@ export default function ClientesPage() {
         <h1 className="section-title">Clientes</h1>
         <button
           onClick={handleNew}
+          className="btn-press"
           style={{
             background: '#0D5C8A', color: '#fff', border: 'none',
-            borderRadius: 8, height: 36, padding: '0 14px',
-            fontSize: 12, fontWeight: 500, cursor: 'pointer',
-            display: 'flex', alignItems: 'center', gap: 5,
+            borderRadius: 10, height: 40, padding: '0 16px',
+            fontSize: 13, fontWeight: 600, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: 6,
           }}
         >
-          <Plus size={13} /> Nuevo cliente
+          <Plus size={14} /> Nuevo cliente
         </button>
       </div>
 
@@ -359,9 +380,22 @@ export default function ClientesPage() {
               ) : !clientes?.length ? (
                 <tr>
                   <td colSpan={6}>
-                    <p style={{ padding: '32px', textAlign: 'center', fontSize: 13, color: '#4A5568', margin: 0 }}>
-                      No se encontraron clientes
-                    </p>
+                    <div style={{ padding: '48px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                      <Users size={40} strokeWidth={1.2} color="#D1D5DB" />
+                      <p style={{ fontSize: 14, fontWeight: 500, color: '#1A2B3C', margin: 0 }}>Sin clientes</p>
+                      <p style={{ fontSize: 12, color: '#4A5568', margin: 0 }}>
+                        {q ? 'No hay clientes que coincidan con la búsqueda' : 'Agregá tu primer cliente'}
+                      </p>
+                      {!q && (
+                        <button onClick={handleNew} className="btn-press" style={{
+                          marginTop: 4, background: '#0D5C8A', color: '#fff', border: 'none',
+                          borderRadius: 10, padding: '10px 20px', fontSize: 13, fontWeight: 600,
+                          cursor: 'pointer', minHeight: 40,
+                        }}>
+                          + Nuevo cliente
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -433,15 +467,28 @@ export default function ClientesPage() {
         {isLoading ? (
           Array.from({ length: 4 }).map((_, i) => <ShimmerCard key={i} />)
         ) : !clientes?.length ? (
-          <p style={{ padding: '32px', textAlign: 'center', fontSize: 13, color: '#4A5568', margin: 0 }}>
-            No se encontraron clientes
-          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', gap: 12, textAlign: 'center' }}>
+            <Users size={40} strokeWidth={1.2} color="#D1D5DB" />
+            <p style={{ fontSize: 14, fontWeight: 500, color: '#1A2B3C', margin: 0 }}>Sin clientes</p>
+            <p style={{ fontSize: 12, color: '#4A5568', margin: 0 }}>
+              {q ? 'No hay clientes que coincidan' : 'Agregá tu primer cliente'}
+            </p>
+            {!q && (
+              <button onClick={handleNew} className="btn-press" style={{
+                background: '#0D5C8A', color: '#fff', border: 'none',
+                borderRadius: 10, padding: '12px 24px', fontSize: 14, fontWeight: 600,
+                cursor: 'pointer', minHeight: 44,
+              }}>
+                + Nuevo cliente
+              </button>
+            )}
+          </div>
         ) : (
           <>
             {clientes.map(c => (
               <div
                 key={c.id}
-                className="cli-card"
+                className="cli-card card-tappable"
                 role="button"
                 tabIndex={0}
                 onClick={() => handleEdit(c)}
@@ -451,10 +498,8 @@ export default function ClientesPage() {
                   background: '#fff', borderRadius: 12, border: '0.5px solid #D1D5DB',
                   padding: '12px 16px', marginBottom: 6,
                   display: 'flex', alignItems: 'center', gap: 10,
-                  cursor: 'pointer', transition: 'background 0.1s',
+                  cursor: 'pointer',
                 }}
-                onMouseEnter={e => ((e.currentTarget as HTMLDivElement).style.background = '#F9FAFB')}
-                onMouseLeave={e => ((e.currentTarget as HTMLDivElement).style.background = '#fff')}
               >
                 <div style={{ flex: 1, minWidth: 0 }}>
                   {/* Línea 1 */}

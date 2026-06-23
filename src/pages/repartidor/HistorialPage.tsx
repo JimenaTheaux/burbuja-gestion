@@ -178,7 +178,7 @@ export default function HistorialPage() {
   const pedidosOrdenados = [...pedidos].sort((a, b) => b.numero - a.numero)
 
   return (
-    <div>
+    <div style={{ animation: 'fadeSlideIn 0.18s ease' }}>
       {/* Selector de fecha — encima del listado */}
       <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}>
         <SelectorFecha fecha={fechaHistorial} onChange={setFechaHistorial} />
@@ -190,17 +190,20 @@ export default function HistorialPage() {
         </div>
 
       ) : !pedidosOrdenados.length ? (
-        <div style={{ textAlign: 'center', padding: '40px 0' }}>
-          <p style={{ fontSize: 13, color: '#4A5568', margin: '0 0 8px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', gap: 12, textAlign: 'center' }}>
+          <IconClock size={40} strokeWidth={1.2} color="#D1D5DB" />
+          <p style={{ fontSize: 14, fontWeight: 500, color: '#1A2B3C', margin: 0 }}>Sin registros</p>
+          <p style={{ fontSize: 12, color: '#4A5568', margin: 0 }}>
             No hay entregas registradas para el {labelFechaLarga(fechaHistorial)}
           </p>
           {!esHoy && (
             <button
               onClick={() => setFechaHistorial(HOY)}
+              className="btn-press"
               style={{
-                background: 'none', border: 'none', color: '#0D5C8A',
-                fontSize: 13, cursor: 'pointer', textDecoration: 'underline',
-                padding: 0, fontFamily: 'Inter, sans-serif',
+                background: 'none', border: '1px solid #D1D5DB', color: '#0D5C8A',
+                fontSize: 13, cursor: 'pointer', borderRadius: 8,
+                padding: '8px 16px', fontFamily: 'Inter, sans-serif', minHeight: 36,
               }}
             >
               Ver hoy →

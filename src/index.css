@@ -2,6 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Keyframes globales ──────────────────────────────────────────────────────── */
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes slideInDrawer {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -46,6 +60,57 @@
 }
 
 @layer components {
+  /* ─── Microinteracciones ──────────────────────────────────────────────────── */
+  .btn-press {
+    transition: transform 0.1s ease, opacity 0.1s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-press:active {
+    transform: scale(0.97);
+    opacity: 0.85;
+  }
+
+  /* ─── Drawer ──────────────────────────────────────────────────────────────── */
+  .drawer-panel {
+    width: 50%;
+  }
+  @media (max-width: 767px) {
+    .drawer-panel { width: 100%; }
+  }
+
+  /* ─── Cards tappables ─────────────────────────────────────────────────────── */
+  .card-tappable {
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.1s ease;
+  }
+  .card-tappable:hover {
+    background: #F9FAFB;
+  }
+  .card-tappable:active {
+    background: #F0F4F8 !important;
+  }
+
+  /* ─── Inputs mobile: prevenir zoom iOS (font-size < 16px hace zoom) ────────── */
+  @media (max-width: 767px) {
+    .form-label .input {
+      font-size: 16px;
+      min-height: 48px;
+    }
+  }
+
+  /* ─── Tap highlight global ────────────────────────────────────────────────── */
+  button, [role="button"], a, label {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ─── Topbar scroll-aware (solo mobile) ───────────────────────────────────── */
+  /* En desktop siempre visible, sin importar lo que diga el inline style */
+  @media (min-width: 1024px) {
+    .topbar-scroll-aware {
+      transform: translateY(0) !important;
+    }
+  }
+
   .section-title {
     font-size: 20px;
     font-weight: 600;

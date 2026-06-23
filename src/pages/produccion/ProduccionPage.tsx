@@ -202,7 +202,7 @@ function CardProduccion({ pedido, onMarcarListo }: {
             disabled={loading}
             aria-label={`Marcar pedido P-${String(pedido.numero).padStart(5, '0')} como listo para reparto`}
             aria-disabled={loading}
-            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 btn-press"
             style={{
               width: '100%', background: loading ? 'rgba(249,168,37,0.5)' : '#F9A825',
               color: '#fff', border: 'none', borderRadius: 10,
@@ -370,7 +370,7 @@ export default function ProduccionPage() {
   const totalPedidos = pedidosProd?.length ?? 0
 
   return (
-    <div>
+    <div style={{ animation: 'fadeSlideIn 0.18s ease' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
         <h1 className="section-title">Producción</h1>

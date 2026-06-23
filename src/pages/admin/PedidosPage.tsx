@@ -584,9 +584,10 @@ function CardMobile({ pedido, expandida, onToggle, onVerDetalle, onAnularRequest
                     if (pedido.estado === 'en_reparto') { onVerDetalle(); return }
                     setConfirmando(true)
                   }}
+                  className="btn-press"
                   style={{
                     width: '100%', background: nextCfg.color, color: '#fff',
-                    border: 'none', borderRadius: 10, height: 44,
+                    border: 'none', borderRadius: 10, height: 48,
                     fontSize: 14, fontWeight: 700, cursor: 'pointer',
                   }}
                 >
@@ -830,7 +831,7 @@ export default function PedidosPage() {
   const nSel = seleccionados.size
 
   return (
-    <div style={{ paddingBottom: nSel > 0 ? 80 : 0 }}>
+    <div style={{ paddingBottom: nSel > 0 ? 80 : 0, animation: 'fadeSlideIn 0.18s ease' }}>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg) } }
         @keyframes shimmer {
@@ -955,11 +956,21 @@ export default function PedidosPage() {
               ) : !pedidos?.length ? (
                 <tr>
                   <td colSpan={6}>
-                    <div style={{ padding: '40px 0', textAlign: 'center' }}>
-                      <ShoppingCart size={28} style={{ color: '#D1D5DB', marginBottom: 8 }} />
-                      <p style={{ fontSize: 14, color: '#4A5568', margin: 0 }}>
-                        {q || estadoFiltro ? 'No hay pedidos en este estado' : 'No hay pedidos aún'}
+                    <div style={{ padding: '48px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                      <ShoppingCart size={40} strokeWidth={1.2} color="#D1D5DB" />
+                      <p style={{ fontSize: 14, fontWeight: 500, color: '#1A2B3C', margin: 0 }}>Sin pedidos</p>
+                      <p style={{ fontSize: 12, color: '#4A5568', margin: 0 }}>
+                        {q || estadoFiltro ? 'No hay pedidos para este filtro' : 'Creá el primer pedido del día'}
                       </p>
+                      {!(q || estadoFiltro) && (
+                        <button onClick={handleNuevo} className="btn-press" style={{
+                          marginTop: 4, background: '#0D5C8A', color: '#fff', border: 'none',
+                          borderRadius: 10, padding: '10px 20px', fontSize: 13, fontWeight: 600,
+                          cursor: 'pointer', minHeight: 40,
+                        }}>
+                          + Nuevo pedido
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -1016,15 +1027,16 @@ export default function PedidosPage() {
             {Array.from({ length: 3 }).map((_, i) => <ShimmerCard key={i} />)}
           </div>
         ) : !pedidos?.length ? (
-          <div style={{ padding: '40px 0', textAlign: 'center' }}>
-            <ShoppingCart size={28} style={{ color: '#D1D5DB', marginBottom: 8 }} />
-            <p style={{ fontSize: 14, color: '#4A5568', margin: 0 }}>
-              {q || estadoFiltro ? 'No hay pedidos en este estado' : 'No hay pedidos aún'}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', gap: 12, textAlign: 'center' }}>
+            <ShoppingCart size={40} strokeWidth={1.2} color="#D1D5DB" />
+            <p style={{ fontSize: 14, fontWeight: 500, color: '#1A2B3C', margin: 0 }}>Sin pedidos</p>
+            <p style={{ fontSize: 12, color: '#4A5568', margin: 0 }}>
+              {q || estadoFiltro ? 'No hay pedidos para este filtro' : 'Creá el primer pedido del día'}
             </p>
             {!(q || estadoFiltro) && (
-              <button onClick={handleNuevo} style={{
-                marginTop: 12, background: '#0D5C8A', color: '#fff', border: 'none',
-                borderRadius: 10, padding: '10px 20px', fontSize: 14,
+              <button onClick={handleNuevo} className="btn-press" style={{
+                background: '#0D5C8A', color: '#fff', border: 'none',
+                borderRadius: 10, padding: '12px 24px', fontSize: 14,
                 fontWeight: 600, cursor: 'pointer', minHeight: 44,
               }}>
                 + Nuevo pedido

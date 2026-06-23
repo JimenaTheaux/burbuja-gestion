@@ -1,11 +1,13 @@
 import { Outlet, useNavigate } from 'react-router-dom'
 import { Factory, List, LogOut } from 'lucide-react'
-import { BottomNav } from './BottomNav'
-import { useAuth }   from '@/hooks/useAuth'
+import { BottomNav }          from './BottomNav'
+import { useAuth }            from '@/hooks/useAuth'
+import { useScrollDirection } from '@/hooks/useScrollDirection'
 
 export function ProduccionLayout() {
   const { usuario, cerrarSesion } = useAuth()
-  const navigate = useNavigate()
+  const navigate     = useNavigate()
+  const scrollDir    = useScrollDirection()
 
   const handleLogout = async () => {
     await cerrarSesion()
@@ -14,11 +16,12 @@ export function ProduccionLayout() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#F4F6F8' }}>
-      {/* Topbar */}
+      {/* Topbar — se oculta al scrollear hacia abajo en mobile */}
       <header
+        className="topbar-scroll-aware"
         style={{
           height:         56,
-          background:     'rgba(255,255,255,0.85)',
+          background:     'rgba(255,255,255,0.9)',
           backdropFilter: 'blur(8px)',
           borderBottom:   '1px solid #D1D5DB',
           padding:        '0 16px',
@@ -28,6 +31,8 @@ export function ProduccionLayout() {
           position:       'sticky',
           top:            0,
           zIndex:         50,
+          transform:      scrollDir === 'down' ? 'translateY(-100%)' : 'translateY(0)',
+          transition:     'transform 0.25s ease',
         }}
       >
         <div

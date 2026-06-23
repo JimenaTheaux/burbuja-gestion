@@ -616,17 +616,19 @@ export default function RepartidorPage() {
   }
 
   return (
-    <div>
+    <div style={{ animation: 'fadeSlideIn 0.18s ease' }}>
       {isLoading ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {[1, 2, 3].map(i => <Skeleton key={i} style={{ height: 82, borderRadius: 10 }} />)}
         </div>
 
       ) : !pedidos.length ? (
-        <div style={{ textAlign: 'center', padding: '40px 0' }}>
-          <p style={{ fontSize: 13, color: '#4A5568', margin: 0 }}>
-            No tenés entregas activas hoy
-          </p>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', gap: 12, textAlign: 'center' }}>
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h11a2 2 0 012 2v3"/><rect x="9" y="11" width="14" height="10" rx="2"/><circle cx="12" cy="16" r="1"/><circle cx="20" cy="16" r="1"/>
+          </svg>
+          <p style={{ fontSize: 14, fontWeight: 500, color: '#1A2B3C', margin: 0 }}>Sin entregas asignadas</p>
+          <p style={{ fontSize: 12, color: '#4A5568', margin: 0 }}>No tenés pedidos para repartir hoy</p>
         </div>
 
       ) : (
@@ -640,11 +642,12 @@ export default function RepartidorPage() {
                 aria-label={`Salir a repartir ${listos.length} pedido${listos.length !== 1 ? 's' : ''} listos`}
                 aria-disabled={cambiar.isPending}
                 className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                className="btn-press"
                 style={{
                   width: '100%',
                   background: cambiar.isPending ? 'rgba(21,101,192,0.5)' : '#1565C0',
                   color: '#fff', border: 'none', borderRadius: 10,
-                  height: 44, fontSize: 13, fontWeight: 500,
+                  height: 48, fontSize: 14, fontWeight: 600,
                   cursor: cambiar.isPending ? 'not-allowed' : 'pointer',
                   marginBottom: 12,
                   fontFamily: 'Inter, sans-serif',
