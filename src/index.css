@@ -145,6 +145,30 @@
     margin: 0;
   }
 
+  /* ─── Compact form system ────────────────────────────────────────────────── */
+  .fi-input {
+    height: 48px;
+    font-size: 16px; /* iOS zoom prevention on mobile */
+  }
+  @media (min-width: 1024px) {
+    .fi-input { height: 40px; font-size: 13px; }
+  }
+  .fi-textarea {
+    min-height: 72px;
+    font-size: 16px;
+  }
+  @media (min-width: 1024px) {
+    .fi-textarea { min-height: 56px; font-size: 13px; }
+  }
+  .form-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  @media (min-width: 1024px) {
+    .form-grid-2 { grid-template-columns: 1fr 1fr; }
+  }
+
   .form-label {
     position: relative;
   }

@@ -3,7 +3,7 @@ import type { CSSProperties, ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Search, Edit2, Package, MoreHorizontal, Eye, EyeOff, Trash2, Pencil } from 'lucide-react'
+import { Plus, Search, Edit2, Package, MoreHorizontal, Eye, EyeOff, Trash2, Pencil, ChevronDown } from 'lucide-react'
 import { Skeleton }       from '@/components/ui/skeleton'
 import { Drawer }         from '@/components/common/Drawer'
 import { FloatInput }     from '@/components/common/FloatInput'
@@ -41,6 +41,12 @@ interface DrawerProps {
   onSaved:  (msg: string) => void
 }
 
+const LABEL_S: React.CSSProperties = {
+  fontSize: 10, fontWeight: 500, color: '#4A5568',
+  textTransform: 'uppercase', letterSpacing: '0.06em',
+  display: 'block', marginBottom: 5,
+}
+
 function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
   const crear    = useCrearProducto()
   const editar   = useEditarProducto()
@@ -49,6 +55,7 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
   const [catText, setCatText] = useState('')
   const [catDrop, setCatDrop] = useState(false)
   const [catErr,  setCatErr]  = useState('')
+  const [activo,  setActivo]  = useState(producto?.activo ?? true)
   const saving = crear.isPending || editar.isPending
 
   const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<FormData>({
@@ -64,8 +71,7 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
     },
   })
 
-  const presentacionVal = watch('presentacion')
-  const categoriaVal    = watch('categoriaId')
+  const categoriaVal = watch('categoriaId')
 
   const onSubmit = async (data: FormData) => {
     const presentacionNum = parseFloat(data.presentacion)
@@ -82,6 +88,7 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
           precio_minorista: minorista,
           precio_mayorista: mayorista,
           codigo:           data.codigo      || null,
+          activo,
         })
         onSaved('Producto actualizado correctamente')
       } else {
@@ -93,12 +100,13 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
           presentacion:     presentacionNum,
           precio_minorista: minorista,
           precio_mayorista: mayorista,
-          activo:           true,
+          activo,
           codigo:           data.codigo      || null,
         })
         onSaved('Producto creado correctamente')
         reset()
         setCatText('')
+        setActivo(true)
       }
       onClose()
     } catch (e) {
@@ -117,6 +125,7 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
       precioMayorista: producto?.precio_mayorista != null ? String(producto.precio_mayorista) : '',
       codigo:          producto?.codigo                                                    ?? '',
     })
+    setActivo(producto?.activo ?? true)
   }, [open, producto])
 
   useEffect(() => {
@@ -142,6 +151,7 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
     try {
       const nueva = await crearCat.mutateAsync(nombre)
       setValue('categoriaId', nueva.id)
+      setCatText(nueva.nombre)
       setCatDrop(false)
     } catch {
       setCatErr('No se pudo crear la categoría')
@@ -157,8 +167,8 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
         className="btn-press"
         style={{
           background: saving ? 'rgba(13,92,138,0.5)' : '#0D5C8A', color: '#fff',
-          border: 'none', borderRadius: 10, height: 48, width: '100%',
-          fontSize: 15, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer',
+          border: 'none', borderRadius: 10, height: 44, width: '100%',
+          fontSize: 14, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer',
         }}
       >
         {saving ? 'Guardando…' : producto ? 'Guardar cambios' : 'Crear producto'}
@@ -169,14 +179,22 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
         className="btn-press"
         style={{
           background: 'transparent', color: '#4A5568',
-          border: 'none', height: 40, width: '100%',
-          fontSize: 14, cursor: 'pointer',
+          border: 'none', height: 36, width: '100%',
+          fontSize: 13, cursor: 'pointer',
         }}
       >
         Cancelar
       </button>
     </>
   )
+
+  const selectStyle: CSSProperties = {
+    width: '100%', padding: '0 28px 0 12px',
+    border: '0.5px solid #D1D5DB', borderRadius: 8,
+    fontFamily: 'Inter, sans-serif', background: '#fff',
+    appearance: 'none', outline: 'none', cursor: 'pointer',
+    color: '#1A2B3C', boxSizing: 'border-box',
+  }
 
   return (
     <Drawer
@@ -188,27 +206,26 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
       <form
         id="producto-form"
         onSubmit={handleSubmit(onSubmit)}
-        style={{ display: 'flex', flexDirection: 'column', gap: 14 }}
+        style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
       >
-          <FloatInput label="Nombre *"  error={errors.nombre?.message}  {...register('nombre')} />
-          <FloatInput label="Fragancia" {...register('fragancia')} />
-          <FloatInput label="Código (opcional)" {...register('codigo')} />
+        {/* Grid 1: Nombre + Categoría */}
+        <div className="form-grid-2">
+          <FloatInput label="Nombre *" error={errors.nombre?.message} {...register('nombre')} />
 
           {/* Categoría — combobox con creación inline */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <span style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#4A5568' }}>
-              Categoría
-            </span>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span style={LABEL_S}>Categoría</span>
             <input type="hidden" {...register('categoriaId')} />
             {categoriaVal ? (
               <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '10px 14px', background: '#E8F4FF', borderRadius: 10, border: '1.5px solid #1B9ED6',
+                padding: '0 10px 0 12px', background: '#E8F4FF', borderRadius: 8,
+                border: '0.5px solid #1B9ED6', height: 40,
               }}>
-                <span style={{ fontSize: 14, fontWeight: 500, color: '#1A2B3C' }}>{catText}</span>
+                <span style={{ fontSize: 13, fontWeight: 500, color: '#1A2B3C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{catText}</span>
                 <button type="button"
                   onClick={() => { setValue('categoriaId', ''); setCatText(''); setCatErr('') }}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1B9ED6', fontSize: 12, fontWeight: 600 }}>
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1B9ED6', fontSize: 11, fontWeight: 600, flexShrink: 0, marginLeft: 6 }}>
                   Cambiar
                 </button>
               </div>
@@ -223,37 +240,37 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
                     if (e.key === 'Escape') { setCatDrop(false); return }
                     if (e.key === 'Enter' && puedeCrear) { e.preventDefault(); handleCrearCat() }
                   }}
-                  placeholder="Buscar o crear categoría…"
-                  style={{ padding: '10px 14px', border: '1px solid rgba(105,105,105,0.4)', borderRadius: 10, fontSize: 14, outline: 0, width: '100%', fontFamily: 'Inter, sans-serif' }}
+                  placeholder="Buscar o crear…"
+                  className="fi-input"
+                  style={{ padding: '0 12px', border: '0.5px solid #D1D5DB', borderRadius: 8, outline: 0, width: '100%', fontFamily: 'Inter, sans-serif', boxSizing: 'border-box', background: '#fff', color: '#1A2B3C' }}
                 />
                 {catDrop && (
                   <div style={{
                     position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
-                    background: '#fff', border: '1px solid #D1D5DB', borderRadius: 10,
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.12)', maxHeight: 220, overflowY: 'auto', marginTop: 4,
+                    background: '#fff', border: '1px solid #D1D5DB', borderRadius: 8,
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.12)', maxHeight: 200, overflowY: 'auto', marginTop: 4,
                   }}>
                     {catsFiltradas.map(cat => (
                       <button key={cat.id} type="button"
                         onClick={() => { setValue('categoriaId', cat.id); setCatText(cat.nombre); setCatDrop(false) }}
-                        style={{ width: '100%', textAlign: 'left', padding: '10px 14px', background: 'none', border: 'none', cursor: 'pointer', display: 'block', borderBottom: '1px solid #F4F6F8', fontSize: 14 }}>
+                        style={{ width: '100%', textAlign: 'left', padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer', display: 'block', borderBottom: '0.5px solid #F4F6F8', fontSize: 13 }}>
                         {cat.nombre}
                       </button>
                     ))}
                     {puedeCrear && (
                       <button type="button" onClick={handleCrearCat} disabled={crearCat.isPending}
                         style={{
-                          width: '100%', textAlign: 'left', padding: '10px 14px',
+                          width: '100%', textAlign: 'left', padding: '8px 12px',
                           background: '#F0F7FF', border: 'none',
                           cursor: crearCat.isPending ? 'not-allowed' : 'pointer',
-                          fontSize: 13, color: '#0D5C8A', fontWeight: 600,
-                          display: 'flex', alignItems: 'center', gap: 6,
-                          borderTop: catsFiltradas.length > 0 ? '1px solid #F4F6F8' : 'none',
+                          fontSize: 12, color: '#0D5C8A', fontWeight: 600,
+                          borderTop: catsFiltradas.length > 0 ? '0.5px solid #F4F6F8' : 'none',
                         }}>
                         {crearCat.isPending ? 'Creando…' : `+ Crear "${catText.trim()}"`}
                       </button>
                     )}
                     {catsFiltradas.length === 0 && !puedeCrear && (
-                      <div style={{ padding: '10px 14px', fontSize: 13, color: '#4A5568' }}>
+                      <div style={{ padding: '8px 12px', fontSize: 12, color: '#4A5568' }}>
                         {catText.trim() ? 'Sin coincidencias' : 'Escribí para buscar o crear'}
                       </div>
                     )}
@@ -261,51 +278,64 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
                 )}
               </div>
             )}
-            {catErr && <p style={{ color: '#D32F2F', fontSize: 11, margin: '2px 0 0' }}>{catErr}</p>}
+            {catErr && <p style={{ color: '#D32F2F', fontSize: 11, margin: '4px 0 0' }}>{catErr}</p>}
           </div>
+        </div>
 
-          <ButtonGroup
-            label="Presentación *"
-            value={presentacionVal ?? ''}
-            onChange={v => setValue('presentacion', v as FormData['presentacion'], { shouldValidate: true })}
-            error={errors.presentacion?.message}
-            options={[
-              { value: '0.5', label: '500 ml' },
-              { value: '3',   label: '3 L' },
-              { value: '5',   label: '5 L' },
-              { value: '10',  label: '10 L' },
-              { value: '20',  label: '20 L' },
-            ]}
-          />
+        {/* Grid 2: Fragancia + Presentación */}
+        <div className="form-grid-2">
+          <FloatInput label="Fragancia" {...register('fragancia')} />
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <FloatInput label="Precio min. *" error={errors.precioMinorista?.message} {...register('precioMinorista')} inputMode="decimal" />
-            <FloatInput label="Precio may. *" error={errors.precioMayorista?.message} {...register('precioMayorista')} inputMode="decimal" />
-          </div>
-
-          {producto && (
-            <div style={{ marginTop: 8, paddingTop: 20, borderTop: '1px solid #D1D5DB' }}>
-              <button
-                type="button"
-                onClick={async () => {
-                  await editar.mutateAsync({ id: producto.id, activo: !producto.activo })
-                  onSaved(`Producto ${!producto.activo ? 'activado' : 'desactivado'}`)
-                  onClose()
-                }}
-                className="btn-press"
-                style={{
-                  width: '100%',
-                  background: producto.activo ? '#FDECEA' : '#E8F8F0',
-                  color: producto.activo ? '#D32F2F' : '#2E9E5C',
-                  border: `1.5px solid ${producto.activo ? '#D32F2F' : '#2E9E5C'}`,
-                  borderRadius: 10, padding: '12px 20px', minHeight: 44,
-                  fontSize: 14, fontWeight: 600, cursor: 'pointer',
-                }}
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span style={LABEL_S}>Presentación *</span>
+            <div style={{ position: 'relative' }}>
+              <select
+                {...register('presentacion')}
+                className="fi-input"
+                style={{ ...selectStyle, borderColor: errors.presentacion ? '#D32F2F' : '#D1D5DB' }}
               >
-                {producto.activo ? 'Desactivar producto' : 'Activar producto'}
-              </button>
+                <option value="0.5">500 ml</option>
+                <option value="3">3 L</option>
+                <option value="5">5 L</option>
+                <option value="10">10 L</option>
+                <option value="20">20 L</option>
+              </select>
+              <ChevronDown size={13} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#4A5568' }} />
             </div>
-          )}
+            {errors.presentacion && <span style={{ color: '#D32F2F', fontSize: 11, marginTop: 4 }}>{errors.presentacion.message}</span>}
+          </div>
+        </div>
+
+        {/* Grid 3: Precio min + Precio may */}
+        <div className="form-grid-2">
+          <FloatInput label="Precio minorista *" error={errors.precioMinorista?.message} {...register('precioMinorista')} inputMode="decimal" />
+          <FloatInput label="Precio mayorista *" error={errors.precioMayorista?.message} {...register('precioMayorista')} inputMode="decimal" />
+        </div>
+
+        <FloatInput label="Código (opcional)" {...register('codigo')} />
+
+        {/* Toggle activo/inactivo */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', background: '#F9FAFB', borderRadius: 8, border: '0.5px solid #D1D5DB' }}>
+          <span style={{ fontSize: 13, color: '#4A5568' }}>Producto activo</span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={activo}
+            onClick={() => setActivo(v => !v)}
+            style={{
+              width: 36, height: 20, borderRadius: 99,
+              background: activo ? '#0D5C8A' : '#D1D5DB',
+              border: 'none', cursor: 'pointer', position: 'relative',
+              transition: 'background 0.2s ease', flexShrink: 0, padding: 0,
+            }}
+          >
+            <span style={{
+              position: 'absolute', top: 2, left: activo ? 18 : 2,
+              width: 16, height: 16, background: '#fff', borderRadius: '50%',
+              transition: 'left 0.2s ease', boxShadow: '0 1px 3px rgba(0,0,0,0.2)', display: 'block',
+            }} />
+          </button>
+        </div>
       </form>
     </Drawer>
   )

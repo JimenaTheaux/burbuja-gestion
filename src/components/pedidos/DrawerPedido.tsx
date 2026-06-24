@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { X, AlertTriangle, Package, ChevronUp } from 'lucide-react'
+import { X, AlertTriangle, Package, ChevronUp, ChevronDown } from 'lucide-react'
 import { Drawer }      from '@/components/common/Drawer'
 import { FloatInput }  from '@/components/common/FloatInput'
 import { ButtonGroup } from '@/components/common/ButtonGroup'
@@ -47,25 +47,18 @@ interface Props {
   onSaved: (msg: string) => void
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Helpers visuales ─────────────────────────────────────────────────────────
 
-function SectionHeader({ num, title, badge }: { num: string; title: string; badge?: string }) {
+function SecLabel({ label, badge }: { label: string; badge?: string }) {
   return (
-    <div style={{
-      display:       'flex',
-      alignItems:    'center',
-      gap:           6,
-      paddingBottom: 8,
-      borderBottom:  '0.5px solid #D1D5DB',
-      marginBottom:  14,
-    }}>
-      <span style={{ fontSize: 11, fontWeight: 600, color: '#4A5568', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-        {num}. {title}
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+      <span style={{ fontSize: 9, fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+        {label}
       </span>
       {badge && (
         <span style={{
-          fontSize: 10, fontWeight: 700, background: '#E8F4FF', color: '#1B9ED6',
-          padding: '1px 7px', borderRadius: 99,
+          fontSize: 10, background: '#F4F6F8', color: '#4A5568',
+          padding: '1px 6px', borderRadius: 99,
         }}>
           {badge}
         </span>
@@ -74,7 +67,11 @@ function SectionHeader({ num, title, badge }: { num: string; title: string; badg
   )
 }
 
-// ─── Toggle switch (bidón nuevo) ──────────────────────────────────────────────
+function Divider() {
+  return <div style={{ height: '0.5px', background: '#F4F6F8', margin: '4px 0' }} />
+}
+
+// ─── Toggle switch (bidón nuevo / reutilizable) ───────────────────────────────
 
 function ToggleSwitch({ value, onChange, label }: {
   value:    boolean
@@ -90,29 +87,16 @@ function ToggleSwitch({ value, onChange, label }: {
         aria-checked={value}
         onClick={() => onChange(!value)}
         style={{
-          width:      36,
-          height:     20,
-          borderRadius: 99,
+          width: 36, height: 20, borderRadius: 99,
           background: value ? '#0D5C8A' : '#D1D5DB',
-          border:     'none',
-          cursor:     'pointer',
-          position:   'relative',
-          transition: 'background 0.2s ease',
-          flexShrink: 0,
-          padding:    0,
+          border: 'none', cursor: 'pointer', position: 'relative',
+          transition: 'background 0.2s ease', flexShrink: 0, padding: 0,
         }}
       >
         <span style={{
-          position:     'absolute',
-          top:          2,
-          left:         value ? 18 : 2,
-          width:        16,
-          height:       16,
-          background:   '#fff',
-          borderRadius: '50%',
-          transition:   'left 0.2s ease',
-          boxShadow:    '0 1px 3px rgba(0,0,0,0.2)',
-          display:      'block',
+          position: 'absolute', top: 2, left: value ? 18 : 2,
+          width: 16, height: 16, background: '#fff', borderRadius: '50%',
+          transition: 'left 0.2s ease', boxShadow: '0 1px 3px rgba(0,0,0,0.2)', display: 'block',
         }} />
       </button>
     </div>
@@ -177,32 +161,23 @@ function SelectorCliente({
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <SectionHeader num="1" title="Cliente" />
-
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       {selected ? (
         <div style={{
-          display:         'flex',
-          alignItems:      'center',
-          justifyContent:  'space-between',
-          padding:         '10px 14px',
-          background:      '#F4F6F8',
-          borderRadius:    10,
-          border:          '0.5px solid #D1D5DB',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '10px 12px', background: '#F4F6F8', borderRadius: 8,
+          border: '0.5px solid #D1D5DB',
         }}>
           <div>
-            <p style={{ margin: 0, fontWeight: 600, fontSize: 14, color: '#1A2B3C' }}>{selected.nombre}</p>
-            <p style={{ margin: 0, fontSize: 12, color: '#4A5568' }}>
+            <p style={{ margin: 0, fontWeight: 500, fontSize: 13, color: '#1A2B3C' }}>{selected.nombre}</p>
+            <p style={{ margin: 0, fontSize: 11, color: '#4A5568' }}>
               {selected.tipo_cliente}{selected.direccion ? ` · ${selected.direccion}` : ''}
             </p>
           </div>
           <button
             type="button"
             onClick={() => { onChange('', 'minorista', ''); setQ(''); setRecienCreado(null) }}
-            style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              color: '#1B9ED6', fontSize: 12, fontWeight: 600, padding: '4px 8px',
-            }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1B9ED6', fontSize: 11, fontWeight: 600, padding: '4px 8px' }}
           >
             Cambiar
           </button>
@@ -216,11 +191,12 @@ function SelectorCliente({
               onFocus={() => setOpen(true)}
               onBlur={() => setTimeout(() => setOpen(false), 150)}
               placeholder="Buscar cliente…"
+              className="fi-input"
               style={{
-                width: '100%', height: 48, padding: '0 14px',
+                width: '100%', padding: '0 12px',
                 border: `0.5px solid ${error ? '#D32F2F' : '#D1D5DB'}`,
-                borderRadius: 10, fontSize: 16, outline: 0, background: '#fff',
-                fontFamily: 'Inter, sans-serif', boxSizing: 'border-box',
+                borderRadius: 8, outline: 0, background: '#fff',
+                fontFamily: 'Inter, sans-serif', boxSizing: 'border-box', color: '#1A2B3C',
               }}
               onFocusCapture={e => { e.currentTarget.style.borderColor = '#1B9ED6' }}
               onBlurCapture={e  => { e.currentTarget.style.borderColor = error ? '#D32F2F' : '#D1D5DB' }}
@@ -228,23 +204,22 @@ function SelectorCliente({
             {open && clientes && clientes.length > 0 && (
               <div style={{
                 position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
-                background: '#fff', border: '1px solid #D1D5DB', borderRadius: 10,
-                boxShadow: '0 8px 24px rgba(0,0,0,0.12)', maxHeight: 200, overflowY: 'auto',
-                marginTop: 4,
+                background: '#fff', border: '0.5px solid #D1D5DB', borderRadius: 8,
+                boxShadow: '0 8px 24px rgba(0,0,0,0.12)', maxHeight: 200, overflowY: 'auto', marginTop: 4,
               }}>
                 {clientes.slice(0, 8).map(c => (
                   <button
                     key={c.id} type="button"
                     onClick={() => { onChange(c.id, c.tipo_cliente, c.direccion ?? ''); setQ(c.nombre); setOpen(false) }}
                     style={{
-                      width: '100%', textAlign: 'left', padding: '10px 14px',
+                      width: '100%', textAlign: 'left', padding: '8px 12px',
                       background: 'none', border: 'none', cursor: 'pointer', display: 'block',
-                      borderBottom: '1px solid #F4F6F8',
+                      borderBottom: '0.5px solid #F4F6F8',
                     }}
                   >
-                    <span style={{ fontWeight: 500, fontSize: 14 }}>{c.nombre}</span>
+                    <span style={{ fontWeight: 500, fontSize: 13 }}>{c.nombre}</span>
                     <span style={{
-                      marginLeft: 8, fontSize: 10, fontWeight: 700,
+                      marginLeft: 8, fontSize: 9, fontWeight: 700,
                       background: c.tipo_cliente === 'mayorista' ? '#E8F4FF' : '#F4F6F8',
                       color:      c.tipo_cliente === 'mayorista' ? '#1B9ED6'  : '#4A5568',
                       padding: '1px 6px', borderRadius: 99,
@@ -258,15 +233,14 @@ function SelectorCliente({
           </div>
 
           <button type="button" onClick={() => { setMiniOpen(v => !v); setMiniErr('') }}
-            style={{ fontSize: 12, color: '#1B9ED6', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: '4px 0', alignSelf: 'flex-start' }}>
+            style={{ fontSize: 12, color: '#1B9ED6', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: '2px 0', alignSelf: 'flex-start' }}>
             {miniOpen ? '− Cerrar' : '+ Nuevo cliente'}
           </button>
 
           <div style={{ overflow: 'hidden', maxHeight: miniOpen ? 600 : 0, transition: 'max-height 0.2s ease' }}>
             <div style={{
-              background: '#E8F6FC', borderRadius: 12, padding: 14,
-              border: '0.5px solid #D1D5DB', display: 'flex', flexDirection: 'column', gap: 10,
-              marginTop: 4,
+              background: '#E8F6FC', borderRadius: 8, padding: 12,
+              border: '0.5px solid #D1D5DB', display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4,
             }}>
               <FloatInput label="Nombre *"  value={miniNombre} onChange={e => setMiniNombre(e.target.value)} />
               <FloatInput label="Teléfono"  value={miniTel}    onChange={e => setMiniTel(e.target.value)}    type="tel" inputMode="tel" />
@@ -276,13 +250,13 @@ function SelectorCliente({
                 {(['minorista', 'mayorista'] as const).map(t => (
                   <button key={t} type="button" onClick={() => setMiniTipo(t)}
                     style={{
-                      flex: 1, padding: '10px', borderRadius: 8, fontSize: 13, fontWeight: 600,
-                      border: `1.5px solid ${miniTipo === t ? '#0D5C8A' : '#D1D5DB'}`,
-                      background: miniTipo === t ? '#E8F4FF' : '#fff',
-                      color: miniTipo === t ? '#0D5C8A' : '#4A5568',
+                      flex: 1, height: 34, borderRadius: 8, fontSize: 12, fontWeight: 600,
+                      border: `0.5px solid ${miniTipo === t ? '#0D5C8A' : '#D1D5DB'}`,
+                      background: miniTipo === t ? '#0D5C8A' : '#fff',
+                      color: miniTipo === t ? '#fff' : '#4A5568',
                       cursor: 'pointer',
                     }}>
-                    {t === 'minorista' ? 'Minorista' : 'Mayorista'}
+                    {t === 'minorista' ? 'Min.' : 'May.'}
                   </button>
                 ))}
               </div>
@@ -294,14 +268,14 @@ function SelectorCliente({
                   style={{
                     flex: 1,
                     background: crearCliente.isPending ? 'rgba(13,92,138,0.5)' : '#0D5C8A',
-                    color: '#fff', border: 'none', borderRadius: 10,
-                    height: 48, fontSize: 14, fontWeight: 600,
+                    color: '#fff', border: 'none', borderRadius: 8,
+                    height: 40, fontSize: 13, fontWeight: 600,
                     cursor: crearCliente.isPending ? 'not-allowed' : 'pointer',
                   }}>
                   {crearCliente.isPending ? 'Guardando…' : 'Guardar cliente'}
                 </button>
                 <button type="button" onClick={cancelarMini}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#4A5568', fontSize: 14, padding: '10px', whiteSpace: 'nowrap' }}>
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#4A5568', fontSize: 13, padding: '8px', whiteSpace: 'nowrap' }}>
                   Cancelar
                 </button>
               </div>
@@ -334,12 +308,8 @@ function ItemCard({ index, watch, onEdit, onRemove }: {
   return (
     <div
       style={{
-        background:   '#fff',
-        border:       '0.5px solid #D1D5DB',
-        borderRadius: 10,
-        padding:      '10px 14px',
-        cursor:       'pointer',
-        animation:    'fadeSlideIn 0.18s ease',
+        background: '#F9FAFB', border: '0.5px solid #D1D5DB', borderRadius: 8,
+        padding: '8px 12px', cursor: 'pointer', animation: 'fadeSlideIn 0.18s ease',
       }}
       onClick={onEdit}
       role="button"
@@ -348,47 +318,36 @@ function ItemCard({ index, watch, onEdit, onRemove }: {
       aria-label={`Editar ${nombre || 'ítem'}`}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ fontWeight: 600, fontSize: 13, color: '#1A2B3C', flex: 1 }}>
+        <span style={{ fontWeight: 500, fontSize: 12, color: '#1A2B3C', flex: 1 }}>
           {nombre || '—'}
         </span>
+        {bidonNuevo && (
+          <span style={{ fontSize: 9, fontWeight: 700, background: '#FFF3E0', color: '#E65100', padding: '1px 5px', borderRadius: 99, flexShrink: 0 }}>
+            BIDÓN NUEVO
+          </span>
+        )}
         {presentacion && (
-          <span style={{
-            fontSize: 9, fontWeight: 700, background: '#F4F6F8', color: '#4A5568',
-            padding: '1px 6px', borderRadius: 99, flexShrink: 0,
-          }}>
+          <span style={{ fontSize: 9, background: '#F4F6F8', color: '#4A5568', padding: '1px 5px', borderRadius: 99, flexShrink: 0 }}>
             {presentacion}L
           </span>
         )}
-        <span style={{ fontSize: 13, fontWeight: 700, color: '#0D5C8A', flexShrink: 0 }}>
+        <span style={{ fontSize: 13, fontWeight: 500, color: '#0D5C8A', flexShrink: 0 }}>
           ${subtotal.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
         </span>
         <button
           type="button"
           onClick={e => { e.stopPropagation(); onRemove() }}
           aria-label={`Eliminar ${nombre || 'ítem'}`}
-          style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            color: '#9CA3AF', padding: 4, flexShrink: 0, lineHeight: 0,
-          }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#D1D5DB', padding: 2, flexShrink: 0, lineHeight: 0, width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4 }}
           onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#D32F2F' }}
-          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#9CA3AF' }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#D1D5DB' }}
         >
           <X size={14} />
         </button>
       </div>
-      <div style={{ fontSize: 11, color: '#4A5568', marginTop: 2 }}>
+      <div style={{ fontSize: 10, color: '#4A5568', marginTop: 2 }}>
         x{cantidad} · ${Number(precioUnitario).toLocaleString('es-AR', { minimumFractionDigits: 2 })} c/u
       </div>
-      {bidonNuevo && (
-        <div style={{ marginTop: 4 }}>
-          <span style={{
-            fontSize: 9, fontWeight: 700, background: '#FFF3E0', color: '#F57C00',
-            padding: '1px 6px', borderRadius: 99,
-          }}>
-            BIDÓN NUEVO
-          </span>
-        </div>
-      )}
     </div>
   )
 }
@@ -396,13 +355,11 @@ function ItemCard({ index, watch, onEdit, onRemove }: {
 // ─── Formulario inline de ítem (editar o agregar) ────────────────────────────
 
 interface ItemFormInlineProps {
-  // modo edición: index ≥ 0 + RHF props
   index?:    number
   control?:  ReturnType<typeof useForm<FormData>>['control']
   register?: ReturnType<typeof useForm<FormData>>['register']
   watch?:    ReturnType<typeof useForm<FormData>>['watch']
   setValue?: ReturnType<typeof useForm<FormData>>['setValue']
-  // modo agregar: local state
   productos:  (Producto & { categoriaNombre?: string })[]
   tipoPrecio: 'minorista' | 'mayorista'
   onConfirm:  (item?: {
@@ -424,7 +381,6 @@ function ItemFormInline({
 }: ItemFormInlineProps) {
   const isEdit = index !== undefined && index >= 0
 
-  // Estado local para modo "agregar nuevo"
   const [lProdId,  setLProdId]  = useState('')
   const [lCant,    setLCant]    = useState('1')
   const [lPrecio,  setLPrecio]  = useState('')
@@ -432,7 +388,6 @@ function ItemFormInline({
   const [lBidon,   setLBidon]   = useState(false)
   const [lErr,     setLErr]     = useState('')
 
-  // Valores para modo edición
   const eProducId   = isEdit ? watch?.(`items.${index!}.productoId`)       : lProdId
   const eCant       = isEdit ? watch?.(`items.${index!}.cantidad`)          : lCant
   const ePrecio     = isEdit ? watch?.(`items.${index!}.precioUnitario`)    : lPrecio
@@ -441,7 +396,6 @@ function ItemFormInline({
 
   const productoSel = productos.find(p => p.id === eProducId)
 
-  // Cargar precio al seleccionar producto
   useEffect(() => {
     if (!productoSel) return
     const precio = String(tipoPrecio === 'mayorista' ? productoSel.precio_mayorista : productoSel.precio_minorista)
@@ -466,10 +420,7 @@ function ItemFormInline({
     Number(precioActual) !== Number(ePrecRef)
 
   const handleConfirm = () => {
-    if (isEdit) {
-      onConfirm()
-      return
-    }
+    if (isEdit) { onConfirm(); return }
     if (!lProdId) { setLErr('Seleccioná un producto'); return }
     if (!lCant || !/^\d+(\.\d+)?$/.test(lCant)) { setLErr('Cantidad inválida'); return }
     if (!lPrecio || !/^\d+(\.\d{0,2})?$/.test(lPrecio)) { setLErr('Precio inválido'); return }
@@ -486,27 +437,22 @@ function ItemFormInline({
   }
 
   const selectStyle: React.CSSProperties = {
-    width: '100%', height: 48, padding: '0 36px 0 14px',
-    border: '0.5px solid #D1D5DB', borderRadius: 10,
-    fontSize: 16, fontFamily: 'Inter, sans-serif',
+    width: '100%', padding: '0 28px 0 12px',
+    border: '0.5px solid #D1D5DB', borderRadius: 8,
+    fontFamily: 'Inter, sans-serif',
     background: '#fff', appearance: 'none', outline: 'none',
     cursor: 'pointer', color: '#1A2B3C', boxSizing: 'border-box',
   }
 
   return (
     <div style={{
-      background:   '#F9FAFB',
-      borderRadius: 10,
-      padding:      14,
-      border:       '0.5px solid #D1D5DB',
-      display:      'flex',
-      flexDirection:'column',
-      gap:          10,
-      animation:    'fadeSlideIn 0.18s ease',
+      background: '#F4F6F8', borderRadius: 8, padding: 12,
+      border: '0.5px solid #D1D5DB', display: 'flex', flexDirection: 'column',
+      gap: 10, animation: 'fadeSlideIn 0.18s ease', marginTop: 4,
     }}>
       {/* Selector de producto */}
       <div>
-        <label style={{ fontSize: 10, fontWeight: 500, color: '#4A5568', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>
+        <label style={{ fontSize: 10, fontWeight: 500, color: '#4A5568', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 5 }}>
           Producto
         </label>
         <div style={{ position: 'relative' }}>
@@ -516,7 +462,7 @@ function ItemFormInline({
               control={control}
               render={({ field, fieldState }) => (
                 <>
-                  <select {...field} style={{ ...selectStyle, borderColor: fieldState.error ? '#D32F2F' : '#D1D5DB' }}>
+                  <select {...field} className="fi-input" style={{ ...selectStyle, borderColor: fieldState.error ? '#D32F2F' : '#D1D5DB' }}>
                     <option value="">Seleccioná producto…</option>
                     {productos.filter(p => p.activo).map(p => (
                       <option key={p.id} value={p.id}>
@@ -534,6 +480,7 @@ function ItemFormInline({
             <select
               value={lProdId}
               onChange={e => { setLProdId(e.target.value); setLErr('') }}
+              className="fi-input"
               style={selectStyle}
             >
               <option value="">Seleccioná producto…</option>
@@ -544,11 +491,11 @@ function ItemFormInline({
               ))}
             </select>
           )}
-          <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#4A5568', fontSize: 11 }}>▼</span>
+          <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#4A5568', fontSize: 10 }}>▼</span>
         </div>
       </div>
 
-      {/* Grid cantidad + precio + subtotal */}
+      {/* Cantidad + precio */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
         {isEdit && register && index !== undefined ? (
           <>
@@ -557,37 +504,20 @@ function ItemFormInline({
               label="Precio unit."
               {...register(`items.${index}.precioUnitario`)}
               inputMode="decimal"
-              hint={
-                precioDesact
-                  ? `Precio actual: $${Number(precioActual).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`
-                  : undefined
-              }
+              hint={precioDesact ? `Actual: $${Number(precioActual).toLocaleString('es-AR', { minimumFractionDigits: 2 })}` : undefined}
             />
           </>
         ) : (
           <>
-            <FloatInput
-              label="Cantidad"
-              value={lCant}
-              onChange={e => setLCant(e.target.value)}
-              inputMode="decimal"
-            />
-            <FloatInput
-              label="Precio unit."
-              value={lPrecio}
-              onChange={e => setLPrecio(e.target.value)}
-              inputMode="decimal"
-            />
+            <FloatInput label="Cantidad"    value={lCant}   onChange={e => setLCant(e.target.value)}   inputMode="decimal" />
+            <FloatInput label="Precio unit." value={lPrecio} onChange={e => setLPrecio(e.target.value)} inputMode="decimal" />
           </>
         )}
       </div>
 
-      {/* Alerta precio desactualizado (modo edición) */}
+      {/* Alerta precio desactualizado */}
       {isEdit && precioDesact && setValue && index !== undefined && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 6, fontSize: 11,
-          color: '#F57C00', background: '#FFF3E0', padding: '6px 10px', borderRadius: 6,
-        }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#F57C00', background: '#FFF3E0', padding: '6px 10px', borderRadius: 6 }}>
           <AlertTriangle size={11} />
           Precio cambió a ${Number(precioActual).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
           <button type="button"
@@ -600,45 +530,29 @@ function ItemFormInline({
 
       {/* Toggle bidón nuevo */}
       {isEdit && setValue && index !== undefined ? (
-        <ToggleSwitch
-          label="Bidón nuevo"
-          value={eBidon ?? false}
-          onChange={v => setValue(`items.${index!}.bidonNuevo`, v)}
-        />
+        <ToggleSwitch label="Bidón nuevo" value={eBidon ?? false} onChange={v => setValue(`items.${index!}.bidonNuevo`, v)} />
       ) : (
-        <ToggleSwitch
-          label="Bidón nuevo"
-          value={lBidon}
-          onChange={setLBidon}
-        />
+        <ToggleSwitch label="Bidón nuevo" value={lBidon} onChange={setLBidon} />
       )}
 
       {/* Subtotal */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ fontSize: 12, color: '#4A5568' }}>Subtotal</span>
-        <span style={{ fontSize: 14, fontWeight: 700, color: '#0D5C8A' }}>
+        <span style={{ fontSize: 13, fontWeight: 500, color: '#0D5C8A' }}>
           ${subtotal.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
         </span>
       </div>
 
-      {lErr && (
-        <span style={{ color: '#D32F2F', fontSize: 11 }}>{lErr}</span>
-      )}
+      {lErr && <span style={{ color: '#D32F2F', fontSize: 11 }}>{lErr}</span>}
 
       {/* Acciones */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingTop: 2 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <button type="button" onClick={handleConfirm}
-          style={{
-            flex: 1, background: '#0D5C8A', color: '#fff', border: 'none',
-            borderRadius: 10, height: 40, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-          }}>
+          style={{ flex: 1, background: '#0D5C8A', color: '#fff', border: 'none', borderRadius: 8, height: 36, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
           {confirmLabel}
         </button>
         <button type="button" onClick={onCancel}
-          style={{
-            background: 'none', border: 'none', color: '#4A5568',
-            fontSize: 13, cursor: 'pointer', padding: '8px 12px', whiteSpace: 'nowrap',
-          }}>
+          style={{ background: 'none', border: 'none', color: '#4A5568', fontSize: 12, cursor: 'pointer', padding: '6px 10px', whiteSpace: 'nowrap' }}>
           Cancelar
         </button>
       </div>
@@ -666,12 +580,14 @@ export function DrawerPedido({ open, onClose, pedido, onSaved }: Props) {
 
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null)
   const [addingNew,   setAddingNew]   = useState(false)
+  const [notasOpen,   setNotasOpen]   = useState(false)
 
   useEffect(() => {
     if (!open) return
     reset(buildDefaults(pedido))
     setExpandedIdx(null)
     setAddingNew(false)
+    setNotasOpen(false)
   }, [open, pedido])
 
   const tipoPrecio  = watch('tipoPrecio')
@@ -760,11 +676,11 @@ export function DrawerPedido({ open, onClose, pedido, onSaved }: Props) {
         onClick={handleSubmit(d => submit(d, 'confirmar'))}
         disabled={saving}
         style={{
-          background:   saving ? 'rgba(13,92,138,0.5)' : '#0D5C8A',
-          color:        '#fff', border: 'none', borderRadius: 10,
-          height:       48, fontSize: 15, fontWeight: 700,
-          cursor:       saving ? 'not-allowed' : 'pointer', width: '100%',
-          display:      'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          background: saving ? 'rgba(13,92,138,0.5)' : '#0D5C8A',
+          color: '#fff', border: 'none', borderRadius: 10,
+          height: 44, fontSize: 14, fontWeight: 700,
+          cursor: saving ? 'not-allowed' : 'pointer', width: '100%',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
         }}
       >
         {saving
@@ -778,10 +694,10 @@ export function DrawerPedido({ open, onClose, pedido, onSaved }: Props) {
           onClick={handleSubmit(d => submit(d, 'borrador'))}
           disabled={saving}
           style={{
-            background:   'transparent', color: '#0D5C8A',
-            border:       '0.5px solid #0D5C8A', borderRadius: 10,
-            height:       48, fontSize: 14, fontWeight: 600,
-            cursor:       saving ? 'not-allowed' : 'pointer', width: '100%',
+            background: 'transparent', color: '#0D5C8A',
+            border: '0.5px solid #0D5C8A', borderRadius: 10,
+            height: 38, fontSize: 13, fontWeight: 600,
+            cursor: saving ? 'not-allowed' : 'pointer', width: '100%',
           }}
         >
           Guardar borrador
@@ -801,81 +717,67 @@ export function DrawerPedido({ open, onClose, pedido, onSaved }: Props) {
     >
       <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
 
-      {!canEdit && (
-        <div style={{
-          background: '#FFF3E0', border: '1px solid #F57C00', borderRadius: 10,
-          padding: '10px 14px', fontSize: 13, color: '#F57C00', marginBottom: 20,
-        }}>
-          Este pedido está en estado <strong>{pedido?.estado}</strong> y no se puede editar.
-        </div>
-      )}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        {!canEdit && (
+          <div style={{
+            background: '#FFF3E0', border: '1px solid #F57C00', borderRadius: 8,
+            padding: '10px 12px', fontSize: 13, color: '#F57C00',
+          }}>
+            Este pedido está en estado <strong>{pedido?.estado}</strong> y no se puede editar.
+          </div>
+        )}
 
-        {/* ── SECCIÓN 1 — Cliente ─────────────────────────────────────────── */}
-        <Controller
-          name="clienteId"
-          control={control}
-          render={({ field, fieldState }) => (
-            <SelectorCliente
-              value={field.value}
-              error={fieldState.error?.message}
-              onChange={(id, tipo, dir) => {
-                field.onChange(id)
-                if (id) {
-                  setValue('tipoPrecio', tipo)
-                  setValue('direccionEntrega', dir)
-                }
-              }}
-            />
-          )}
-        />
-
-        <ButtonGroup
-          label="Tipo de precio"
-          value={tipoPrecio}
-          onChange={v => setValue('tipoPrecio', v as 'minorista' | 'mayorista')}
-          options={[
-            { value: 'minorista', label: 'Minorista' },
-            { value: 'mayorista', label: 'Mayorista', color: '#1B9ED6' },
-          ]}
-        />
-
-        {/* ── SECCIÓN 2 — Fecha y detalles ───────────────────────────────── */}
+        {/* ── BLOQUE 1 — Cliente ──────────────────────────────────────────────── */}
         <div>
-          <SectionHeader num="2" title="Fecha y detalles" />
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <FloatInput
-              label="Fecha de producción *"
-              type="date"
-              error={errors.fechaProduccion?.message}
-              {...register('fechaProduccion')}
-            />
-            <FloatInput label="Dirección entrega" {...register('direccionEntrega')} />
-          </div>
-          <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <FloatInput
-              label="Notas para producción"
-              as="textarea"
-              rows={2}
-              hint="Visible en el área de producción"
-              {...register('notasProduccion')}
-            />
-            <FloatInput
-              label="Notas internas (solo admin)"
-              as="textarea"
-              rows={2}
-              hint="Solo visible para administración"
-              {...register('notasInternas')}
-            />
-          </div>
+          <SecLabel label="Cliente" />
+          <Controller
+            name="clienteId"
+            control={control}
+            render={({ field, fieldState }) => (
+              <SelectorCliente
+                value={field.value}
+                error={fieldState.error?.message}
+                onChange={(id, tipo, dir) => {
+                  field.onChange(id)
+                  if (id) {
+                    setValue('tipoPrecio', tipo)
+                    setValue('direccionEntrega', dir)
+                  }
+                }}
+              />
+            )}
+          />
         </div>
 
-        {/* ── SECCIÓN 3 — Productos ───────────────────────────────────────── */}
+        <Divider />
+
+        {/* ── BLOQUE 2 — Tipo de precio + Fecha ──────────────────────────────── */}
+        <div className="form-grid-2">
+          <ButtonGroup
+            label="Tipo de precio"
+            compact
+            value={tipoPrecio}
+            onChange={v => setValue('tipoPrecio', v as 'minorista' | 'mayorista')}
+            options={[
+              { value: 'minorista', label: 'Min.' },
+              { value: 'mayorista', label: 'May.', color: '#1B9ED6' },
+            ]}
+          />
+          <FloatInput
+            label="Fecha de producción *"
+            type="date"
+            error={errors.fechaProduccion?.message}
+            {...register('fechaProduccion')}
+          />
+        </div>
+
+        <Divider />
+
+        {/* ── BLOQUE 3 — Productos ────────────────────────────────────────────── */}
         <div>
-          <SectionHeader
-            num="3"
-            title="Productos"
+          <SecLabel
+            label="Productos"
             badge={fields.length > 0 ? `${fields.length} ítem${fields.length !== 1 ? 's' : ''}` : undefined}
           />
 
@@ -889,26 +791,24 @@ export function DrawerPedido({ open, onClose, pedido, onSaved }: Props) {
             {fields.length === 0 && !addingNew && (
               <button type="button" onClick={handleAgregarNuevo}
                 style={{
-                  background: '#F4F6F8', border: '2px dashed #D1D5DB', borderRadius: 10,
-                  padding: '24px', cursor: 'pointer', color: '#4A5568',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 14,
+                  background: '#F4F6F8', border: '1.5px dashed #D1D5DB', borderRadius: 8,
+                  padding: '20px', cursor: 'pointer', color: '#4A5568',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 13,
                   width: '100%',
                 }}>
-                <Package size={18} /> Agregar primer producto
+                <Package size={16} /> Agregar primer producto
               </button>
             )}
 
             {fields.map((field, i) => (
               expandedIdx === i ? (
                 <div key={field.id} style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                  {/* Header de item expandido */}
                   <div style={{
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    padding: '8px 14px',
-                    background: '#E8F4FF', borderRadius: '10px 10px 0 0',
+                    display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px',
+                    background: '#E8F4FF', borderRadius: '8px 8px 0 0',
                     border: '0.5px solid #1B9ED6', borderBottom: 'none',
                   }}>
-                    <ChevronUp size={14} color="#1B9ED6" />
+                    <ChevronUp size={13} color="#1B9ED6" />
                     <span style={{ fontSize: 12, fontWeight: 600, color: '#1B9ED6', flex: 1 }}>
                       {watch(`items.${i}.productoNombre`) || 'Ítem'}
                     </span>
@@ -920,10 +820,10 @@ export function DrawerPedido({ open, onClose, pedido, onSaved }: Props) {
                       onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#D32F2F' }}
                       onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#9CA3AF' }}
                     >
-                      <X size={14} />
+                      <X size={13} />
                     </button>
                   </div>
-                  <div style={{ border: '0.5px solid #1B9ED6', borderTop: 'none', borderRadius: '0 0 10px 10px', overflow: 'hidden' }}>
+                  <div style={{ border: '0.5px solid #1B9ED6', borderTop: 'none', borderRadius: '0 0 8px 8px', overflow: 'hidden' }}>
                     <ItemFormInline
                       index={i}
                       control={control}
@@ -949,7 +849,6 @@ export function DrawerPedido({ open, onClose, pedido, onSaved }: Props) {
               )
             ))}
 
-            {/* Formulario inline de agregar (siempre al fondo) */}
             {addingNew ? (
               <ItemFormInline
                 productos={productos ?? []}
@@ -961,79 +860,121 @@ export function DrawerPedido({ open, onClose, pedido, onSaved }: Props) {
             ) : fields.length > 0 && (
               <button type="button" onClick={handleAgregarNuevo}
                 style={{
-                  background: '#F4F6F8', border: '1px dashed #1B9ED6', borderRadius: 10,
-                  padding: '10px', cursor: 'pointer', width: '100%',
-                  color: '#1B9ED6', fontSize: 13, fontWeight: 600,
+                  background: 'transparent', border: '0.5px dashed #D1D5DB', borderRadius: 8,
+                  height: 36, cursor: 'pointer', width: '100%',
+                  color: '#4A5568', fontSize: 12, fontWeight: 400,
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                  marginTop: 2,
-                }}>
+                  transition: 'all 0.15s',
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#1B9ED6'; (e.currentTarget as HTMLButtonElement).style.color = '#1B9ED6'; (e.currentTarget as HTMLButtonElement).style.background = '#F0F9FF' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#D1D5DB'; (e.currentTarget as HTMLButtonElement).style.color = '#4A5568'; (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
+              >
                 + Agregar producto
               </button>
             )}
           </div>
         </div>
 
-        {/* ── SECCIÓN 4 — Totales ─────────────────────────────────────────── */}
-        <div>
-          <SectionHeader num="4" title="Totales" />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <FloatInput
-              label="Costo de envío"
-              {...register('costoEnvio')}
-              inputMode="decimal"
-              style={{ textAlign: 'right' } as React.CSSProperties}
-            />
+        <Divider />
 
-            {/* Desglose */}
-            <div style={{
-              background: '#F9FAFB', borderRadius: 10,
-              padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 6,
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#4A5568' }}>
-                <span>Subtotal productos</span>
-                <span>${subtotalProductos.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
-              </div>
-              {(Number(costoEnvio) || 0) > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#4A5568' }}>
-                  <span>+ Costo de envío</span>
-                  <span>${(Number(costoEnvio) || 0).toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
-                </div>
-              )}
-              <div style={{ height: '0.5px', background: '#D1D5DB', margin: '2px 0' }} />
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 14, fontWeight: 700, color: '#1A2B3C' }}>Total</span>
-                <span style={{ fontSize: 22, fontWeight: 900, color: totalEditado ? '#F57C00' : '#0D5C8A', letterSpacing: -1 }}>
-                  ${totalMostrado.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
-                </span>
-              </div>
+        {/* ── BLOQUE 4 — Totales ──────────────────────────────────────────────── */}
+        <div>
+          <div style={{ background: '#F4F6F8', borderRadius: 8, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {/* Subtotal */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 12, color: '#4A5568' }}>Subtotal</span>
+              <span style={{ fontSize: 12, color: '#4A5568' }}>
+                ${subtotalProductos.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+              </span>
             </div>
 
-            {/* Total manual */}
-            <FloatInput
-              label="Total manual (dejar vacío para usar calculado)"
-              {...register('totalManual')}
-              inputMode="decimal"
-              style={{ textAlign: 'right' } as React.CSSProperties}
-              hint={
-                totalEditado
-                  ? `Total modificado. Calculado: $${totalCalculado.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`
-                  : undefined
-              }
-            />
-            {totalEditado && (
-              <button
-                type="button"
-                onClick={() => setValue('totalManual', '')}
+            {/* Envío con input inline */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 12, color: '#4A5568' }}>Envío</span>
+              <input
+                {...register('costoEnvio')}
+                inputMode="decimal"
+                placeholder="0"
                 style={{
-                  alignSelf: 'flex-start', background: 'none', border: 'none',
-                  color: '#1B9ED6', fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: 0,
+                  width: 80, height: 28, border: '0.5px solid #D1D5DB', borderRadius: 6,
+                  padding: '0 8px', fontSize: 12, textAlign: 'right',
+                  fontFamily: 'Inter, sans-serif', outline: 'none', background: '#fff', color: '#1A2B3C',
                 }}
-              >
-                Restaurar calculado
-              </button>
+                onFocus={e => { e.currentTarget.style.borderColor = '#1B9ED6' }}
+                onBlur={e  => { e.currentTarget.style.borderColor = '#D1D5DB' }}
+              />
+            </div>
+
+            <div style={{ height: '0.5px', background: '#D1D5DB' }} />
+
+            {/* Total */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 13, fontWeight: 500, color: '#1A2B3C' }}>Total</span>
+              <span style={{ fontSize: 16, fontWeight: 600, color: totalEditado ? '#F57C00' : '#0D5C8A', letterSpacing: '-0.3px' }}>
+                ${totalMostrado.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+
+            {totalEditado && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11, color: '#F57C00' }}>
+                <span>Modificado · calculado: ${totalCalculado.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
+                <button type="button" onClick={() => setValue('totalManual', '')}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1B9ED6', fontSize: 11, fontWeight: 600, textDecoration: 'underline', padding: 0 }}>
+                  Restaurar
+                </button>
+              </div>
             )}
           </div>
+
+          {/* Total manual — campo oculto salvo que quieran override */}
+          {!totalEditado && (
+            <div style={{ marginTop: 6 }}>
+              <FloatInput
+                label="Total manual (opcional — deja vacío para calculado)"
+                {...register('totalManual')}
+                inputMode="decimal"
+                style={{ textAlign: 'right' } as React.CSSProperties}
+              />
+            </div>
+          )}
         </div>
+
+        {/* ── BLOQUE 5 — Notas (colapsado) ────────────────────────────────────── */}
+        <div style={{ border: '0.5px solid #D1D5DB', borderRadius: 8, overflow: 'hidden' }}>
+          <button
+            type="button"
+            onClick={() => setNotasOpen(v => !v)}
+            style={{
+              width: '100%', padding: '9px 12px', background: 'none', border: 'none',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            }}
+          >
+            <span style={{ fontSize: 13, color: '#1A2B3C' }}>
+              Notas y detalles <span style={{ color: '#9CA3AF' }}>(opcional)</span>
+            </span>
+            <ChevronDown size={14} color="#4A5568" style={{ transform: notasOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+          </button>
+          <div style={{ display: 'grid', gridTemplateRows: notasOpen ? '1fr' : '0fr', transition: 'grid-template-rows 0.2s ease' }}>
+            <div style={{ overflow: 'hidden' }}>
+              <div style={{ padding: '0 12px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <FloatInput label="Dirección de entrega" {...register('direccionEntrega')} />
+                <FloatInput
+                  label="Notas para producción"
+                  as="textarea"
+                  hint="Visible en el área de producción"
+                  {...register('notasProduccion')}
+                />
+                <FloatInput
+                  label="Notas internas (solo admin)"
+                  as="textarea"
+                  hint="Solo visible para administración"
+                  {...register('notasInternas')}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </Drawer>
   )

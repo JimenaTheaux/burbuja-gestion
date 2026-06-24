@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Search, Edit2, Users } from 'lucide-react'
+import { Plus, Search, Edit2, Users, ChevronDown } from 'lucide-react'
 import { Skeleton }       from '@/components/ui/skeleton'
 import { Drawer }         from '@/components/common/Drawer'
 import { FloatInput }     from '@/components/common/FloatInput'
@@ -40,6 +40,7 @@ function ClienteDrawer({ open, onClose, cliente, onSaved }: DrawerProps) {
   const crear  = useCrearCliente()
   const editar = useEditarCliente()
   const saving = crear.isPending || editar.isPending
+  const [notasOpen, setNotasOpen] = useState(false)
 
   const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -94,7 +95,7 @@ function ClienteDrawer({ open, onClose, cliente, onSaved }: DrawerProps) {
         style={{
           background: saving ? 'rgba(13,92,138,0.5)' : '#0D5C8A',
           color: '#fff', border: 'none', borderRadius: 10,
-          height: 48, fontSize: 15, fontWeight: 600,
+          height: 44, fontSize: 14, fontWeight: 600,
           cursor: saving ? 'not-allowed' : 'pointer', width: '100%',
         }}
       >
@@ -106,7 +107,7 @@ function ClienteDrawer({ open, onClose, cliente, onSaved }: DrawerProps) {
         className="btn-press"
         style={{
           background: 'transparent', color: '#4A5568',
-          border: 'none', height: 40, fontSize: 14,
+          border: 'none', height: 36, fontSize: 13,
           cursor: 'pointer', width: '100%',
         }}
       >
@@ -125,7 +126,7 @@ function ClienteDrawer({ open, onClose, cliente, onSaved }: DrawerProps) {
       <form
         id="cliente-form"
         onSubmit={handleSubmit(onSubmit)}
-        style={{ display: 'flex', flexDirection: 'column', gap: 14 }}
+        style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
       >
         <FloatInput
           label="Nombre *"
@@ -140,27 +141,57 @@ function ClienteDrawer({ open, onClose, cliente, onSaved }: DrawerProps) {
           autoComplete="tel"
           {...register('telefono')}
         />
-        <FloatInput
-          label="Dirección de entrega"
-          autoComplete="street-address"
-          {...register('direccion')}
-        />
 
-        <ButtonGroup
-          label="Tipo de cliente *"
-          value={tipoVal}
-          onChange={v => setValue('tipo_cliente', v, { shouldValidate: true })}
-          error={errors.tipo_cliente?.message}
-          options={[
-            { value: 'minorista', label: 'Minorista' },
-            { value: 'mayorista', label: 'Mayorista', color: '#1B9ED6' },
-          ]}
-        />
+        {/* Dirección + Tipo en grid 2 columnas */}
+        <div className="form-grid-2">
+          <FloatInput
+            label="Dirección de entrega"
+            autoComplete="street-address"
+            {...register('direccion')}
+          />
+          <ButtonGroup
+            label="Tipo *"
+            compact
+            value={tipoVal}
+            onChange={v => setValue('tipo_cliente', v, { shouldValidate: true })}
+            error={errors.tipo_cliente?.message}
+            options={[
+              { value: 'minorista', label: 'Min.' },
+              { value: 'mayorista', label: 'May.', color: '#1B9ED6' },
+            ]}
+          />
+        </div>
 
-        <FloatInput label="Observaciones" {...register('notas')} />
+        {/* Notas colapsado */}
+        <div style={{ border: '0.5px solid #D1D5DB', borderRadius: 8, overflow: 'hidden' }}>
+          <button
+            type="button"
+            onClick={() => setNotasOpen(v => !v)}
+            style={{
+              width: '100%', padding: '9px 12px', background: 'none', border: 'none',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            }}
+          >
+            <span style={{ fontSize: 13, color: '#1A2B3C' }}>
+              Notas <span style={{ color: '#9CA3AF' }}>(opcional)</span>
+            </span>
+            <ChevronDown size={14} color="#4A5568" style={{ transform: notasOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+          </button>
+          <div style={{ display: 'grid', gridTemplateRows: notasOpen ? '1fr' : '0fr', transition: 'grid-template-rows 0.2s ease' }}>
+            <div style={{ overflow: 'hidden' }}>
+              <div style={{ padding: '0 12px 12px' }}>
+                <FloatInput
+                  label="Observaciones"
+                  as="textarea"
+                  {...register('notas')}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
 
         {cliente && (
-          <div style={{ marginTop: 8, paddingTop: 20, borderTop: '1px solid #D1D5DB' }}>
+          <div style={{ paddingTop: 16, borderTop: '0.5px solid #F4F6F8' }}>
             <button
               type="button"
               onClick={async () => {
@@ -173,8 +204,8 @@ function ClienteDrawer({ open, onClose, cliente, onSaved }: DrawerProps) {
                 width: '100%', background: cliente.activo ? '#FDECEA' : '#E8F8F0',
                 color: cliente.activo ? '#D32F2F' : '#2E9E5C',
                 border: `1.5px solid ${cliente.activo ? '#D32F2F' : '#2E9E5C'}`,
-                borderRadius: 10, padding: '12px 20px', minHeight: 44,
-                fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                borderRadius: 10, padding: '10px 20px', minHeight: 40,
+                fontSize: 13, fontWeight: 600, cursor: 'pointer',
               }}
             >
               {cliente.activo ? 'Desactivar cliente' : 'Activar cliente'}

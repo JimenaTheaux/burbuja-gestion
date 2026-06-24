@@ -20,14 +20,13 @@ const LABEL_STYLE: React.CSSProperties = {
   textTransform: 'uppercase',
   letterSpacing: '0.06em',
   display:       'block',
-  marginBottom:  6,
+  marginBottom:  5,
 }
 
 const BASE_INPUT: React.CSSProperties = {
   border:       '0.5px solid #D1D5DB',
-  borderRadius: 10,
+  borderRadius: 8,
   fontFamily:   'Inter, sans-serif',
-  fontSize:     16,   // 16px mínimo — previene zoom automático en iOS
   color:        '#1A2B3C',
   outline:      'none',
   width:        '100%',
@@ -52,6 +51,7 @@ export const FloatInput = forwardRef<HTMLInputElement, FloatInputProps>(
       disabled,
       onFocus: onFocusProp,
       onBlur:  onBlurProp,
+      className: classNameProp,
       ...rest
     },
     ref,
@@ -77,10 +77,10 @@ export const FloatInput = forwardRef<HTMLInputElement, FloatInputProps>(
 
     const isTextarea = asEl === 'textarea'
 
+    // height y fontSize vienen del CSS class fi-input / fi-textarea
     const inputStyle: React.CSSProperties = {
       ...BASE_INPUT,
-      height:     48,
-      padding:    `0 ${rightSlot ? 48 : 14}px`,
+      padding:    `0 ${rightSlot ? 44 : 12}px`,
       borderColor: borderBase,
       background:  disabled ? '#F4F6F8' : '#fff',
       color:       disabled ? '#9CA3AF' : '#1A2B3C',
@@ -90,8 +90,7 @@ export const FloatInput = forwardRef<HTMLInputElement, FloatInputProps>(
 
     const textareaStyle: React.CSSProperties = {
       ...BASE_INPUT,
-      minHeight:   80,
-      padding:     '12px 14px',
+      padding:     '8px 12px',
       resize:      'vertical',
       borderColor: borderBase,
       background:  disabled ? '#F4F6F8' : '#fff',
@@ -110,9 +109,10 @@ export const FloatInput = forwardRef<HTMLInputElement, FloatInputProps>(
             <textarea
               id={inputId}
               name={name}
-              rows={rows ?? 3}
+              rows={rows ?? 2}
               disabled={disabled}
               ref={ref as unknown as React.Ref<HTMLTextAreaElement>}
+              className={`fi-textarea${classNameProp ? ` ${classNameProp}` : ''}`}
               style={textareaStyle}
               onFocus={handleFocus as React.FocusEventHandler<HTMLTextAreaElement>}
               onBlur={handleBlur as React.FocusEventHandler<HTMLTextAreaElement>}
@@ -124,6 +124,7 @@ export const FloatInput = forwardRef<HTMLInputElement, FloatInputProps>(
               name={name}
               disabled={disabled}
               ref={ref}
+              className={`fi-input${classNameProp ? ` ${classNameProp}` : ''}`}
               style={inputStyle}
               onFocus={handleFocus as React.FocusEventHandler<HTMLInputElement>}
               onBlur={handleBlur as React.FocusEventHandler<HTMLInputElement>}
@@ -136,7 +137,7 @@ export const FloatInput = forwardRef<HTMLInputElement, FloatInputProps>(
               style={{
                 position:        'absolute',
                 right:           0, top: 0, bottom: 0,
-                width:           48,
+                width:           44,
                 display:         'flex',
                 alignItems:      'center',
                 justifyContent:  'center',

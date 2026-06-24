@@ -3,12 +3,10 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Plus, Edit2, Settings, Mail } from 'lucide-react'
-import {
-  Sheet, SheetContent, SheetHeader, SheetTitle,
-} from '@/components/ui/sheet'
+import { Drawer }           from '@/components/common/Drawer'
 import { Skeleton }         from '@/components/ui/skeleton'
-import { FloatInput }            from '@/components/common/FloatInput'
-import { ButtonGroup }           from '@/components/common/ButtonGroup'
+import { FloatInput }       from '@/components/common/FloatInput'
+import { ButtonGroup }      from '@/components/common/ButtonGroup'
 import { BadgeRol, BadgeActivo } from '@/components/common/BadgeEstado'
 import { EmptyState }       from '@/components/common/EmptyState'
 import { ToastContainer }   from '@/components/common/ToastContainer'
@@ -74,49 +72,70 @@ function CrearUsuarioDrawer({ open, onClose, onSaved }: CrearDrawerProps) {
     }
   }
 
+  const footer = (
+    <>
+      <button
+        type="submit"
+        form="crear-usuario-form"
+        disabled={saving}
+        className="btn-press"
+        style={{
+          background: saving ? 'rgba(13,92,138,0.5)' : '#0D5C8A', color: '#fff',
+          border: 'none', borderRadius: 10, height: 44, width: '100%',
+          fontSize: 14, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer',
+        }}
+      >
+        {saving ? 'Creando…' : 'Crear usuario'}
+      </button>
+      <button
+        type="button"
+        onClick={onClose}
+        className="btn-press"
+        style={{
+          background: 'transparent', color: '#4A5568', border: 'none',
+          height: 36, width: '100%', fontSize: 13, cursor: 'pointer',
+        }}
+      >
+        Cancelar
+      </button>
+    </>
+  )
+
   return (
-    <Sheet open={open} onOpenChange={v => { if (!v) onClose() }}>
-      <SheetContent side="right">
-        <SheetHeader>
-          <SheetTitle>Nuevo usuario</SheetTitle>
-        </SheetHeader>
-
-        <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 24 }}>
+    <Drawer open={open} onClose={onClose} title="Nuevo usuario" footer={footer}>
+      <form
+        id="crear-usuario-form"
+        onSubmit={handleSubmit(onSubmit)}
+        style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+      >
+        {/* Nombre + Email */}
+        <div className="form-grid-2">
           <FloatInput label="Nombre completo *" error={errors.nombre?.message}   {...register('nombre')} />
-          <FloatInput label="Email *"           error={errors.email?.message}    {...register('email')}    type="email" autoComplete="off" />
-          <FloatInput label="Contraseña inicial *" error={errors.password?.message} {...register('password')} type="password" autoComplete="new-password" />
+          <FloatInput label="Email *"           error={errors.email?.message}    {...register('email')} type="email" autoComplete="off" />
+        </div>
 
-          <ButtonGroup
-            label="Rol *"
-            value={rolVal}
-            onChange={v => setVal('rol', v as CrearForm['rol'], { shouldValidate: true })}
-            error={errors.rol?.message}
-            options={ROL_OPTIONS}
-          />
+        <FloatInput
+          label="Contraseña inicial *"
+          error={errors.password?.message}
+          {...register('password')}
+          type="password"
+          autoComplete="new-password"
+        />
 
-          <p style={{ fontSize: 12, color: '#4A5568', background: '#F4F6F8', borderRadius: 8, padding: '8px 10px', margin: 0 }}>
-            El usuario recibirá sus credenciales. Pedile que cambie la contraseña al ingresar.
-          </p>
+        <ButtonGroup
+          label="Rol *"
+          compact
+          value={rolVal}
+          onChange={v => setVal('rol', v as CrearForm['rol'], { shouldValidate: true })}
+          error={errors.rol?.message}
+          options={ROL_OPTIONS}
+        />
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 }}>
-            <button type="submit" disabled={saving} style={{
-              background: saving ? 'rgba(13,92,138,0.5)' : '#0D5C8A', color: '#fff',
-              border: 'none', borderRadius: 10, padding: '13px 20px', minHeight: 44,
-              fontSize: 15, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer',
-            }}>
-              {saving ? 'Creando…' : 'Crear usuario'}
-            </button>
-            <button type="button" onClick={onClose} style={{
-              background: 'transparent', color: '#0D5C8A', border: '1.5px solid #0D5C8A',
-              borderRadius: 10, padding: '12px 20px', minHeight: 44,
-              fontSize: 15, fontWeight: 600, cursor: 'pointer',
-            }}>
-              Cancelar
-            </button>
-          </div>
-        </form>
-      </SheetContent>
-    </Sheet>
+        <p style={{ fontSize: 12, color: '#4A5568', background: '#F4F6F8', borderRadius: 8, padding: '8px 10px', margin: 0 }}>
+          El usuario recibirá sus credenciales. Pedile que cambie la contraseña al ingresar.
+        </p>
+      </form>
+    </Drawer>
   )
 }
 
@@ -153,81 +172,88 @@ function EditarUsuarioDrawer({ open, onClose, usuario, onSaved, selfId }: Editar
     }
   }
 
+  const footer = usuario ? (
+    <>
+      <button
+        type="submit"
+        form="editar-usuario-form"
+        disabled={saving}
+        className="btn-press"
+        style={{
+          background: saving ? 'rgba(13,92,138,0.5)' : '#0D5C8A', color: '#fff',
+          border: 'none', borderRadius: 10, height: 44, width: '100%',
+          fontSize: 14, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer',
+        }}
+      >
+        {saving ? 'Guardando…' : 'Guardar cambios'}
+      </button>
+      {!isSelf && (
+        <button
+          type="button"
+          onClick={async () => {
+            await editar.mutateAsync({ id: usuario.id, activo: !usuario.activo })
+            onSaved(`Usuario ${!usuario.activo ? 'activado' : 'desactivado'}`)
+            onClose()
+          }}
+          className="btn-press"
+          style={{
+            background: usuario.activo ? '#FDECEA' : '#E8F8F0',
+            color: usuario.activo ? '#D32F2F' : '#2E9E5C',
+            border: `1.5px solid ${usuario.activo ? '#D32F2F' : '#2E9E5C'}`,
+            borderRadius: 10, height: 40, width: '100%',
+            fontSize: 13, fontWeight: 600, cursor: 'pointer',
+          }}
+        >
+          {usuario.activo ? 'Desactivar usuario' : 'Activar usuario'}
+        </button>
+      )}
+      <button
+        type="button"
+        onClick={onClose}
+        className="btn-press"
+        style={{
+          background: 'transparent', color: '#4A5568', border: 'none',
+          height: 36, width: '100%', fontSize: 13, cursor: 'pointer',
+        }}
+      >
+        Cancelar
+      </button>
+    </>
+  ) : undefined
+
   return (
-    <Sheet open={open} onOpenChange={v => { if (!v) onClose() }}>
-      <SheetContent side="right">
-        <SheetHeader>
-          <SheetTitle>Editar usuario</SheetTitle>
-        </SheetHeader>
+    <Drawer open={open} onClose={onClose} title="Editar usuario" footer={footer}>
+      {usuario && (
+        <form
+          id="editar-usuario-form"
+          onSubmit={handleSubmit(onSubmit)}
+          style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 10px', background: '#F4F6F8', borderRadius: 8 }}>
+            <Mail size={13} color="#4A5568" />
+            <span style={{ fontSize: 13, color: '#4A5568' }}>{usuario.email}</span>
+          </div>
 
-        {usuario && (
-          <>
-            <p style={{ fontSize: 13, color: '#4A5568', marginTop: 16, marginBottom: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Mail size={14} /> {usuario.email}
+          <FloatInput label="Nombre *" error={errors.nombre?.message} {...register('nombre')} />
+
+          <ButtonGroup
+            label="Rol *"
+            compact
+            value={rolVal}
+            onChange={v => setVal('rol', v as EditarForm['rol'], { shouldValidate: true })}
+            error={errors.rol?.message}
+            disabled={isSelf}
+            options={ROL_OPTIONS}
+          />
+
+          {isSelf && (
+            <p style={{ fontSize: 12, color: '#F57C00', background: '#FFF3E0', borderRadius: 8, padding: '8px 10px', margin: 0 }}>
+              No podés cambiar tu propio rol.
             </p>
-
-            <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 20 }}>
-              <FloatInput label="Nombre *" error={errors.nombre?.message} {...register('nombre')} />
-
-              <ButtonGroup
-                label="Rol *"
-                value={rolVal}
-                onChange={v => setVal('rol', v as EditarForm['rol'], { shouldValidate: true })}
-                error={errors.rol?.message}
-                disabled={isSelf}
-                options={ROL_OPTIONS}
-              />
-
-              {isSelf && (
-                <p style={{ fontSize: 12, color: '#F57C00', background: '#FFF3E0', borderRadius: 8, padding: '8px 10px', margin: 0 }}>
-                  No podés cambiar tu propio rol.
-                </p>
-              )}
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 }}>
-                <button type="submit" disabled={saving} style={{
-                  background: saving ? 'rgba(13,92,138,0.5)' : '#0D5C8A', color: '#fff',
-                  border: 'none', borderRadius: 10, padding: '13px 20px', minHeight: 44,
-                  fontSize: 15, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer',
-                }}>
-                  {saving ? 'Guardando…' : 'Guardar cambios'}
-                </button>
-                <button type="button" onClick={onClose} style={{
-                  background: 'transparent', color: '#0D5C8A', border: '1.5px solid #0D5C8A',
-                  borderRadius: 10, padding: '12px 20px', minHeight: 44,
-                  fontSize: 15, fontWeight: 600, cursor: 'pointer',
-                }}>
-                  Cancelar
-                </button>
-              </div>
-            </form>
-
-            {/* Activar / desactivar */}
-            {!isSelf && (
-              <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid #D1D5DB' }}>
-                <button
-                  onClick={async () => {
-                    await editar.mutateAsync({ id: usuario.id, activo: !usuario.activo })
-                    onSaved(`Usuario ${!usuario.activo ? 'activado' : 'desactivado'}`)
-                    onClose()
-                  }}
-                  style={{
-                    width: '100%',
-                    background: usuario.activo ? '#FDECEA' : '#E8F8F0',
-                    color: usuario.activo ? '#D32F2F' : '#2E9E5C',
-                    border: `1.5px solid ${usuario.activo ? '#D32F2F' : '#2E9E5C'}`,
-                    borderRadius: 10, padding: '12px 20px', minHeight: 44,
-                    fontSize: 14, fontWeight: 600, cursor: 'pointer',
-                  }}
-                >
-                  {usuario.activo ? 'Desactivar usuario' : 'Activar usuario'}
-                </button>
-              </div>
-            )}
-          </>
-        )}
-      </SheetContent>
-    </Sheet>
+          )}
+        </form>
+      )}
+    </Drawer>
   )
 }
 
@@ -246,7 +272,6 @@ function UsuarioCard({
       boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
       display: 'flex', alignItems: 'center', gap: 14,
     }}>
-      {/* Avatar */}
       <div style={{
         width: 44, height: 44, borderRadius: '50%', background: '#0D5C8A',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
