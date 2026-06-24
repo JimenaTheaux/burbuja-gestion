@@ -352,6 +352,106 @@ function ItemCard({ index, watch, onEdit, onRemove }: {
   )
 }
 
+// ─── Selector de producto con búsqueda ───────────────────────────────────────
+
+function SelectorProducto({
+  value, onChange, productos, error,
+}: {
+  value:     string
+  onChange:  (id: string) => void
+  productos: Producto[]
+  error?:    string
+}) {
+  const [q, setQ]       = useState('')
+  const [open, setOpen] = useState(false)
+
+  const selected = productos.find(p => p.id === value)
+
+  const filtrados = productos.filter(p => p.activo && (
+    !q ||
+    p.nombre.toLowerCase().includes(q.toLowerCase()) ||
+    (p.fragancia ?? '').toLowerCase().includes(q.toLowerCase())
+  ))
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+      {selected ? (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '0 10px 0 12px', background: '#E8F4FF', borderRadius: 8,
+          border: '0.5px solid #1B9ED6', minHeight: 40,
+        }}>
+          <span style={{ fontSize: 13, fontWeight: 500, color: '#1A2B3C', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {selected.nombre}{selected.fragancia ? ` (${selected.fragancia})` : ''}
+            <span style={{ marginLeft: 6, fontSize: 9, background: '#D8EDFF', color: '#0D5C8A', padding: '1px 5px', borderRadius: 99 }}>
+              {selected.presentacion}L
+            </span>
+          </span>
+          <button
+            type="button"
+            onClick={() => { onChange(''); setQ('') }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1B9ED6', fontSize: 11, fontWeight: 600, flexShrink: 0, marginLeft: 8 }}
+          >
+            Cambiar
+          </button>
+        </div>
+      ) : (
+        <div style={{ position: 'relative' }}>
+          <input
+            value={q}
+            onChange={e => { setQ(e.target.value); setOpen(true) }}
+            onFocus={() => setOpen(true)}
+            onBlur={() => setTimeout(() => setOpen(false), 150)}
+            placeholder="Buscar producto…"
+            className="fi-input"
+            style={{
+              width: '100%', padding: '0 12px',
+              border: `0.5px solid ${error ? '#D32F2F' : '#D1D5DB'}`,
+              borderRadius: 8, outline: 0, background: '#fff',
+              fontFamily: 'Inter, sans-serif', boxSizing: 'border-box', color: '#1A2B3C',
+            }}
+            onFocusCapture={e => { e.currentTarget.style.borderColor = '#1B9ED6' }}
+            onBlurCapture={e  => { e.currentTarget.style.borderColor = error ? '#D32F2F' : '#D1D5DB' }}
+          />
+          {open && (
+            <div style={{
+              position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 60,
+              background: '#fff', border: '0.5px solid #D1D5DB', borderRadius: 8,
+              boxShadow: '0 8px 24px rgba(0,0,0,0.12)', maxHeight: 200, overflowY: 'auto', marginTop: 4,
+            }}>
+              {filtrados.length > 0 ? filtrados.slice(0, 12).map(p => (
+                <button
+                  key={p.id} type="button"
+                  onClick={() => { onChange(p.id); setQ(''); setOpen(false) }}
+                  style={{
+                    width: '100%', textAlign: 'left', padding: '8px 12px',
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    borderBottom: '0.5px solid #F4F6F8',
+                  }}
+                >
+                  <span style={{ fontWeight: 500, fontSize: 13, color: '#1A2B3C', flex: 1 }}>
+                    {p.nombre}
+                    {p.fragancia && <span style={{ fontWeight: 400, color: '#4A5568' }}> ({p.fragancia})</span>}
+                  </span>
+                  <span style={{ fontSize: 9, background: '#F4F6F8', color: '#4A5568', padding: '1px 5px', borderRadius: 99, flexShrink: 0 }}>
+                    {p.presentacion}L
+                  </span>
+                </button>
+              )) : (
+                <div style={{ padding: '10px 12px', fontSize: 12, color: '#4A5568' }}>
+                  {q ? 'Sin coincidencias' : 'No hay productos activos'}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+      {error && <span style={{ color: '#D32F2F', fontSize: 11, marginTop: 4, display: 'block' }}>{error}</span>}
+    </div>
+  )
+}
+
 // ─── Formulario inline de ítem (editar o agregar) ────────────────────────────
 
 interface ItemFormInlineProps {
@@ -436,63 +536,38 @@ function ItemFormInline({
     })
   }
 
-  const selectStyle: React.CSSProperties = {
-    width: '100%', padding: '0 28px 0 12px',
-    border: '0.5px solid #D1D5DB', borderRadius: 8,
-    fontFamily: 'Inter, sans-serif',
-    background: '#fff', appearance: 'none', outline: 'none',
-    cursor: 'pointer', color: '#1A2B3C', boxSizing: 'border-box',
-  }
-
   return (
     <div style={{
       background: '#F4F6F8', borderRadius: 8, padding: 12,
       border: '0.5px solid #D1D5DB', display: 'flex', flexDirection: 'column',
       gap: 10, animation: 'fadeSlideIn 0.18s ease', marginTop: 4,
     }}>
-      {/* Selector de producto */}
+      {/* Selector de producto con búsqueda */}
       <div>
         <label style={{ fontSize: 10, fontWeight: 500, color: '#4A5568', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 5 }}>
           Producto
         </label>
-        <div style={{ position: 'relative' }}>
-          {isEdit && control && index !== undefined ? (
-            <Controller
-              name={`items.${index}.productoId`}
-              control={control}
-              render={({ field, fieldState }) => (
-                <>
-                  <select {...field} className="fi-input" style={{ ...selectStyle, borderColor: fieldState.error ? '#D32F2F' : '#D1D5DB' }}>
-                    <option value="">Seleccioná producto…</option>
-                    {productos.filter(p => p.activo).map(p => (
-                      <option key={p.id} value={p.id}>
-                        {p.nombre}{p.fragancia ? ` (${p.fragancia})` : ''} — {p.presentacion}L
-                      </option>
-                    ))}
-                  </select>
-                  {fieldState.error && (
-                    <span style={{ color: '#D32F2F', fontSize: 11, marginTop: 4, display: 'block' }}>{fieldState.error.message}</span>
-                  )}
-                </>
-              )}
-            />
-          ) : (
-            <select
-              value={lProdId}
-              onChange={e => { setLProdId(e.target.value); setLErr('') }}
-              className="fi-input"
-              style={selectStyle}
-            >
-              <option value="">Seleccioná producto…</option>
-              {productos.filter(p => p.activo).map(p => (
-                <option key={p.id} value={p.id}>
-                  {p.nombre}{p.fragancia ? ` (${p.fragancia})` : ''} — {p.presentacion}L
-                </option>
-              ))}
-            </select>
-          )}
-          <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#4A5568', fontSize: 10 }}>▼</span>
-        </div>
+        {isEdit && control && index !== undefined ? (
+          <Controller
+            name={`items.${index}.productoId`}
+            control={control}
+            render={({ field, fieldState }) => (
+              <SelectorProducto
+                value={field.value}
+                onChange={field.onChange}
+                productos={productos}
+                error={fieldState.error?.message}
+              />
+            )}
+          />
+        ) : (
+          <SelectorProducto
+            value={lProdId}
+            onChange={id => { setLProdId(id); setLErr('') }}
+            productos={productos}
+            error={lErr && !lProdId ? lErr : undefined}
+          />
+        )}
       </div>
 
       {/* Cantidad + precio */}
