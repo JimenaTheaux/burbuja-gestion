@@ -2,6 +2,7 @@ import { Outlet, useNavigate } from 'react-router-dom'
 import { Factory, List, LogOut } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { BottomNav }          from './BottomNav'
+import { RefreshBar }         from './RefreshBar'
 import { useAuth }            from '@/hooks/useAuth'
 import { useScrollDirection } from '@/hooks/useScrollDirection'
 
@@ -19,6 +20,7 @@ export function ProduccionLayout() {
 
   return (
     <div style={{ minHeight: '100dvh', background: '#F4F6F8', overflowX: 'hidden' }}>
+      <RefreshBar />
       {/* Topbar — se oculta al scrollear hacia abajo en mobile */}
       <header
         className="topbar-scroll-aware"

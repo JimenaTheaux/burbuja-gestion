@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Chart, registerables, type TooltipItem } from 'chart.js'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { Clock } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -66,7 +66,8 @@ function addDays(dateStr: string, days: number): string {
 // Pedidos por fecha_produccion — para conteos y panel de estados
 function usePedidosPeriodo(inicio: string, fin: string) {
   return useQuery({
-    queryKey: ['pedidos', 'dash-periodo', inicio, fin],
+    queryKey:        ['pedidos', 'dash-periodo', inicio, fin],
+    placeholderData: keepPreviousData,
     queryFn:  async () => {
       const { data, error } = await supabase
         .from('pedidos')
@@ -84,7 +85,8 @@ function usePedidosPeriodo(inicio: string, fin: string) {
 // Cobros por fecha_cobro — para KPIs de dinero
 function useCobrosperiodo(inicio: string, fin: string) {
   return useQuery({
-    queryKey: ['pedidos', 'dash-cobros', inicio, fin],
+    queryKey:        ['pedidos', 'dash-cobros', inicio, fin],
+    placeholderData: keepPreviousData,
     queryFn:  async () => {
       const { data, error } = await supabase
         .from('pedidos')
@@ -111,7 +113,8 @@ type EvolItem = {
 function useEvolucionRango(desde: string, hasta: string) {
   const mesAnteriorDesde = restarUnMes(desde)
   return useQuery({
-    queryKey: ['pedidos', 'dash-evolucion-rango', desde, hasta],
+    queryKey:        ['pedidos', 'dash-evolucion-rango', desde, hasta],
+    placeholderData: keepPreviousData,
     queryFn:  async () => {
       const { data, error } = await supabase
         .from('pedidos')

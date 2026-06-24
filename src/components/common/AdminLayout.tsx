@@ -3,10 +3,11 @@ import {
   LayoutDashboard, ShoppingCart, Users, Package,
 } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
-import { Sidebar }   from './Sidebar'
-import { BottomNav } from './BottomNav'
-import { useSidebar } from '@/hooks/useSidebar'
-import { useAuth }   from '@/hooks/useAuth'
+import { Sidebar }     from './Sidebar'
+import { BottomNav }   from './BottomNav'
+import { RefreshBar }  from './RefreshBar'
+import { useSidebar }  from '@/hooks/useSidebar'
+import { useAuth }     from '@/hooks/useAuth'
 
 const BOTTOM_NAV_ITEMS = [
   { to: '/admin',           icon: LayoutDashboard, label: 'Dashboard', end: true },
@@ -29,6 +30,7 @@ export function AdminLayout() {
 
   return (
     <div style={{ minHeight: '100dvh', background: '#F4F6F8', overflowX: 'hidden' }}>
+      <RefreshBar />
       {/* Sidebar — solo desktop */}
       <div className="hidden md:block">
         <Sidebar />

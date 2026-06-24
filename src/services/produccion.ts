@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import type { EstadoPedido } from '@/types'
 
@@ -93,7 +93,8 @@ const ESTADOS_TERMINALES: EstadoPedido[] = ['cerrado', 'anulado']
 
 export const usePedidosProduccion = (fecha?: string) =>
   useQuery({
-    queryKey: ['produccion', fecha],
+    queryKey:        ['produccion', fecha],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       let q = supabase
         .from('pedidos')
@@ -145,7 +146,8 @@ export const usePedidosProduccion = (fecha?: string) =>
 
 export const usePedidosListosHoy = () => {
   return useQuery({
-    queryKey: ['produccion', 'listos'],
+    queryKey:        ['produccion', 'listos'],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('pedidos')
@@ -175,7 +177,8 @@ export const useResumenProduccion = (fecha?: string) => {
   const fechaTarget = fecha ?? hoy
 
   return useQuery({
-    queryKey: ['produccion', 'resumen', fechaTarget],
+    queryKey:        ['produccion', 'resumen', fechaTarget],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('pedidos')
@@ -232,7 +235,8 @@ export const useDashboard = () => {
   const hoy = new Date().toISOString().split('T')[0]
 
   return useQuery({
-    queryKey: ['dashboard', hoy],
+    queryKey:        ['dashboard', hoy],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_dashboard_stats', { p_fecha: hoy })
 
