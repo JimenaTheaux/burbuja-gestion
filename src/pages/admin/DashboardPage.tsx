@@ -69,7 +69,7 @@ function addDays(dateStr: string, days: number): string {
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
 
-// Pedidos por fecha_produccion — para conteos y panel de estados
+// Pedidos por created_at — para conteos y panel de estados
 function usePedidosPeriodo(inicio: string, fin: string) {
   return useQuery({
     queryKey:        ['pedidos', 'dash-periodo', inicio, fin],
@@ -78,8 +78,8 @@ function usePedidosPeriodo(inicio: string, fin: string) {
       const { data, error } = await supabase
         .from('pedidos')
         .select('id, estado, fecha_produccion, pedido_items(cantidad, producto_id, productos(nombre, presentacion))')
-        .gte('fecha_produccion', inicio)
-        .lte('fecha_produccion', fin)
+        .gte('created_at', inicio)
+        .lte('created_at', fin + 'T23:59:59')
       if (error) throw new Error(error.message)
       return (data ?? []) as unknown as PedidoRow[]
     },
