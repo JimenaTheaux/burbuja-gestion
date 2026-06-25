@@ -61,11 +61,9 @@ function aniosDisponibles(): number[] {
 
 // ─── Schema Zod ───────────────────────────────────────────────────────────────
 
-const CATEGORIAS_ENUM = ['sueldos','alquiler','drogueria','grafica','packaging','luz','otros'] as const
-
 const schema = z.object({
   fecha_egreso:   z.string().min(1, 'La fecha es obligatoria'),
-  categoria:      z.enum(CATEGORIAS_ENUM, { required_error: 'La categoría es obligatoria' }),
+  categoria:      z.enum(['sueldos','alquiler','drogueria','grafica','packaging','luz','otros']),
   concepto:       z.string().min(3, 'Mínimo 3 caracteres'),
   monto:          z.string().refine(v => parseFloat(v) > 0, 'El monto debe ser mayor a 0'),
   registrado_por: z.string().optional(),
