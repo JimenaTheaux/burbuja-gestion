@@ -326,8 +326,8 @@ function CardRepartidor({ pedido, isExpanded, onToggle, isOnline, addAction, onS
                 className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                 style={{
                   width: '100%', background: loading ? 'rgba(21,101,192,0.5)' : '#1565C0',
-                  color: '#fff', border: 'none', borderRadius: 8,
-                  height: 40, fontSize: 12, fontWeight: 500,
+                  color: '#fff', border: 'none', borderRadius: 10,
+                  height: 44, fontSize: 13, fontWeight: 500,
                   cursor: loading ? 'not-allowed' : 'pointer',
                 }}
               >
@@ -419,7 +419,7 @@ function CardRepartidor({ pedido, isExpanded, onToggle, isOnline, addAction, onS
                     className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                     style={{
                       flex: 1, background: '#0D5C8A', color: '#fff', border: 'none',
-                      borderRadius: 8, height: 40, fontSize: 12, fontWeight: 500,
+                      borderRadius: 10, height: 44, fontSize: 13, fontWeight: 500,
                       cursor: 'pointer',
                     }}
                   >
@@ -431,8 +431,8 @@ function CardRepartidor({ pedido, isExpanded, onToggle, isOnline, addAction, onS
                     className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                     style={{
                       flex: 1, background: '#fff', color: '#D32F2F',
-                      border: '0.5px solid #D32F2F', borderRadius: 8,
-                      height: 40, fontSize: 12, fontWeight: 500, cursor: 'pointer',
+                      border: '0.5px solid #D32F2F', borderRadius: 10,
+                      height: 44, fontSize: 13, fontWeight: 500, cursor: 'pointer',
                     }}
                   >
                     Entrega fallida
@@ -481,8 +481,8 @@ function CardRepartidor({ pedido, isExpanded, onToggle, isOnline, addAction, onS
                   style={{
                     width: '100%',
                     background: '#FDECEA', color: '#D32F2F',
-                    border: '0.5px solid #D32F2F', borderRadius: 8,
-                    height: 44, fontSize: 12, fontWeight: 500,
+                    border: '0.5px solid #D32F2F', borderRadius: 10,
+                    height: 44, fontSize: 13, fontWeight: 500,
                     cursor: !motivo.trim() ? 'not-allowed' : 'pointer',
                     opacity: !motivo.trim() ? 0.6 : 1,
                     fontFamily: 'Inter, sans-serif',
@@ -522,7 +522,7 @@ function CardRepartidor({ pedido, isExpanded, onToggle, isOnline, addAction, onS
                       style={{
                         flex: 1, background: loading ? 'rgba(245,124,0,0.5)' : '#F57C00',
                         color: '#fff', border: 'none',
-                        borderRadius: 8, height: 40, fontSize: 12, fontWeight: 500,
+                        borderRadius: 10, height: 44, fontSize: 13, fontWeight: 500,
                         cursor: loading ? 'not-allowed' : 'pointer',
                       }}
                     >
@@ -534,8 +534,8 @@ function CardRepartidor({ pedido, isExpanded, onToggle, isOnline, addAction, onS
                       className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                       style={{
                         flex: 1, background: '#fff', color: '#4A5568',
-                        border: '0.5px solid #D1D5DB', borderRadius: 8,
-                        height: 40, fontSize: 12, cursor: 'pointer',
+                        border: '0.5px solid #D1D5DB', borderRadius: 10,
+                        height: 44, fontSize: 13, cursor: 'pointer',
                         fontFamily: 'Inter, sans-serif',
                       }}
                     >
@@ -550,8 +550,8 @@ function CardRepartidor({ pedido, isExpanded, onToggle, isOnline, addAction, onS
                   className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                   style={{
                     width: '100%', background: '#fff', color: '#F57C00',
-                    border: '0.5px solid #F57C00', borderRadius: 8,
-                    height: 40, fontSize: 12, fontWeight: 500,
+                    border: '0.5px solid #F57C00', borderRadius: 10,
+                    height: 44, fontSize: 13, fontWeight: 500,
                     cursor: 'pointer', fontFamily: 'Inter, sans-serif',
                   }}
                 >
@@ -631,7 +631,7 @@ export default function RepartidorPage() {
         </div>
 
       ) : (
-        <div>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
           {/* Sección: Listos para salir */}
           {listos.length > 0 && (
             <section role="region" aria-label="Listos para salir">

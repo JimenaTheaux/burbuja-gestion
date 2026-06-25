@@ -80,7 +80,7 @@ export const FloatInput = forwardRef<HTMLInputElement, FloatInputProps>(
     // height y fontSize vienen del CSS class fi-input / fi-textarea
     const inputStyle: React.CSSProperties = {
       ...BASE_INPUT,
-      padding:    `0 ${rightSlot ? 44 : 12}px`,
+      padding:    `0 ${rightSlot ? 44 : 12}px 0 12px`,
       borderColor: borderBase,
       background:  disabled ? '#F4F6F8' : '#fff',
       color:       disabled ? '#9CA3AF' : '#1A2B3C',

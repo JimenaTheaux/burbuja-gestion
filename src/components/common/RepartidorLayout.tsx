@@ -31,9 +31,10 @@ export function RepartidorLayout() {
       <header
         className="topbar-scroll-aware"
         style={{
-          height:       56,
-          background:   '#fff',
-          borderBottom: '0.5px solid #D1D5DB',
+          height:         56,
+          background:     'rgba(255,255,255,0.9)',
+          backdropFilter: 'blur(8px)',
+          borderBottom:   '1px solid #D1D5DB',
           padding:      '0 16px',
           display:      'flex',
           alignItems:   'center',
