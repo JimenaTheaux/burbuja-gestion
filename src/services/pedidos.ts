@@ -102,6 +102,14 @@ const LIST_SELECT = `
 
 const KEY = ['pedidos']
 
+// El Dashboard usa queryKey ['dashboard', fecha] — no comparte prefijo con
+// 'pedidos', así que cualquier mutación que cambie cobros/estados debe
+// invalidarlo explícitamente o el panel queda desactualizado hasta que
+// venza el staleTime global.
+function invalidarDashboard(qc: ReturnType<typeof useQueryClient>) {
+  qc.invalidateQueries({ queryKey: ['dashboard'] })
+}
+
 // ─── usePedidos ───────────────────────────────────────────────────────────────
 
 export const usePedidos = (filtros?: {
@@ -291,7 +299,10 @@ export const useCrearPedido = () => {
 
       return parsePedido(pedido)
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEY })
+      invalidarDashboard(qc)
+    },
   })
 }
 
@@ -352,6 +363,7 @@ export const useEditarPedido = () => {
     onSuccess: (_, { id }) => {
       qc.invalidateQueries({ queryKey: KEY })
       qc.invalidateQueries({ queryKey: [...KEY, id] })
+      invalidarDashboard(qc)
     },
   })
 }
@@ -403,6 +415,7 @@ export const useCambiarEstado = () => {
     onSettled: () => {
       qc.invalidateQueries({ queryKey: KEY })
       qc.invalidateQueries({ queryKey: ['produccion'] })
+      invalidarDashboard(qc)
     },
   })
 }
@@ -451,6 +464,7 @@ export const useAnularPedido = () => {
     onSettled: () => {
       qc.invalidateQueries({ queryKey: KEY })
       qc.invalidateQueries({ queryKey: ['produccion'] })
+      invalidarDashboard(qc)
     },
   })
 }
@@ -501,7 +515,10 @@ export const useCerrarPedido = () => {
     onError: (_, __, ctx) => {
       ctx?.snapshots.forEach(([key, data]) => qc.setQueryData(key, data))
     },
-    onSettled: () => qc.invalidateQueries({ queryKey: KEY }),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: KEY })
+      invalidarDashboard(qc)
+    },
   })
 }
 
@@ -536,6 +553,9 @@ export const useEditarCobro = () => {
 
       if (error) throw new Error(error.message)
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEY })
+      invalidarDashboard(qc)
+    },
   })
 }
