@@ -1,15 +1,17 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { Chart, registerables, type TooltipItem } from 'chart.js'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
-import { Share2, CheckCircle2, BarChart2 } from 'lucide-react'
+import {
+  Share2, CheckCircle2,
+  Package, Banknote, Clock, TrendingDown, FlaskConical, BarChart2, Download,
+} from 'lucide-react'
+import * as XLSX from 'xlsx'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { Skeleton } from '@/components/ui/skeleton'
-import { BadgeEstado } from '@/components/common/BadgeEstado'
 import { useEditarCobro, fetchPedidoDetalle } from '@/services/pedidos'
 import { useCompartirFactura } from '@/hooks/useCompartirFactura'
 import { useDashboard } from '@/services/produccion'
-import { ESTADO_CONFIG, formatNumero, CATEGORIA_EGRESO_LABELS, type EstadoPedido, type CategoriaEgreso } from '@/types'
+import { formatNumero, type EstadoPedido } from '@/types'
 import type { PedidoPendienteCobro } from '@/services/produccion'
 import { supabase } from '@/lib/supabase'
 
@@ -17,30 +19,43 @@ Chart.register(...registerables)
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface PedidoItemRow {
-  cantidad:    number
-  producto_id: string
-  productos?:  { nombre: string; presentacion: number } | null
+interface PedidoCobradoItem {
+  cantidad:        number
+  costo_snapshot:  number
+  precio_unitario: number
+  productos?: {
+    nombre:    string
+    fragancia: string | null
+    categorias_producto?: { nombre: string } | null
+  } | null
+}
+
+interface PedidoCobradoDetalle {
+  id:               string
+  numero:           number
+  monto_cobrado:    number | null
+  forma_cobro:      string | null
+  fecha_cobro:      string | null
+  fecha_produccion: string | null
+  pedido_items:     PedidoCobradoItem[]
 }
 
 interface PedidoRow {
   id:               string
   estado:           EstadoPedido
   fecha_produccion: string | null
-  pedido_items?:    PedidoItemRow[]
-}
-
-interface CobroRow {
-  id:            string
-  forma_cobro:   string | null
-  monto_cobrado: string | null
-  fecha_cobro:   string | null
 }
 
 type EgresoItem = {
   monto:        number | string
-  categoria:    string
   fecha_egreso: string
+}
+
+type EvolItem = {
+  monto_cobrado: string | null
+  fecha_cobro:   string | null
+  estado_pago:   string | null
+  forma_cobro:   string | null
 }
 
 // ─── Date helpers ─────────────────────────────────────────────────────────────
@@ -66,61 +81,86 @@ function addDays(dateStr: string, days: number): string {
   return d.toISOString().split('T')[0]
 }
 
+function fmtDia(d: Date): string {
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
+function fmtDiaAno(d: Date): string {
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
+}
+
 // ─── Hooks ────────────────────────────────────────────────────────────────────
 
-// Pedidos por created_at — para conteos y panel de estados
 function usePedidosPeriodo(inicio: string, fin: string) {
   return useQuery({
-    queryKey:        ['pedidos', 'dash-periodo', inicio, fin],
+    queryKey:        ['pedidos', 'dash-periodo-v2', inicio, fin],
     placeholderData: keepPreviousData,
-    queryFn:  async () => {
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('pedidos')
-        .select('id, estado, fecha_produccion, pedido_items(cantidad, producto_id, productos(nombre, presentacion))')
-        .gte('created_at', inicio)
-        .lte('created_at', fin + 'T23:59:59')
+        .select('id, estado, fecha_produccion')
+        .gte('fecha_produccion', inicio)
+        .lte('fecha_produccion', fin)
       if (error) throw new Error(error.message)
-      return (data ?? []) as unknown as PedidoRow[]
+      return (data ?? []) as PedidoRow[]
     },
     refetchInterval: 30_000,
     staleTime:       0,
   })
 }
 
-// Cobros por fecha_cobro — para KPIs de dinero
-function useCobrosperiodo(inicio: string, fin: string) {
+function usePendientesCierre() {
   return useQuery({
-    queryKey:        ['pedidos', 'dash-cobros', inicio, fin],
+    queryKey:        ['pedidos', 'pendientes-cierre'],
     placeholderData: keepPreviousData,
-    queryFn:  async () => {
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('pedidos')
-        .select('id, forma_cobro, monto_cobrado, fecha_cobro')
-        .eq('estado', 'cerrado')
-        .gte('fecha_cobro', inicio)
-        .lte('fecha_cobro', fin)
+        .select('id')
+        .not('estado', 'in', '("cerrado","anulado")')
       if (error) throw new Error(error.message)
-      return (data ?? []) as CobroRow[]
+      return (data ?? []).length
     },
     refetchInterval: 30_000,
     staleTime:       0,
   })
 }
 
-type EvolItem = {
-  monto_cobrado: string | null
-  fecha_cobro:   string | null
-  estado_pago:   string | null
-  forma_cobro:   string | null
+function usePedidosCobradosDetalle(desde: string, hasta: string) {
+  return useQuery({
+    queryKey:        ['pedidos', 'cobrados-detalle', desde, hasta],
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('pedidos')
+        .select(`
+          id, numero, monto_cobrado, forma_cobro, fecha_cobro, fecha_produccion,
+          pedido_items (
+            cantidad, costo_snapshot, precio_unitario,
+            productos (
+              nombre, fragancia,
+              categorias_producto (nombre)
+            )
+          )
+        `)
+        .eq('estado', 'cerrado')
+        .eq('estado_pago', 'cobrado')
+        .gte('fecha_cobro', desde)
+        .lte('fecha_cobro', hasta)
+      if (error) throw new Error(error.message)
+      return (data ?? []) as unknown as PedidoCobradoDetalle[]
+    },
+    refetchInterval: 30_000,
+    staleTime:       0,
+  })
 }
 
-// Chart: cubre período actual + mes anterior, filtrado por fecha_cobro
 function useEvolucionRango(desde: string, hasta: string) {
   const mesAnteriorDesde = restarUnMes(desde)
   return useQuery({
     queryKey:        ['pedidos', 'dash-evolucion-rango', desde, hasta],
     placeholderData: keepPreviousData,
-    queryFn:  async () => {
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('pedidos')
         .select('monto_cobrado, fecha_cobro, estado_pago, forma_cobro')
@@ -135,40 +175,14 @@ function useEvolucionRango(desde: string, hasta: string) {
   })
 }
 
-type MargenRow = {
-  monto_cobrado: string | null
-  pedido_items?: { cantidad: string | number; costo_snapshot: string | number }[]
-}
-
-// Margen bruto del período — pedidos cerrados y cobrados, filtrado por fecha_cobro
-function useMargenPeriodo(inicio: string, hasta: string) {
-  return useQuery({
-    queryKey:        ['pedidos', 'dash-margen', inicio, hasta],
-    placeholderData: keepPreviousData,
-    queryFn:  async () => {
-      const { data, error } = await supabase
-        .from('pedidos')
-        .select('monto_cobrado, pedido_items(cantidad, costo_snapshot)')
-        .eq('estado', 'cerrado')
-        .eq('estado_pago', 'cobrado')
-        .gte('fecha_cobro', inicio)
-        .lte('fecha_cobro', hasta)
-      if (error) throw new Error(error.message)
-      return (data ?? []) as MargenRow[]
-    },
-    refetchInterval: 30_000,
-    staleTime:       0,
-  })
-}
-
 function useEgresosDashboard(desde: string, hasta: string) {
   return useQuery({
     queryKey:        ['dashboard-egresos', desde, hasta],
     placeholderData: keepPreviousData,
-    queryFn:  async () => {
+    queryFn: async () => {
       const { data } = await supabase
         .from('egresos')
-        .select('monto, categoria, fecha_egreso')
+        .select('monto, fecha_egreso')
         .gte('fecha_egreso', desde)
         .lte('fecha_egreso', hasta)
       return (data ?? []) as EgresoItem[]
@@ -185,27 +199,8 @@ function esCobrado(p: { estado: string; estado_pago: string | null; forma_cobro:
   return p.estado_pago == null && !!p.forma_cobro && p.forma_cobro !== 'pendiente'
 }
 
-// Pedidos por fecha_produccion: conteos y distribución de estados
-function calcKPIs(pedidos: PedidoRow[]) {
-  const pendCierre = pedidos.filter(p => !['cerrado', 'anulado'].includes(p.estado)).length
-  const porEstado: Record<string, number> = {}
-  for (const p of pedidos) porEstado[p.estado] = (porEstado[p.estado] || 0) + 1
-  return { pendCierre, porEstado, count: pedidos.length }
-}
-
-// Cobros por fecha_cobro: totales de dinero
-function calcCobrosKPI(cobros: CobroRow[]) {
-  const totalCob = cobros.reduce((a, p) => a + (Number(p.monto_cobrado) || 0), 0)
-  const totalEf  = cobros.filter(p => p.forma_cobro === 'efectivo')
-                         .reduce((a, p) => a + (Number(p.monto_cobrado) || 0), 0)
-  const totalTr  = cobros.filter(p => p.forma_cobro === 'transferencia')
-                         .reduce((a, p) => a + (Number(p.monto_cobrado) || 0), 0)
-  return { totalCob, totalEf, totalTr }
-}
-
 function calcEvolucionRango(pedidosTodos: EvolItem[], desde: string, hasta: string) {
   const mesAnteriorDesde = restarUnMes(desde)
-
   const dDesde    = new Date(desde + 'T12:00:00')
   const dHasta    = new Date(hasta + 'T12:00:00')
   const totalDays = Math.round((dHasta.getTime() - dDesde.getTime()) / 86_400_000) + 1
@@ -218,8 +213,8 @@ function calcEvolucionRango(pedidosTodos: EvolItem[], desde: string, hasta: stri
     byDia[p.fecha_cobro] = (byDia[p.fecha_cobro] || 0) + Number(p.monto_cobrado)
   }
 
-  const labels:   string[] = []
-  const actual:   number[] = []
+  const labels: string[] = []
+  const actual: number[] = []
   const anterior: number[] = []
 
   if (porDia) {
@@ -252,59 +247,73 @@ function calcEvolucionRango(pedidosTodos: EvolItem[], desde: string, hasta: stri
   return { labels, actual, anterior }
 }
 
-function fmtRango(desde: string, hasta: string): string {
-  const opts: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'short' }
-  const d = new Date(desde + 'T12:00:00').toLocaleDateString('es-AR', opts)
-  const h = new Date(hasta + 'T12:00:00').toLocaleDateString('es-AR', opts)
-  return `${d} — ${h}`
-}
+function calcTopVentas(pedidos: PedidoCobradoDetalle[]) {
+  const porCategoria: Record<string, number> = {}
+  const porProducto: Record<string, { nombre: string; fragancia: string | null; cantidad: number }> = {}
 
-function calcTopProductos(pedidos: PedidoRow[]) {
-  const acc: Record<string, { nombre: string; presentacion: number; total: number }> = {}
-  for (const p of pedidos) {
-    if (p.estado !== 'cerrado') continue
-    for (const item of p.pedido_items ?? []) {
-      const key = item.producto_id
-      if (!acc[key]) acc[key] = {
-        nombre:       item.productos?.nombre       ?? '—',
-        presentacion: item.productos?.presentacion ?? 0,
-        total:        0,
-      }
-      acc[key].total += Number(item.cantidad)
+  for (const pedido of pedidos) {
+    for (const item of pedido.pedido_items) {
+      const cat = item.productos?.categorias_producto?.nombre ?? 'Sin categoría'
+      porCategoria[cat] = (porCategoria[cat] ?? 0) + Number(item.cantidad) * Number(item.precio_unitario)
+
+      const nombre    = item.productos?.nombre ?? '—'
+      const fragancia = item.productos?.fragancia ?? null
+      const key       = `${nombre}|||${fragancia ?? ''}`
+      if (!porProducto[key]) porProducto[key] = { nombre, fragancia, cantidad: 0 }
+      porProducto[key].cantidad += Number(item.cantidad)
     }
   }
-  return Object.values(acc).sort((a, b) => b.total - a.total).slice(0, 5)
+
+  const topCategorias = Object.entries(porCategoria).sort((a, b) => b[1] - a[1]).slice(0, 5)
+  const topProductos  = Object.values(porProducto).sort((a, b) => b.cantidad - a.cantidad).slice(0, 5)
+
+  return { topCategorias, topProductos }
+}
+
+function generarQuincenas(desde: string, hasta: string): { inicio: Date; fin: Date }[] {
+  const quincenas: { inicio: Date; fin: Date }[] = []
+  let cursor      = new Date(hasta + 'T12:00:00')
+  const desdeDate = new Date(desde + 'T12:00:00')
+
+  for (let i = 0; i < 24; i++) {
+    const dia = cursor.getDate()
+    let inicio: Date, fin: Date
+
+    if (dia >= 16) {
+      fin    = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0, 12)
+      inicio = new Date(cursor.getFullYear(), cursor.getMonth(), 16, 12)
+    } else {
+      fin    = new Date(cursor.getFullYear(), cursor.getMonth(), 15, 12)
+      inicio = new Date(cursor.getFullYear(), cursor.getMonth(), 1, 12)
+    }
+
+    if (fin < desdeDate) break
+    quincenas.push({ inicio, fin })
+
+    const prevDay = new Date(inicio)
+    prevDay.setDate(prevDay.getDate() - 1)
+    if (prevDay < desdeDate) break
+    cursor = prevDay
+  }
+
+  return quincenas
+}
+
+function calcQuincena(pedidos: PedidoCobradoDetalle[], inicio: Date, fin: Date) {
+  const filtrados = pedidos.filter(p => {
+    if (!p.fecha_cobro) return false
+    const fecha = new Date(p.fecha_cobro + 'T12:00:00')
+    return fecha >= inicio && fecha <= fin
+  })
+  const totalVendido = filtrados.reduce((s, p) => s + (Number(p.monto_cobrado) || 0), 0)
+  const totalCosto   = filtrados.reduce((sum, p) =>
+    sum + p.pedido_items.reduce((s, i) => s + Number(i.cantidad) * Number(i.costo_snapshot), 0), 0
+  )
+  return { totalVendido, totalCosto, ganancia: totalVendido - totalCosto }
 }
 
 function pesos(n: number): string {
   return `$${n.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
-}
-
-function deltaCalc(cur: number, prev: number): number | null {
-  if (!prev) return null
-  return Math.round(((cur - prev) / prev) * 100)
-}
-
-function calcMargenKPI(rows: MargenRow[]) {
-  const totalCobrado = rows.reduce((s, p) => s + (Number(p.monto_cobrado) || 0), 0)
-  const totalCosto   = rows.reduce((s, p) =>
-    s + (p.pedido_items ?? []).reduce((acc, i) => acc + Number(i.cantidad) * Number(i.costo_snapshot), 0), 0
-  )
-  const margenBruto = totalCobrado - totalCosto
-  const margenPct   = totalCobrado > 0 ? Math.round((margenBruto / totalCobrado) * 100) : 0
-  return { margenBruto, margenPct }
-}
-
-function calcEgresos(egresos: EgresoItem[]) {
-  const total = egresos.reduce((s, e) => s + Number(e.monto), 0)
-  const byCateg: Record<string, number> = {}
-  for (const e of egresos) {
-    byCateg[e.categoria] = (byCateg[e.categoria] || 0) + Number(e.monto)
-  }
-  const top2 = Object.entries(byCateg)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 2)
-  return { total, top2 }
 }
 
 // ─── GraficoLinea ─────────────────────────────────────────────────────────────
@@ -442,7 +451,6 @@ function FilaPendiente({ p, onCobrado }: {
       boxShadow:    '0 1px 3px rgba(0,0,0,0.06)',
       marginBottom: 10,
     }}>
-      {/* Fila superior: número + monto */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
         <span style={{ fontSize: 12, fontWeight: 700, color: '#3DD6B5' }}>
           {formatNumero(p.numero)}
@@ -452,7 +460,6 @@ function FilaPendiente({ p, onCobrado }: {
         </span>
       </div>
 
-      {/* Fila cliente */}
       <div style={{
         fontSize: 13, fontWeight: 500, color: '#1C1C1E', marginBottom: 4,
         whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
@@ -460,7 +467,6 @@ function FilaPendiente({ p, onCobrado }: {
         {p.clienteNombre}
       </div>
 
-      {/* Fila meta: fecha prod + fecha cobro */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 14, flexWrap: 'wrap' }}>
         {p.fechaProduccion && (
           <span style={{ fontSize: 11, color: '#8E8E93' }}>
@@ -474,7 +480,6 @@ function FilaPendiente({ p, onCobrado }: {
       </div>
 
       {!abierto ? (
-        /* Fila acciones */
         <div style={{ display: 'flex', gap: 8 }}>
           <button
             disabled={loadingWA}
@@ -484,7 +489,7 @@ function FilaPendiente({ p, onCobrado }: {
                 const detalle = await fetchPedidoDetalle(p.id)
                 await compartir(detalle)
               } catch {
-                // silencioso — el toast de error no está disponible aquí
+                // silencioso
               }
             }}
             style={{
@@ -515,11 +520,7 @@ function FilaPendiente({ p, onCobrado }: {
           </button>
         </div>
       ) : (
-        /* Mini-form cobro */
-        <div
-          role="group"
-          aria-label={`Registrar cobro — ${formatNumero(p.numero)}`}
-        >
+        <div role="group" aria-label={`Registrar cobro — ${formatNumero(p.numero)}`}>
           <div style={{ height: 1, background: '#E5E5EA', margin: '0 0 14px' }} />
 
           <div style={{ marginBottom: 10 }}>
@@ -691,48 +692,51 @@ function SheetPendientes({ open, onClose, pendientes, onRefetch }: {
   )
 }
 
-// ─── Estados a mostrar en el panel ────────────────────────────────────────────
-
-const ESTADOS_PANEL: EstadoPedido[] = [
-  'en_produccion', 'listo_reparto', 'en_reparto', 'cerrado', 'entrega_fallida',
-]
-
 // ─── DashboardPage ────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
-  const navigate = useNavigate()
-
   const [desde,     setDesde]    = useState<string>(primerDiaMes())
   const [hasta,     setHasta]    = useState<string>(fmtDate(new Date()))
   const [sheetPend, setSheetPend] = useState(false)
+  const [tabTop,    setTabTop]   = useState<'categoria' | 'producto'>('categoria')
 
-  // Pedidos por fecha_produccion (conteos, estados)
-  const { data: pedidos,    isLoading } = usePedidosPeriodo(desde, hasta)
-  // Cobros por fecha_cobro (totales de dinero)
-  const { data: cobros }                = useCobrosperiodo(desde, hasta)
-  const { data: cobrosPrev }            = useCobrosperiodo(restarUnMes(desde), restarUnMes(hasta))
-  const { data: dashData, refetch }     = useDashboard()
-  const { data: evolData }              = useEvolucionRango(desde, hasta)
-  const { data: egresosData, isLoading: isLoadingEgresos } = useEgresosDashboard(desde, hasta)
-  const { data: egresosDataPrev }       = useEgresosDashboard(restarUnMes(desde), restarUnMes(hasta))
-  const { data: margenData }            = useMargenPeriodo(desde, hasta)
+  const { data: pedidos,    isLoading }              = usePedidosPeriodo(desde, hasta)
+  const { data: pendCierre }                         = usePendientesCierre()
+  const { data: pedCobrados }                        = usePedidosCobradosDetalle(desde, hasta)
+  const { data: dashData, refetch }                  = useDashboard()
+  const { data: evolData }                           = useEvolucionRango(desde, hasta)
+  const { data: egresosData, isLoading: loadingEg }  = useEgresosDashboard(desde, hasta)
 
-  const kpi        = pedidos    ? calcKPIs(pedidos)       : null
-  const kpiCobros  = cobros     ? calcCobrosKPI(cobros)   : null
-  const kpiCobrosPrev = cobrosPrev ? calcCobrosKPI(cobrosPrev) : null
-  const delta      = kpiCobros && kpiCobrosPrev ? deltaCalc(kpiCobros.totalCob, kpiCobrosPrev.totalCob) : null
-  const evolucion  = evolData ? calcEvolucionRango(evolData, desde, hasta) : null
-  const pendientes = dashData?.pendientes
+  // ── Derivados ───────────────────────────────────────────────────────────────
 
-  const kpiEgresos     = egresosData     ? calcEgresos(egresosData)     : null
-  const kpiEgresosPrev = egresosDataPrev ? calcEgresos(egresosDataPrev) : null
-  const totalEgresos   = kpiEgresos?.total ?? 0
-  const gananciaNeta   = (kpiCobros?.totalCob ?? 0) - totalEgresos
-  const gananciaPrev   = kpiCobrosPrev && kpiEgresosPrev
-    ? (kpiCobrosPrev.totalCob - kpiEgresosPrev.total)
-    : null
-  const deltaGanancia  = gananciaPrev !== null ? deltaCalc(gananciaNeta, gananciaPrev) : null
-  const margen         = margenData ? calcMargenKPI(margenData) : null
+  const countPedidos      = pedidos?.length ?? 0
+  const pendientesCierre  = pendCierre ?? 0
+  const cobrados          = pedCobrados ?? []
+
+  const totalCobrado = cobrados.reduce((s, p) => s + (Number(p.monto_cobrado) || 0), 0)
+  const totalEfectivo = cobrados
+    .filter(p => p.forma_cobro === 'efectivo')
+    .reduce((s, p) => s + (Number(p.monto_cobrado) || 0), 0)
+  const totalTransf = cobrados
+    .filter(p => p.forma_cobro === 'transferencia')
+    .reduce((s, p) => s + (Number(p.monto_cobrado) || 0), 0)
+
+  const totalCostoProduccion = cobrados.reduce((sum, p) =>
+    sum + p.pedido_items.reduce((s, i) => s + Number(i.cantidad) * Number(i.costo_snapshot), 0), 0
+  )
+
+  const totalEgresos  = egresosData ? egresosData.reduce((s, e) => s + Number(e.monto), 0) : 0
+  const gananciaNeta  = totalCobrado - totalCostoProduccion - totalEgresos
+
+  const montoPendienteCobro = dashData?.pendientes?.total ?? 0
+  const pendientes          = dashData?.pendientes
+
+  const { topCategorias, topProductos } = cobrados.length > 0
+    ? calcTopVentas(cobrados)
+    : { topCategorias: [] as [string, number][], topProductos: [] as { nombre: string; fragancia: string | null; cantidad: number }[] }
+
+  const evolucion = evolData ? calcEvolucionRango(evolData, desde, hasta) : null
+  const quincenas = generarQuincenas(desde, hasta)
 
   const todayStr = fmtDate(new Date())
 
@@ -755,6 +759,31 @@ export default function DashboardPage() {
     else setHasta(val)
   }
 
+  const descargarExcel = () => {
+    const filas = quincenas.map(({ inicio, fin }) => {
+      const { totalVendido, totalCosto, ganancia } = calcQuincena(cobrados, inicio, fin)
+      return {
+        'Período':          `${fmtDia(inicio)} al ${fmtDiaAno(fin)}`,
+        'Total vendido':    totalVendido,
+        'Costo producción': totalCosto,
+        'Ganancia':         ganancia,
+      }
+    })
+    filas.push({
+      'Período':          'TOTAL PERÍODO',
+      'Total vendido':    totalCobrado,
+      'Costo producción': totalCostoProduccion,
+      'Ganancia':         totalCobrado - totalCostoProduccion,
+    })
+    const ws = XLSX.utils.json_to_sheet(filas)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Resumen quincenal')
+    const d = new Date(desde + 'T12:00:00')
+    XLSX.writeFile(wb, `burbuja-resumen-${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}.xlsx`)
+  }
+
+  // ── Loading skeleton ─────────────────────────────────────────────────────────
+
   if (isLoading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16, fontFamily: 'Inter, sans-serif' }}>
@@ -767,30 +796,42 @@ export default function DashboardPage() {
           </div>
         </div>
         <Skeleton style={{ height: 14, width: 200, borderRadius: 4 }} />
-        <div className="grid grid-cols-3 gap-3">
-          {[1,2,3].map(i => <Skeleton key={i} style={{ height: 88, borderRadius: 10 }} />)}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {[1,2,3,4,5,6].map(i => <Skeleton key={i} style={{ height: 88, borderRadius: 10 }} />)}
         </div>
         <div className="grid md:grid-cols-2 grid-cols-1 gap-3">
-          <Skeleton style={{ height: 240, borderRadius: 10 }} />
-          <Skeleton style={{ height: 240, borderRadius: 10 }} />
+          <Skeleton style={{ height: 220, borderRadius: 10 }} />
+          <Skeleton style={{ height: 220, borderRadius: 10 }} />
         </div>
+        <Skeleton style={{ height: 200, borderRadius: 10 }} />
       </div>
     )
   }
 
+  // ── Styles ───────────────────────────────────────────────────────────────────
+
   const card = {
     background: '#fff', border: '0.5px solid #E5E5EA', borderRadius: 10, padding: '14px 16px',
+  }
+  const labelRow = {
+    display: 'flex', alignItems: 'center', gap: 5, marginBottom: 6,
   }
   const labelSt = {
     fontSize: 10, fontWeight: 500, color: '#8E8E93',
     textTransform: 'uppercase' as const, letterSpacing: '0.06em',
-    marginBottom: 10, display: 'block',
   }
   const valorSt = {
     fontSize: 22, fontWeight: 500, color: '#1C1C1E', letterSpacing: '-0.5px', lineHeight: 1,
   }
   const subSt = {
     fontSize: 11, fontWeight: 400, color: '#8E8E93', marginTop: 4,
+  }
+  const thStyle: React.CSSProperties = {
+    padding: '10px 20px', fontSize: 9, fontWeight: 700,
+    color: '#8E8E93', textTransform: 'uppercase', letterSpacing: '0.07em', textAlign: 'left',
+  }
+  const tdStyle: React.CSSProperties = {
+    padding: '12px 20px', fontSize: 13, color: '#1C1C1E',
   }
 
   return (
@@ -804,27 +845,23 @@ export default function DashboardPage() {
         <h1 className="section-title">Dashboard</h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <input
-            type="date"
-            value={desde}
+            type="date" value={desde}
             onChange={e => handleDesde(e.target.value)}
             style={{
               height: 32, border: '0.5px solid #E5E5EA', borderRadius: 6,
               padding: '0 10px', fontSize: 11, fontFamily: 'Inter, sans-serif',
-              color: '#1C1C1E', background: '#fff', outline: 'none',
-              boxSizing: 'border-box',
+              color: '#1C1C1E', background: '#fff', outline: 'none', boxSizing: 'border-box',
             }}
             onFocus={e => (e.target.style.borderColor = '#7EB8E8')}
             onBlur={e  => (e.target.style.borderColor = '#E5E5EA')}
           />
           <input
-            type="date"
-            value={hasta}
+            type="date" value={hasta}
             onChange={e => handleHasta(e.target.value)}
             style={{
               height: 32, border: '0.5px solid #E5E5EA', borderRadius: 6,
               padding: '0 10px', fontSize: 11, fontFamily: 'Inter, sans-serif',
-              color: '#1C1C1E', background: '#fff', outline: 'none',
-              boxSizing: 'border-box',
+              color: '#1C1C1E', background: '#fff', outline: 'none', boxSizing: 'border-box',
             }}
             onFocus={e => (e.target.style.borderColor = '#7EB8E8')}
             onBlur={e  => (e.target.style.borderColor = '#E5E5EA')}
@@ -843,63 +880,47 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── Fecha del día ── */}
-      <p style={{ margin: 0, fontSize: 12, fontWeight: 400, color: '#8E8E93' }}>
-        {fechaDisplay}
-      </p>
+      {/* ── Fecha ── */}
+      <p style={{ margin: 0, fontSize: 12, fontWeight: 400, color: '#8E8E93' }}>{fechaDisplay}</p>
 
-      {/* ── KPIs — 6 columnas desktop / 2 columnas mobile ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+      {/* ── KPIs — 3 cols desktop / 2 mobile ── */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
 
-        {/* KPI 1 — Total cobrado (filtrado por fecha_cobro) */}
+        {/* 1 — Pedidos */}
         <div style={card}>
-          <span style={labelSt}>Total cobrado</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, lineHeight: 1 }}>
-            <span style={valorSt}>{pesos(kpiCobros?.totalCob ?? 0)}</span>
-            {delta !== null && (
-              <span style={{
-                fontSize: 10, fontWeight: 500, borderRadius: 99, padding: '1px 6px',
-                background: delta >= 0 ? '#E8F8F0' : '#FDECEA',
-                color:      delta >= 0 ? '#145A32' : '#B71C1C',
-                flexShrink: 0,
-              }}>
-                {delta >= 0 ? '↑' : '↓'} {Math.abs(delta)}%
-              </span>
-            )}
+          <div style={labelRow}>
+            <Package size={14} color="#28B99A" />
+            <span style={labelSt}>Pedidos</span>
           </div>
-          <p style={subSt}>
-            Ef. {pesos(kpiCobros?.totalEf ?? 0)} · Tr. {pesos(kpiCobros?.totalTr ?? 0)}
-          </p>
+          <span style={valorSt}>{countPedidos}</span>
+          <p style={subSt}>{pendientesCierre} pendiente{pendientesCierre !== 1 ? 's' : ''} de cierre</p>
         </div>
 
-        {/* KPI 2 — Pedidos (filtrado por fecha_produccion) */}
+        {/* 2 — Total cobrado */}
         <div style={card}>
-          <span style={labelSt}>Pedidos</span>
-          <span style={valorSt}>{kpi?.count ?? 0}</span>
-          <p style={subSt}>{kpi?.pendCierre ?? 0} pendientes de cierre</p>
+          <div style={labelRow}>
+            <Banknote size={14} color="#7EB8E8" />
+            <span style={labelSt}>Total cobrado</span>
+          </div>
+          <span style={valorSt}>{pesos(totalCobrado)}</span>
+          <p style={subSt}>Ef. {pesos(totalEfectivo)} · Tr. {pesos(totalTransf)}</p>
         </div>
 
-        {/* KPI 3 — Pendiente de cobro */}
+        {/* 3 — Pendiente de cobro */}
         <div style={{
           ...card,
-          ...(pendientes && pendientes.total > 0
-            ? { background: '#FFF8F8', border: '0.5px solid rgba(211,47,47,0.3)' }
-            : {}
-          ),
+          ...(montoPendienteCobro > 0 ? { background: '#FFF8F8', border: '0.5px solid rgba(211,47,47,0.3)' } : {}),
         }}>
-          <span style={{
-            ...labelSt,
-            color: pendientes && pendientes.total > 0 ? '#D32F2F' : '#8E8E93',
-          }}>
-            Pendiente de cobro
+          <div style={labelRow}>
+            <Clock size={14} color={montoPendienteCobro > 0 ? '#D32F2F' : '#C47B00'} />
+            <span style={{ ...labelSt, color: montoPendienteCobro > 0 ? '#D32F2F' : '#8E8E93' }}>
+              Pend. cobro
+            </span>
+          </div>
+          <span style={{ ...valorSt, color: montoPendienteCobro > 0 ? '#D32F2F' : '#1C1C1E' }}>
+            {pesos(montoPendienteCobro)}
           </span>
-          <span style={{
-            ...valorSt,
-            color: pendientes && pendientes.total > 0 ? '#D32F2F' : '#1C1C1E',
-          }}>
-            {pesos(pendientes?.total ?? 0)}
-          </span>
-          {pendientes && pendientes.total > 0 ? (
+          {montoPendienteCobro > 0 ? (
             <button
               onClick={() => setSheetPend(true)}
               style={{
@@ -915,84 +936,58 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* KPI 4 — Egresos del período */}
-        <div style={card} aria-label={`KPI: Egresos del período, ${pesos(totalEgresos)}`}>
-          <span style={labelSt}>Egresos</span>
-          {isLoadingEgresos ? (
-            <Skeleton style={{ height: 28, width: 100, borderRadius: 4, marginBottom: 6 }} />
-          ) : (
-            <>
-              <span style={valorSt}>{kpiEgresos ? pesos(kpiEgresos.total) : '—'}</span>
-              <p style={subSt}>
-                {kpiEgresos && kpiEgresos.top2.length > 0
-                  ? kpiEgresos.top2
-                      .map(([cat, monto]) => `${CATEGORIA_EGRESO_LABELS[cat as CategoriaEgreso] ?? cat} ${pesos(monto)}`)
-                      .join(' · ')
-                  : 'Sin egresos en el período'
-                }
-              </p>
-            </>
-          )}
-        </div>
-
-        {/* KPI 5 — Ganancia neta */}
-        <div
-          className="col-span-2 lg:col-span-1"
-          style={{
-            ...card,
-            ...(gananciaNeta < 0 ? { background: '#FFF8F8', border: '0.5px solid rgba(211,47,47,0.25)' } : {}),
-          }}
-          aria-label={`KPI: Ganancia neta del período, ${pesos(gananciaNeta)}`}
-        >
-          <span style={labelSt}>Ganancia neta</span>
-          {isLoadingEgresos ? (
-            <Skeleton style={{ height: 28, width: 100, borderRadius: 4, marginBottom: 6 }} />
-          ) : (
-            <>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, lineHeight: 1 }}>
-                <span style={{
-                  ...valorSt,
-                  color: gananciaNeta > 0 ? '#145A32' : gananciaNeta < 0 ? '#D32F2F' : '#1C1C1E',
-                }}>
-                  {pesos(gananciaNeta)}
-                </span>
-                {deltaGanancia !== null && (
-                  <span style={{
-                    fontSize: 10, fontWeight: 500, borderRadius: 99, padding: '1px 6px',
-                    background: deltaGanancia >= 0 ? '#E8F8F0' : '#FDECEA',
-                    color:      deltaGanancia >= 0 ? '#145A32' : '#D32F2F',
-                    flexShrink: 0,
-                  }}>
-                    {deltaGanancia >= 0 ? '↑' : '↓'} {Math.abs(deltaGanancia)}%
-                  </span>
-                )}
-              </div>
-              {gananciaNeta < 0 ? (
-                <p style={{ ...subSt, color: '#D32F2F', fontSize: 10 }}>
-                  Egresos superan los ingresos en este período
-                </p>
-              ) : (
-                <p style={subSt}>Cobrado − Egresos</p>
-              )}
-            </>
-          )}
-        </div>
-
-        {/* KPI 6 — Margen bruto (filtrado por fecha_cobro) */}
-        <div style={card} aria-label={`KPI: Margen bruto del período, ${margen?.margenPct ?? 0}%, ${pesos(margen?.margenBruto ?? 0)} de ganancia`}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 10 }}>
-            <BarChart2 size={16} color="#28B99A" />
-            <span style={{ ...labelSt, marginBottom: 0 }}>Margen bruto</span>
+        {/* 4 — Egresos */}
+        <div style={card}>
+          <div style={labelRow}>
+            <TrendingDown size={14} color="#8E8E93" />
+            <span style={labelSt}>Egresos</span>
           </div>
-          <span style={{ ...valorSt, color: '#28B99A' }}>{margen ? `${margen.margenPct}%` : '—'}</span>
-          <p style={subSt}>{margen ? `${pesos(margen.margenBruto)} ganancia` : 'Sin datos'}</p>
+          {loadingEg ? (
+            <Skeleton style={{ height: 28, width: 100, borderRadius: 4, marginBottom: 6 }} />
+          ) : (
+            <>
+              <span style={valorSt}>{pesos(totalEgresos)}</span>
+              <p style={subSt}>del período</p>
+            </>
+          )}
+        </div>
+
+        {/* 5 — Costo de producción */}
+        <div style={card}>
+          <div style={labelRow}>
+            <FlaskConical size={14} color="#7EB8E8" />
+            <span style={labelSt}>Costo prod.</span>
+          </div>
+          <span style={valorSt}>{pesos(totalCostoProduccion)}</span>
+          <p style={subSt}>ventas cobradas del período</p>
+        </div>
+
+        {/* 6 — Ganancia neta */}
+        <div style={{
+          ...card,
+          ...(gananciaNeta < 0 ? { background: '#FEF2F2', border: '0.5px solid rgba(240,82,82,0.3)' } : {}),
+        }}>
+          <div style={labelRow}>
+            <BarChart2 size={14} color={gananciaNeta >= 0 ? '#28B99A' : '#F05252'} />
+            <span style={labelSt}>Ganancia neta</span>
+          </div>
+          {loadingEg ? (
+            <Skeleton style={{ height: 28, width: 100, borderRadius: 4, marginBottom: 6 }} />
+          ) : (
+            <>
+              <span style={{ ...valorSt, color: gananciaNeta >= 0 ? '#28B99A' : '#F05252' }}>
+                {pesos(gananciaNeta)}
+              </span>
+              <p style={subSt}>− {pesos(totalEgresos)} egresos</p>
+            </>
+          )}
         </div>
       </div>
 
-      {/* ── Panel inferior — 2 columnas ── */}
+      {/* ── Panel — Gráfico + Top ventas ── */}
       <div className="grid md:grid-cols-2 grid-cols-1 gap-3">
 
-        {/* Panel izquierdo — Evolución de cobros (por fecha_cobro) */}
+        {/* Evolución de ventas */}
         <div style={{ background: '#fff', border: '0.5px solid #E5E5EA', borderRadius: 10, overflow: 'hidden' }}>
           <div style={{ padding: '12px 16px', borderBottom: '0.5px solid #F5F7F9' }}>
             <span style={{ fontSize: 12, fontWeight: 500, color: '#1C1C1E', letterSpacing: '-0.3px' }}>
@@ -1001,9 +996,8 @@ export default function DashboardPage() {
           </div>
           <div style={{ padding: '14px 16px' }}>
             <span style={{ fontSize: 20, fontWeight: 500, color: '#1C1C1E', letterSpacing: '-0.5px' }}>
-              {pesos(kpiCobros?.totalCob ?? 0)}
+              {pesos(totalCobrado)}
             </span>
-            {/* Leyenda custom */}
             <div style={{ display: 'flex', gap: 14, marginTop: 10, marginBottom: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                 <div style={{ width: 8, height: 8, borderRadius: 2, background: '#3DD6B5' }} />
@@ -1017,136 +1011,162 @@ export default function DashboardPage() {
                 <span style={{ fontSize: 10, color: '#8E8E93' }}>Mes anterior</span>
               </div>
             </div>
-            {evolucion ? (
-              <GraficoLinea
-                labels={evolucion.labels}
-                actual={evolucion.actual}
-                anterior={evolucion.anterior}
-              />
-            ) : (
-              <div style={{ height: 100, background: '#F5F7F9', borderRadius: 6 }} />
-            )}
+            {evolucion
+              ? <GraficoLinea labels={evolucion.labels} actual={evolucion.actual} anterior={evolucion.anterior} />
+              : <div style={{ height: 100, background: '#F5F7F9', borderRadius: 6 }} />
+            }
           </div>
         </div>
 
-        {/* Panel derecho — Estado de pedidos (por fecha_produccion) */}
+        {/* Top ventas con tabs */}
         <div style={{ background: '#fff', border: '0.5px solid #E5E5EA', borderRadius: 10, overflow: 'hidden' }}>
-          <div style={{ padding: '12px 16px', borderBottom: '0.5px solid #F5F7F9' }}>
-            <span style={{ fontSize: 12, fontWeight: 500, color: '#1C1C1E', letterSpacing: '-0.3px' }}>
-              Estado de pedidos
-            </span>
+          <div style={{ padding: '10px 16px', borderBottom: '0.5px solid #F5F7F9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 12, fontWeight: 500, color: '#1C1C1E', letterSpacing: '-0.3px' }}>Top ventas</span>
+            <div style={{ display: 'flex', gap: 2, background: '#F5F7F9', borderRadius: 8, padding: 3 }}>
+              {(['categoria', 'producto'] as const).map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setTabTop(tab)}
+                  style={{
+                    padding: '4px 12px', borderRadius: 6, border: 'none',
+                    background: tabTop === tab ? '#FFFFFF' : 'transparent',
+                    color:      tabTop === tab ? '#1C1C1E' : '#8E8E93',
+                    fontSize: 11, fontWeight: tabTop === tab ? 600 : 500,
+                    cursor: 'pointer',
+                    boxShadow: tabTop === tab ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {tab === 'categoria' ? 'Categoría' : 'Producto'}
+                </button>
+              ))}
+            </div>
           </div>
-          <div>
-            {(() => {
-              const porEst   = kpi?.porEstado ?? {}
-              const visible  = ESTADOS_PANEL.filter(e =>
-                e === 'entrega_fallida' ? (porEst[e] ?? 0) > 0 : true
-              )
-              const maxCount = Math.max(1, ...visible.map(e => porEst[e] ?? 0))
 
-              if (visible.every(e => !(porEst[e] ?? 0))) {
-                return (
-                  <p style={{ fontSize: 13, color: '#8E8E93', textAlign: 'center', padding: '28px 16px' }}>
-                    Sin pedidos en el período
-                  </p>
-                )
-              }
-
-              return visible.map((estado, i) => {
-                const count  = porEst[estado] ?? 0
-                const cfg    = ESTADO_CONFIG[estado]
-                const pct    = (count / maxCount) * 100
-                const isLast = i === visible.length - 1
-
-                return (
-                  <button
-                    key={estado}
-                    onClick={() => navigate('/admin/pedidos')}
-                    style={{
-                      width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', gap: 12,
-                      padding: '9px 16px',
-                      borderBottom: isLast ? 'none' : '0.5px solid #F5F7F9',
-                      transition: 'background 0.1s',
-                    }}
-                    onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-                  >
-                    <BadgeEstado estado={estado} />
-                    <div style={{ flex: 1, height: 3, borderRadius: 99, background: '#F5F7F9' }}>
-                      <div style={{
-                        width: `${pct}%`, height: '100%',
-                        borderRadius: 99, background: cfg.color,
-                        transition: 'width 0.4s ease',
-                        minWidth: count > 0 ? 4 : 0,
-                      }} />
+          <div style={{ padding: '0 16px' }}>
+            {tabTop === 'categoria' ? (
+              topCategorias.length === 0 ? (
+                <p style={{ fontSize: 12, color: '#8E8E93', textAlign: 'center', padding: '28px 0', margin: 0 }}>
+                  Sin ventas cobradas en el período
+                </p>
+              ) : topCategorias.map(([nombre, monto], i) => (
+                <div key={nombre} style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  padding: '9px 0',
+                  borderBottom: i < topCategorias.length - 1 ? '1px solid #E5E5EA' : 'none',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{
+                      width: 20, height: 20, borderRadius: 6,
+                      background: '#E8FAF6', color: '#28B99A',
+                      fontSize: 10, fontWeight: 700, flexShrink: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>{i + 1}</span>
+                    <span style={{ fontSize: 13, fontWeight: 500, color: '#1C1C1E' }}>{nombre}</span>
+                  </div>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#1C1C1E' }}>{pesos(monto)}</span>
+                </div>
+              ))
+            ) : (
+              topProductos.length === 0 ? (
+                <p style={{ fontSize: 12, color: '#8E8E93', textAlign: 'center', padding: '28px 0', margin: 0 }}>
+                  Sin ventas cobradas en el período
+                </p>
+              ) : topProductos.map((prod, i) => (
+                <div key={i} style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  padding: '9px 0',
+                  borderBottom: i < topProductos.length - 1 ? '1px solid #E5E5EA' : 'none',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{
+                      width: 20, height: 20, borderRadius: 6,
+                      background: '#EBF5FF', color: '#2B6CB0',
+                      fontSize: 10, fontWeight: 700, flexShrink: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>{i + 1}</span>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 500, color: '#1C1C1E' }}>{prod.nombre}</div>
+                      {prod.fragancia && (
+                        <div style={{ fontSize: 11, color: '#8E8E93' }}>{prod.fragancia}</div>
+                      )}
                     </div>
-                    <span style={{ fontSize: 12, fontWeight: 500, color: '#1C1C1E', minWidth: 20, textAlign: 'right' }}>
-                      {count}
-                    </span>
-                  </button>
-                )
-              })
-            })()}
+                  </div>
+                  <span style={{ fontSize: 12, color: '#8E8E93' }}>{prod.cantidad} u.</span>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
 
-      {/* ── Top 5 productos más vendidos ── */}
-      {(() => {
-        const top5 = pedidos ? calcTopProductos(pedidos) : []
-        const maxU  = top5[0]?.total ?? 1
+      {/* ── Resumen quincenal ── */}
+      <div style={{ background: '#FFFFFF', borderRadius: 10, border: '0.5px solid #E5E5EA', overflow: 'hidden' }}>
+        <div style={{ padding: '14px 20px', borderBottom: '0.5px solid #E5E5EA', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#1C1C1E' }}>Resumen quincenal</span>
+          <button
+            onClick={descargarExcel}
+            style={{
+              height: 30, padding: '0 12px',
+              border: '1px solid #E5E5EA', borderRadius: 8,
+              background: 'transparent', color: '#8E8E93',
+              fontSize: 11, fontWeight: 500, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 6,
+              fontFamily: 'Inter, sans-serif',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = '#3DD6B5'; e.currentTarget.style.color = '#28B99A' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = '#E5E5EA'; e.currentTarget.style.color = '#8E8E93' }}
+          >
+            <Download size={13} /> Exportar Excel
+          </button>
+        </div>
 
-        return (
-          <div style={{ background: '#fff', border: '0.5px solid #E5E5EA', borderRadius: 10, overflow: 'hidden' }}>
-            <div style={{ padding: '10px 16px', borderBottom: '0.5px solid #F5F7F9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 12, fontWeight: 500, color: '#1C1C1E' }}>Productos más vendidos</span>
-              <span style={{ fontSize: 10, color: '#8E8E93' }}>{fmtRango(desde, hasta)}</span>
-            </div>
-            {top5.length === 0 ? (
-              <p style={{ fontSize: 12, color: '#8E8E93', textAlign: 'center', padding: 16, margin: 0 }}>
-                Sin ventas en el período seleccionado
-              </p>
-            ) : top5.map((prod, i) => (
-              <div
-                key={prod.nombre + prod.presentacion}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 12,
-                  padding: '8px 16px',
-                  borderBottom: i < top5.length - 1 ? '0.5px solid #F5F7F9' : 'none',
-                }}
-              >
-                <span style={{ fontSize: 11, fontWeight: 500, color: '#8E8E93', minWidth: 16 }}>
-                  {i + 1}
-                </span>
-                <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center' }}>
-                  <span style={{ fontSize: 12, fontWeight: 500, color: '#1C1C1E', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {prod.nombre}
-                  </span>
-                  {prod.presentacion > 0 && (
-                    <span style={{
-                      marginLeft: 6, fontSize: 9, color: '#8E8E93',
-                      background: '#F5F7F9', padding: '1px 5px', borderRadius: 4,
-                      flexShrink: 0,
-                    }}>
-                      {prod.presentacion} L
-                    </span>
-                  )}
-                </div>
-                <span style={{ fontSize: 12, fontWeight: 500, color: '#3DD6B5', minWidth: 60, textAlign: 'right' }}>
-                  {prod.total} u.
-                </span>
-                <div style={{ width: 80, height: 3, borderRadius: 99, background: '#F5F7F9', flexShrink: 0 }}>
-                  <div style={{
-                    width: `${(prod.total / maxU) * 100}%`,
-                    height: '100%', borderRadius: 99, background: '#3DD6B5',
-                  }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        )
-      })()}
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr style={{ background: '#F5F7F9' }}>
+              <th style={thStyle}>Período</th>
+              <th style={{ ...thStyle, textAlign: 'right' }}>Total vendido</th>
+              <th style={{ ...thStyle, textAlign: 'right' }}>Costo producción</th>
+              <th style={{ ...thStyle, textAlign: 'right' }}>Ganancia</th>
+            </tr>
+          </thead>
+          <tbody>
+            {quincenas.length === 0 ? (
+              <tr>
+                <td colSpan={4} style={{ ...tdStyle, textAlign: 'center', color: '#8E8E93' }}>
+                  Sin datos en el período seleccionado
+                </td>
+              </tr>
+            ) : quincenas.map(({ inicio, fin }, i) => {
+              const { totalVendido, totalCosto, ganancia } = calcQuincena(cobrados, inicio, fin)
+              return (
+                <tr key={i} style={{ borderBottom: '1px solid #E5E5EA' }}>
+                  <td style={tdStyle}>{fmtDia(inicio)} al {fmtDiaAno(fin)}</td>
+                  <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 600 }}>
+                    {pesos(totalVendido)}
+                  </td>
+                  <td style={{ ...tdStyle, textAlign: 'right', color: '#8E8E93' }}>
+                    {pesos(totalCosto)}
+                  </td>
+                  <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 700, color: ganancia >= 0 ? '#28B99A' : '#F05252' }}>
+                    {pesos(ganancia)}
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+          <tfoot>
+            <tr style={{ background: '#F5F7F9' }}>
+              <td style={{ ...tdStyle, fontWeight: 700 }}>Total período</td>
+              <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 700 }}>{pesos(totalCobrado)}</td>
+              <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 700, color: '#8E8E93' }}>{pesos(totalCostoProduccion)}</td>
+              <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 700, color: (totalCobrado - totalCostoProduccion) >= 0 ? '#28B99A' : '#F05252' }}>
+                {pesos(totalCobrado - totalCostoProduccion)}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
 
       {/* ── Sheet pendientes ── */}
       {pendientes && (
