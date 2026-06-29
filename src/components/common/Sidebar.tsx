@@ -2,6 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Package, Users, ShoppingCart,
   ChevronRight, LogOut, Settings, UserCircle, Receipt,
+  FlaskConical, Truck,
 } from 'lucide-react'
 import { useSidebar } from '@/hooks/useSidebar'
 import { useAuth } from '@/hooks/useAuth'
@@ -19,7 +20,15 @@ const NAV_ADMIN: NavItem[] = [
   { to: '/admin/productos', icon: <Package         size={18} />, label: 'Productos' },
   { to: '/admin/egresos',  icon: <Receipt         size={18} />, label: 'Egresos' },
   { to: '/admin/usuarios',  icon: <Settings        size={18} />, label: 'Usuarios' },
-  { to: '/admin/perfil',    icon: <UserCircle      size={18} />, label: 'Mi perfil' },
+]
+
+const NAV_OPERATIVAS: NavItem[] = [
+  { to: '/admin/produccion', icon: <FlaskConical size={18} />, label: 'Producción' },
+  { to: '/admin/repartidor', icon: <Truck        size={18} />, label: 'Reparto' },
+]
+
+const NAV_PERFIL: NavItem[] = [
+  { to: '/admin/perfil', icon: <UserCircle size={18} />, label: 'Mi perfil' },
 ]
 
 function getIniciales(nombre: string) {
@@ -48,7 +57,8 @@ export function Sidebar() {
         left:       0,
         bottom:     0,
         width:      isOpen ? 240 : 64,
-        background: '#1A2B3C',
+        background: '#FFFFFF',
+        borderRight:'1px solid #E5E5EA',
         transition: 'width 0.25s ease',
         zIndex:     100,
         display:    'flex',
@@ -66,21 +76,34 @@ export function Sidebar() {
           justifyContent: isOpen ? 'flex-start' : 'center',
           gap:         10,
           flexShrink:  0,
-          borderBottom:'1px solid rgba(255,255,255,0.08)',
+          borderBottom:'1px solid #E5E5EA',
         }}
       >
-        {isOpen ? (
-          <img
-            src="/logo.png"
-            alt="Limpimax"
-            style={{ maxWidth: 120, height: 'auto' }}
-          />
-        ) : (
-          <img
-            src="/logo-mark.png"
-            alt="Limpimax"
-            style={{ width: 32, height: 32, borderRadius: 6, objectFit: 'contain' }}
-          />
+        {/* Logo mark */}
+        <div style={{
+          width: 36,
+          height: 36,
+          borderRadius: 12,
+          border: '1px solid #E5E5EA',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+          overflow: 'hidden',
+        }}>
+          <img src="/icons/icon-192.png" width={36} height={36} alt="" />
+        </div>
+
+        {/* Texto (solo visible cuando sidebar abierto) */}
+        {isOpen && (
+          <div>
+            <div style={{ fontSize: 17, fontWeight: 800, color: '#1C1C1E', letterSpacing: '-0.5px' }}>
+              burbuja
+            </div>
+            <div style={{ fontSize: 9, fontWeight: 500, color: '#8E8E93', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              Limpieza Superpoderosa
+            </div>
+          </div>
         )}
       </div>
 
@@ -102,9 +125,74 @@ export function Sidebar() {
               borderRadius:   10,
               textDecoration: 'none',
               fontSize:       13,
-              fontWeight:     isActive ? 600 : 400,
-              color:          isActive ? '#fff' : 'rgba(255,255,255,0.6)',
-              background:     isActive ? '#0D5C8A' : 'transparent',
+              fontWeight:     isActive ? 600 : 500,
+              color:          isActive ? '#28B99A' : '#3A3A3C',
+              background:     isActive ? '#E8FAF6' : 'transparent',
+              transition:     'all 0.15s ease',
+              whiteSpace:     'nowrap',
+              overflow:       'hidden',
+            })}
+          >
+            <span style={{ flexShrink: 0 }}>{item.icon}</span>
+            {isOpen && item.label}
+          </NavLink>
+        ))}
+
+        {/* Vistas operativas — lo que vería producción/repartidor, dentro del propio admin */}
+        {isOpen && (
+          <div style={{
+            padding: '10px 16px 4px', fontSize: 9, fontWeight: 700,
+            color: '#8E8E93', textTransform: 'uppercase', letterSpacing: '0.08em',
+          }}>
+            Vistas operativas
+          </div>
+        )}
+        {NAV_OPERATIVAS.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            title={!isOpen ? item.label : undefined}
+            style={({ isActive }) => ({
+              display:        'flex',
+              alignItems:     'center',
+              gap:            10,
+              padding:        isOpen ? '10px 16px' : '10px 0',
+              justifyContent: isOpen ? 'flex-start' : 'center',
+              margin:         '2px 8px',
+              borderRadius:   10,
+              textDecoration: 'none',
+              fontSize:       13,
+              fontWeight:     isActive ? 600 : 500,
+              color:          isActive ? '#28B99A' : '#3A3A3C',
+              background:     isActive ? '#E8FAF6' : 'transparent',
+              transition:     'all 0.15s ease',
+              whiteSpace:     'nowrap',
+              overflow:       'hidden',
+            })}
+          >
+            <span style={{ flexShrink: 0 }}>{item.icon}</span>
+            {isOpen && item.label}
+          </NavLink>
+        ))}
+
+        {NAV_PERFIL.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            title={!isOpen ? item.label : undefined}
+            style={({ isActive }) => ({
+              display:        'flex',
+              alignItems:     'center',
+              gap:            10,
+              padding:        isOpen ? '10px 16px' : '10px 0',
+              justifyContent: isOpen ? 'flex-start' : 'center',
+              margin:         '2px 8px',
+              borderRadius:   10,
+              textDecoration: 'none',
+              fontSize:       13,
+              fontWeight:     isActive ? 600 : 500,
+              color:          isActive ? '#28B99A' : '#3A3A3C',
+              background:     isActive ? '#E8FAF6' : 'transparent',
               transition:     'all 0.15s ease',
               whiteSpace:     'nowrap',
               overflow:       'hidden',
@@ -120,7 +208,7 @@ export function Sidebar() {
       <div
         style={{
           padding:     isOpen ? '12px 16px' : '12px 0',
-          borderTop:   '1px solid rgba(255,255,255,0.08)',
+          borderTop:   '1px solid #E5E5EA',
           display:     'flex',
           alignItems:  'center',
           gap:         10,
@@ -133,8 +221,8 @@ export function Sidebar() {
           style={{
             width:          32,
             height:         32,
-            borderRadius:   '50%',
-            background:     '#0D5C8A',
+            borderRadius:   10,
+            background:     'linear-gradient(135deg, #3DD6B5, #7EB8E8)',
             display:        'flex',
             alignItems:     'center',
             justifyContent: 'center',
@@ -150,13 +238,13 @@ export function Sidebar() {
         {isOpen && (
           <div style={{ flex: 1, overflow: 'hidden', minWidth: 0 }}>
             <p style={{
-              color: '#fff', fontSize: 13, fontWeight: 500,
+              color: '#1C1C1E', fontSize: 13, fontWeight: 500,
               whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
               margin: 0,
             }}>
               {usuario?.nombre ?? '—'}
             </p>
-            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, margin: 0 }}>
+            <p style={{ color: '#8E8E93', fontSize: 11, margin: 0 }}>
               {usuario?.rol ?? '—'}
             </p>
           </div>
@@ -170,7 +258,7 @@ export function Sidebar() {
               background: 'transparent',
               border:     'none',
               cursor:     'pointer',
-              color:      'rgba(255,255,255,0.5)',
+              color:      '#8E8E93',
               padding:    4,
               borderRadius: 6,
               display:    'flex',
@@ -194,7 +282,7 @@ export function Sidebar() {
           width:          24,
           height:         24,
           borderRadius:   '50%',
-          background:     '#1B9ED6',
+          background:     '#7EB8E8',
           border:         'none',
           cursor:         'pointer',
           display:        'flex',

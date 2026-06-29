@@ -27,9 +27,9 @@ export const FloatSelect = forwardRef<HTMLSelectElement, FloatSelectProps>(
               appearance:   'none',
               cursor:       'pointer',
               transition:   'border-color 0.2s ease, padding 0.2s ease',
-              color:        hasValue ? '#1A2B3C' : 'rgba(88,87,87,0.82)',
+              color:        hasValue ? '#1C1C1E' : 'rgba(88,87,87,0.82)',
             }}
-            onFocus={(e) => { e.currentTarget.style.borderColor = '#1B9ED6' }}
+            onFocus={(e) => { e.currentTarget.style.borderColor = '#3DD6B5' }}
             onBlur={(e)  => { e.currentTarget.style.borderColor = 'rgba(105,105,105,0.4)' }}
             {...props}
           >
@@ -43,7 +43,7 @@ export const FloatSelect = forwardRef<HTMLSelectElement, FloatSelectProps>(
             top:            '50%',
             transform:      'translateY(-50%)',
             pointerEvents:  'none',
-            color:          '#4A5568',
+            color:          '#8E8E93',
             fontSize:       10,
           }}>▼</span>
 
@@ -52,7 +52,7 @@ export const FloatSelect = forwardRef<HTMLSelectElement, FloatSelectProps>(
             position:    'absolute',
             left:        10,
             top:         hasValue ? 4 : 15,
-            color:       hasValue ? '#1B9ED6' : 'rgba(88,87,87,0.82)',
+            color:       hasValue ? '#3DD6B5' : 'rgba(88,87,87,0.82)',
             fontSize:    hasValue ? 10 : 14,
             fontWeight:  hasValue ? 600 : 400,
             transition:  'all 0.2s ease',

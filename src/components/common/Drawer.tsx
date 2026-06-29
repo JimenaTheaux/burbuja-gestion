@@ -48,7 +48,7 @@ export function Drawer({ open, onClose, title, children, footer, scrollRef, pane
         className="drawer-panel"
         style={{
           position: 'fixed', top: 0, right: 0, bottom: 0,
-          background: '#F4F6F8',
+          background: '#F5F7F9',
           zIndex: 201,
           display: 'flex',
           flexDirection: 'column',
@@ -60,7 +60,7 @@ export function Drawer({ open, onClose, title, children, footer, scrollRef, pane
         {/* Header sticky */}
         <div style={{
           background: '#fff',
-          borderBottom: '0.5px solid #D1D5DB',
+          borderBottom: '0.5px solid #E5E5EA',
           padding: '0 16px',
           height: 56,
           display: 'flex',
@@ -68,7 +68,7 @@ export function Drawer({ open, onClose, title, children, footer, scrollRef, pane
           justifyContent: 'space-between',
           flexShrink: 0,
         }}>
-          <span style={{ fontSize: 14, fontWeight: 600, color: '#1A2B3C' }}>
+          <span style={{ fontSize: 14, fontWeight: 600, color: '#1C1C1E' }}>
             {title}
           </span>
           <button
@@ -77,7 +77,7 @@ export function Drawer({ open, onClose, title, children, footer, scrollRef, pane
             className="btn-press"
             style={{
               background: 'transparent', border: 'none', cursor: 'pointer',
-              color: '#4A5568', width: 32, height: 32,
+              color: '#8E8E93', width: 32, height: 32,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               borderRadius: 8,
             }}
@@ -105,7 +105,7 @@ export function Drawer({ open, onClose, title, children, footer, scrollRef, pane
         {footer && (
           <div style={{
             background: '#fff',
-            borderTop: '0.5px solid #D1D5DB',
+            borderTop: '0.5px solid #E5E5EA',
             padding: '12px 16px',
             paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
             display: 'flex',

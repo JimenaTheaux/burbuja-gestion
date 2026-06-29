@@ -9,7 +9,7 @@ interface Toast {
 const STYLES = {
   success: { bg: '#E8F8F0', border: '#2E9E5C', color: '#145A32' },
   error:   { bg: '#FDECEA', border: '#D32F2F', color: '#B71C1C' },
-  info:    { bg: '#E8F4FF', border: '#1B9ED6', color: '#0D5C8A' },
+  info:    { bg: '#EBF5FF', border: '#7EB8E8', color: '#3DD6B5' },
 }
 
 const ICONS = {

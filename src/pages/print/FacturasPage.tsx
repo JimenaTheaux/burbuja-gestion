@@ -56,38 +56,38 @@ function Factura({ pedido, posicion }: { pedido: FacturaPedido; posicion: 0|1|2|
     <div className="factura-cell" style={{ borderRight, borderBottom }}>
 
       {/* Encabezado empresa — fila única, compacta */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4, paddingBottom: 4, borderBottom: '1.5px solid #0D5C8A', flexShrink: 0 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4, paddingBottom: 4, borderBottom: '1.5px solid #3DD6B5', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <div style={{
-            width: 16, height: 16, borderRadius: 3, background: '#0D5C8A',
+            width: 16, height: 16, borderRadius: 3, background: '#3DD6B5',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: '#fff', fontSize: 6, fontWeight: 900, flexShrink: 0,
           }}>LM</div>
-          <span style={{ fontWeight: 900, fontSize: 9, color: '#0D5C8A' }}>LIMPIMAX</span>
+          <span style={{ fontWeight: 900, fontSize: 9, color: '#3DD6B5' }}>BURBUJA</span>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontWeight: 900, fontSize: 9, color: '#1A2B3C' }}>
+          <div style={{ fontWeight: 900, fontSize: 9, color: '#1C1C1E' }}>
             P-{String(pedido.numero).padStart(5, '0')}
           </div>
-          <div style={{ fontSize: 7, color: '#4A5568' }}>
+          <div style={{ fontSize: 7, color: '#8E8E93' }}>
             {formatFecha(pedido.fechaProduccion ?? pedido.createdAt)}
           </div>
         </div>
       </div>
 
       {/* Cliente */}
-      <div style={{ marginBottom: 4, padding: '3px 5px', background: '#F4F6F8', borderRadius: 3, flexShrink: 0 }}>
-        <div style={{ fontSize: 8, fontWeight: 700, color: '#1A2B3C', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+      <div style={{ marginBottom: 4, padding: '3px 5px', background: '#F5F7F9', borderRadius: 3, flexShrink: 0 }}>
+        <div style={{ fontSize: 8, fontWeight: 700, color: '#1C1C1E', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {pedido.clienteNombre ?? '—'}
         </div>
         {pedido.direccionEntrega && (
-          <div style={{ fontSize: 7, color: '#4A5568', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div style={{ fontSize: 7, color: '#8E8E93', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {pedido.direccionEntrega}
           </div>
         )}
         <span style={{
-          background: pedido.tipoPrecio === 'mayorista' ? '#E8F4FF' : '#F0F0F0',
-          color:      pedido.tipoPrecio === 'mayorista' ? '#1B9ED6' : '#9A9A9A',
+          background: pedido.tipoPrecio === 'mayorista' ? '#EBF5FF' : '#F0F0F0',
+          color:      pedido.tipoPrecio === 'mayorista' ? '#7EB8E8' : '#9A9A9A',
           fontSize: 6, fontWeight: 700, padding: '0 3px', borderRadius: 99,
         }}>
           {pedido.tipoPrecio.toUpperCase()}
@@ -126,14 +126,14 @@ function Factura({ pedido, posicion }: { pedido: FacturaPedido; posicion: 0|1|2|
       </div>
 
       {/* Totales */}
-      <div style={{ borderTop: '1px solid #D1D5DB', paddingTop: 3, flexShrink: 0 }}>
+      <div style={{ borderTop: '1px solid #E5E5EA', paddingTop: 3, flexShrink: 0 }}>
         {Number(pedido.costoEnvio) > 0 && (
-          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#4A5568', marginBottom: 1 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#8E8E93', marginBottom: 1 }}>
             <span>Envío</span>
             <span>${formatPeso(pedido.costoEnvio)}</span>
           </div>
         )}
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 900, fontSize: 10, color: '#0D5C8A', marginTop: 2 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 900, fontSize: 10, color: '#3DD6B5', marginTop: 2 }}>
           <span>TOTAL</span>
           <span>${formatPeso(total)}</span>
         </div>
@@ -148,7 +148,7 @@ function Factura({ pedido, posicion }: { pedido: FacturaPedido; posicion: 0|1|2|
 
       {/* Notas */}
       {pedido.notasProduccion && (
-        <div style={{ marginTop: 2, color: '#4A5568', fontStyle: 'italic', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 0 }}>
+        <div style={{ marginTop: 2, color: '#8E8E93', fontStyle: 'italic', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 0 }}>
           {pedido.notasProduccion}
         </div>
       )}
@@ -364,14 +364,14 @@ export default function FacturasPage() {
         position:   'sticky',
         top:        0,
         zIndex:     10,
-        background: '#1A2B3C',
+        background: '#1C1C1E',
         padding:    '10px 20px',
         display:    'flex',
         alignItems: 'center',
         gap:        12,
         flexWrap:   'wrap',
       }}>
-        <span style={{ color: '#fff', fontWeight: 900, fontSize: 14 }}>LIMPIMAX</span>
+        <span style={{ color: '#fff', fontWeight: 900, fontSize: 14 }}>BURBUJA</span>
         <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>
           {loading
             ? 'Cargando…'
@@ -383,7 +383,7 @@ export default function FacturasPage() {
             onClick={() => window.print()}
             disabled={loading || !pedidos.length}
             style={{
-              background: 'white', color: '#0D5C8A', border: 'none',
+              background: 'white', color: '#3DD6B5', border: 'none',
               borderRadius: 8, padding: '8px 16px', fontWeight: 700,
               cursor: 'pointer', fontSize: 13,
               display: 'flex', alignItems: 'center', gap: 6,

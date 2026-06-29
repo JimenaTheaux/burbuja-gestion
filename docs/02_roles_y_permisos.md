@@ -1,83 +1,85 @@
 # 02 — Roles y Permisos
 
-## Roles del sistema
+## Estado actual
 
-3 roles operativos + 1 superusuario de sistema.
+Los cuatro roles (`admin`, `superadmin`, `produccion`, `repartidor`) están **activos**. Cada uno tiene login propio y aterriza en su propio espacio según `perfiles.rol` (`RUTA_POR_ROL` en `LoginPage.tsx`):
+
+| Rol | Ruta destino |
+|---|---|
+| `admin` / `superadmin` | `/admin` |
+| `produccion` | `/produccion` |
+| `repartidor` | `/repartidor` |
+
+El Admin además puede ver las vistas operativas de Producción y Reparto desde `/admin/produccion` y `/admin/repartidor` — son el **mismo componente** (`ProduccionView` / `RepartidorView`) que usan los roles operativos, sin restricción a un usuario en particular: cualquier cuenta con rol `produccion` o `repartidor` ve y opera toda la cola de pedidos (no hay asignación de pedido a un repartidor específico).
+
+RLS en Supabase restringe la **lectura** por rol (ver `06_estructura_de_datos.md`), pero los cambios de estado pasan por RPCs `SECURITY DEFINER` que no validan el rol del caller — ver nota de seguridad al final.
 
 ---
 
-### ROL: Administración (`admin`)
-**Quién:** Personal de oficina que gestiona pedidos, clientes y cierre de ventas.
+## Roles definidos
+
+### ROL: Administración (`admin`) — **ACTIVO EN MVP**
+**Quién:** Dueño o personal de oficina que gestiona pedidos, clientes y cierres.
 
 **Puede:**
 - Crear, editar y anular pedidos
 - Ver todos los pedidos en cualquier estado
-- Acceder al dashboard general (resumen de estados, pedidos del día, pendientes)
-- Acceder al dashboard de ventas con KPIs (cantidad, ingresos, filtros de fechas)
+- Avanzar el estado de cualquier pedido manualmente
+- Acceder al dashboard general (KPIs del día, pedidos por estado)
+- Acceder al dashboard de ventas con KPIs (cantidad, ingresos, margen bruto, filtros de fechas)
 - Registrar y editar clientes
-- ABM de productos y precios
-- Avanzar el estado de cualquier pedido manualmente (override)
+- ABM de productos y precios (incluido `costo_produccion`)
 - Ver y registrar el cierre de ventas (cobro)
 - Editar forma de pago y monto cobrado en pedidos CERRADOS
-- Exportar o imprimir el listado de pedidos del día para producción
+- Exportar o compartir documento por pedido (JPG vía WhatsApp)
 - Crear y gestionar usuarios del sistema
+- Acceder a las vistas de Producción y Reparto
+- Ver y gestionar egresos
 
-**Vista principal:** Dashboard con KPIs + tablero de pedidos agrupados por estado + dashboard de ventas.
+**Vista principal:** Dashboard con KPIs + tablero de pedidos + gráfico semanal.
+
+**Navegación desktop:** Sidebar blanco colapsable (240px / 64px).
+
+**Navegación mobile:** Hamburguesa (menú completo) + bottom nav fijo con accesos directos: Dashboard · Pedidos · Egresos.
 
 ---
 
-### ROL: Producción (`produccion`)
-**Quién:** Operario que fabrica y arma los pedidos.
+### ROL: Producción (`produccion`) — **ACTIVO**
+**Quién:** Operario de planta que fabrica/arma los pedidos.
 
 **Puede:**
-- Ver y descargar la lista de producción total (agrupada por artículo con cantidad total)
-- **Ver pedidos EN PRODUCCIÓN filtrados por fecha seleccionada, navegando día a día. Vista principal: hoy.**
-- Navegar a días anteriores o futuros con el selector de fecha (‹ / › / Hoy)
-- Marcar pedidos como "Listo para reparto" en cualquier fecha (puede completar pedidos pendientes de días anteriores)
-- Ver el detalle de cada pedido: cliente, productos, cantidades, notas de producción, marca bidón nuevo
-- Ver pedidos ya marcados como listos (solo lectura)
+- Ver pedidos en estado `en_produccion` (agrupados por fecha de producción, con ítems y notas de producción)
+- Ver lista resumen de producción (cantidades por artículo)
+- Marcar pedido como `listo_reparto`
+- Ver listado de pedidos ya marcados como listos (`/produccion/listos`, solo lectura)
+- Editar su propio perfil / contraseña
 
-**No puede:**
-- Crear ni editar pedidos
-- Ver información de precios ni totales de venta
-- Modificar clientes ni productos
-- Acceder al dashboard de administración
+**No puede:** ver precios, totales, costos, ni datos de cobro. No tiene acceso a Pedidos, Clientes, Productos, Egresos ni Usuarios.
 
-**Vista principal:**
-- **Desktop:** Kanban horizontal — una columna para la fecha seleccionada, con scroll horizontal. Hoy destacado visualmente.
-- **Mobile:** Lista agrupada por fecha con encabezado de día separador ("Hoy — Lun 2 jun · 3 pedidos" + línea divisora) y pedidos en cards debajo.
-- Selector de fecha (‹ Lun 23 jun ›) en el header — navega día a día, botón "Hoy" cuando no es hoy.
-- Banner informativo cuando la fecha seleccionada no es hoy.
-- Lista resumen de producción de la fecha seleccionada como panel colapsable arriba.
+**Navegación:** `ProduccionLayout` con bottom nav (Producción · Listos · Perfil). Sin soporte offline.
 
 ---
 
-### ROL: Repartidor (`repartidor`)
-**Quién:** Persona que retira los pedidos, los entrega y cobra.
+### ROL: Repartidor (`repartidor`) — **ACTIVO**
+**Quién:** Persona que entrega los pedidos y cobra.
 
 **Puede:**
-- Ver pedidos en estado EN PRODUCCIÓN del día (solo lectura + acción de emergencia)
-- Ver pedidos en estado LISTO PARA REPARTO del día
-- Ver pedidos en estado EN REPARTO del día
-- Avance de emergencia: pedido EN PRODUCCIÓN → EN REPARTO (si ya retiró físicamente y producción no lo marcó)
-- Ver detalle del pedido: cliente, dirección, lista de productos y cantidades, total a cobrar
-- Marcar pedido como "Entregado" registrando: forma de cobro, monto cobrado, observaciones
-- Marcar pedido como "Entrega fallida" con motivo en texto libre
-- Ver su historial de entregas del día
-- **Puede ver el historial de días anteriores (solo lectura). Para fechas distintas a hoy: solo pedidos cerrados, sin acciones.**
-- Funcionar en modo offline con sincronización automática al reconectar (solo aplica para hoy; sin conexión en día anterior muestra caché si existe)
+- Ver pedidos en `en_produccion` (con acción de emergencia), `listo_reparto` y `en_reparto`
+- Marcar salida a reparto (`listo_reparto` → `en_reparto`)
+- Registrar entrega + cobro (forma de cobro, monto, fecha de cobro, observaciones) → pasa a `cerrado`
+- Registrar entrega fallida con motivo → pasa a `entrega_fallida`
+- Avance de emergencia: retirar un pedido directo desde `en_produccion` → `en_reparto`
+- Ver historial de entregas cerradas/fallidas del día (`/repartidor/historial`, solo lectura)
+- Editar su propio perfil / contraseña
+- Operar **sin conexión**: las acciones se encolan en IndexedDB y sincronizan al volver online
 
-**No puede:**
-- Crear ni editar pedidos
-- Ver precios de costo ni información interna
-- Acceder al dashboard de administración
-- Modificar clientes ni productos
+**No puede:** ver precios de catálogo ni costos. No tiene acceso a Pedidos, Clientes, Productos, Egresos ni Usuarios.
 
-**Vista principal:** Cards de pedidos del día con cliente, dirección y total a cobrar. Detalle expandible. Botón de acción prominente por pedido. Indicador de estado de conexión siempre visible. Selector de fecha en el header para consultar historial.
+**Navegación:** `RepartidorLayout` con bottom nav (Pedidos · Historial · Perfil), indicador de conexión y banners de sincronización.
 
 ---
 
-### ROL: Superadmin (`superadmin`)
+### ROL: Superadmin (`superadmin`) — **RESERVADO**
 Todo lo del admin + configuración técnica, gestión de roles, acceso a logs.
 
 ---
@@ -86,31 +88,28 @@ Todo lo del admin + configuración técnica, gestión de roles, acceso a logs.
 
 | Acción | Admin | Producción | Repartidor |
 |---|:---:|:---:|:---:|
-| Ver todos los pedidos | ✅ | ❌ | ❌ |
-| Ver pedidos EN PRODUCCIÓN (fecha seleccionada, cualquier día) | ✅ | ✅ | ❌ |
-| Ver pedidos EN PRODUCCIÓN (solo hoy) | ✅ | ✅ | ✅ (lectura + emergencia) |
-| Ver pedidos LISTO PARA REPARTO | ✅ | ✅ | ✅ |
-| Ver pedidos EN REPARTO | ✅ | ❌ | ✅ |
+| Ver todos los pedidos | ✅ | — | — |
+| Ver pedidos en producción | ✅ | ✅ | — |
+| Ver pedidos listos/en reparto | ✅ | — | ✅ |
 | Crear pedido | ✅ | ❌ | ❌ |
 | Editar pedido | ✅ | ❌ | ❌ |
 | Anular pedido | ✅ | ❌ | ❌ |
-| Ver precios y totales | ✅ | ❌ | ✅ (solo total a cobrar) |
-| Avanzar estado (producción → listo) | ✅ | ✅ | ❌ |
-| Avanzar emergencia (producción → en reparto) | ✅ | ❌ | ✅ |
-| Avanzar estado (listo → en reparto → entregado) | ✅ | ❌ | ✅ |
-| Registrar cobro | ✅ | ❌ | ✅ |
+| Ver precios, totales y margen | ✅ | ❌ | ❌ |
+| Avanzar `en_produccion` → `listo_reparto` | ✅ | ✅ | ❌ |
+| Avanzar `listo_reparto` → `en_reparto` | ✅ | ❌ | ✅ |
+| Avance de emergencia `en_produccion` → `en_reparto` | ✅ | ❌ | ✅ |
+| Registrar cobro / cerrar pedido | ✅ | ❌ | ✅ |
+| Registrar entrega fallida | ✅ | ❌ | ✅ |
 | Editar cobro en pedido cerrado | ✅ | ❌ | ❌ |
-| Lista resumen producción | ✅ | ✅ | ❌ |
-| Filtrar producción por fecha | ✅ | ✅ | ❌ |
-| ABM clientes | ✅ | ❌ | ❌ |
-| ABM productos | ✅ | ❌ | ❌ |
-| Dashboard general + ventas | ✅ | ❌ | ❌ |
-| Gestión de usuarios | ✅ | ❌ | ❌ |
-| Ver historial de días anteriores | ✅ | ✅ | ✅ (solo lectura) |
-| Navegar fechas con selector (‹ / ›) | ✅ | ✅ | ✅ |
+| ABM clientes / productos / usuarios / egresos | ✅ | ❌ | ❌ |
+| Dashboard general + ventas + margen | ✅ | ❌ | ❌ |
+| Operar sin conexión (offline queue) | — | ❌ | ✅ |
+
+---
 
 ## Notas
 - Login con email + contraseña. Sin registro público.
 - Sesión persistente (no expira sola).
-- El avance de emergencia del repartidor queda registrado en el historial con usuario y timestamp.
 - Los usuarios se desactivan, nunca se eliminan.
+- El filtrado por rol en el frontend es vía `ProtectedRoute` (`src/components/common/ProtectedRoute.tsx`) según `roles` permitidos en cada ruta de `App.tsx`.
+- **Validación de rol en las RPCs:** `cambiar_estado_pedido`, `cerrar_pedido` y `anular_pedido` validan el rol del caller (vía `perfiles.rol`) antes de aplicar la transición — ver `supabase/rpcs_and_indexes.sql`. El grant a `anon` se sacó (quedan solo para `authenticated`). **Pendiente de ejecutar:** este SQL está actualizado en el repo pero hay que correrlo en el SQL Editor de Supabase para que tome efecto en la base real — no se aplica solo. `get_dashboard_stats` (KPIs de ventas) sigue sin chequeo de rol propio dentro de la función, aunque ya no es accesible para `anon`; el frontend solo la llama desde el dashboard de Admin.

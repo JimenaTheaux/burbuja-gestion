@@ -6,16 +6,16 @@
 - Formulario: email + contraseña con float labels
 - Sin registro público; usuarios creados solo por Admin
 - Sesión persistente (no expira sola)
-- Redirección automática según rol al ingresar
+- Redirección automática según rol al ingresar: `admin`/`superadmin` → `/admin`, `produccion` → `/produccion`, `repartidor` → `/repartidor`
 - Error inline: "Credenciales incorrectas. Intentá de nuevo." — sin alert del browser
 
 ### F1.2 — Gestión de sesión
-- Logout manual disponible siempre
-- Si el token expira con datos offline pendientes de sync, no se pierden
+- Logout manual disponible siempre (footer del sidebar / menú hamburguesa)
+- Si `activo = false` en `perfiles`, `useAuth` cierra sesión automáticamente
 
 ---
 
-## MÓDULO 2: Pedidos (núcleo del sistema)
+## MÓDULO 2: Pedidos
 
 ### F2.1 — Crear pedido (Admin)
 Se abre en un drawer/sheet lateral (50% desktop, 100% mobile) con fondo oscurecido.
@@ -24,181 +24,152 @@ Se abre en un drawer/sheet lateral (50% desktop, 100% mobile) con fondo oscureci
 - Cliente: selector con búsqueda por texto + botón "+ Cliente nuevo" que expande mini-form inline
 - Fecha de producción (date picker nativo estilizado)
 - Lista de ítems:
-  - Producto (select del catálogo)
+  - Producto (select del catálogo activo)
   - Cantidad
   - Precio unitario (precargado según tipo de cliente: mayorista/minorista; editable)
   - Subtotal calculado automáticamente
   - Bidón nuevo (checkbox por ítem)
 - Costo de envío (opcional, numérico)
-- Total: calculado automáticamente, pero editable manualmente (si se modifica manualmente, se resalta visualmente)
+- Total: calculado automáticamente, editable manualmente (si se edita manualmente, se resalta visualmente)
 - Notas internas (solo Admin)
-- Notas para producción (visible para Producción y Admin)
+- Notas para producción
 
 **Comportamiento de precios:**
-- Al seleccionar cliente, ítems se precargan con precio según tipo (mayorista/minorista)
-- Admin puede modificar precio de cualquier ítem antes de confirmar
-- Total se recalcula al agregar/quitar ítems; si Admin edita el total directamente, ese valor tiene precedencia
+- Al seleccionar cliente, ítems precargan precio según tipo (mayorista/minorista)
+- Admin puede modificar precio de cualquier ítem
+- Total se recalcula al agregar/quitar ítems; si se edita manualmente, ese valor tiene precedencia
 - Al guardar, el precio de cada ítem queda congelado como snapshot
-- Cambios futuros en el ABM no afectan pedidos ya creados
+- Cambios futuros en ABM no afectan pedidos ya creados
 
 **Acciones footer del drawer:**
 - "Guardar borrador" (botón secondary)
-- "Confirmar pedido" (botón primary) → pasa a EN PRODUCCIÓN automáticamente
+- "Confirmar pedido" (botón primary) → pasa a `en_produccion` automáticamente
 
 **Validaciones:** al menos 1 ítem, cliente obligatorio, fecha de producción obligatoria.
 
 ### F2.1.1 — Marca de bidón nuevo
 - Checkbox por ítem: "¿Bidón nuevo?"
 - Campo `bidon_nuevo` boolean en `pedido_items`, default `false`
-- Aparece como badge naranja "Bidón nuevo" en detalle del pedido (Admin) y en vista de producción
-- En lista resumen producción: muestra cuántas unidades requieren bidón nuevo vs reutilizado
-- No aparece en vista del repartidor
+- Aparece como badge en detalle del pedido y en vista de producción
 
 ### F2.2 — Editar pedido (Admin)
-- Disponible en estados BORRADOR, CONFIRMADO, EN PRODUCCIÓN
+- Disponible en estados `borrador`, `confirmado`, `en_produccion`
 - Se abre en el mismo drawer lateral
 - Muestra historial de cambios de estado
-- **Alerta de precio desactualizado:** si el precio de un ítem cambió en el ABM desde la creación, muestra alerta por ítem con precio original vs actual. El Admin elige: mantener original o actualizar.
+- **Alerta de precio desactualizado:** si el precio de un ítem cambió en ABM desde la creación, muestra alerta con precio original vs actual. Admin elige: mantener original o actualizar.
 
 ### F2.3 — Ver detalle de pedido
-- Todos los roles pueden ver el detalle (campos visibles según rol)
-- Se abre en drawer lateral (detalle expandible, no página nueva)
+- Se abre en drawer lateral (no página nueva)
 - Historial de estados con timestamps y usuario responsable
 
 ### F2.4 — Listado de pedidos (Admin)
-- Vista principal del dashboard
+- Vista principal: tabla con columnas Número · Cliente · Estado · Fecha prod. · Total · Acción
+- Tabs: Todos / En producción / En reparto / Cerrados
 - Filtros: por estado, por fecha de producción, por cliente
 - Búsqueda por número de pedido o nombre de cliente
-- Indicadores visuales de estado (badge con colores exactos de la tabla)
-- Acceso rápido a cambiar estado (override)
+- Badges de estado con colores exactos de la tabla en `03_flujo_de_estados.md`
 
 ### F2.5 — Anular pedido (Admin)
-- Disponible desde cualquier estado excepto CERRADO
-- Se abre drawer con campo de motivo obligatorio
+- Disponible desde cualquier estado excepto `cerrado`
+- Drawer con campo de motivo obligatorio
 - El pedido anulado se oculta de vistas operativas pero queda en historial
 
 ---
 
 ## MÓDULO 3: Vista de Producción
 
-### F3.1 — Lista resumen de producción (descargable)
+> Rol `produccion` activo: login propio en `/produccion`. El Admin accede a la misma vista (mismo componente `ProduccionView`) en `/admin/produccion`, sin restricción a un operario en particular.
+
+### F3.1 — Panel de pedidos a producir
+- `/produccion` (rol producción) o `/admin/produccion` (Admin) — `ProduccionLayout` con bottom nav: Producción · Listos · Perfil
+- Muestra únicamente pedidos en estado `en_produccion`
+- **Desktop:** agrupado/kanban por fecha de producción
+- **Mobile:** lista agrupada con encabezado de día separador
+- Selector de fecha en el header (navega día a día)
+- Por pedido: número, cliente, ítems (cantidad, presentación), notas de producción, badge "Bidón nuevo"
+- **Sin precios, sin totales, sin datos de cobro** (excluidos de la query, no solo ocultos en UI)
+
+### F3.2 — Lista resumen de producción
 - Panel colapsable arriba de la vista
-- Filtro por fecha de producción (selector de día)
-- Agrupado por artículo: nombre, presentación, cantidad total, unidades con bidón nuevo
+- Agrupado por artículo: nombre, presentación, cantidad total
 - Descargable / imprimible
-- Sin precios, totales ni datos de cobro
-
-### F3.2 — Panel de pedidos a producir
-
-**Desktop (kanban horizontal):**
-- Una columna por fecha de producción, ordenadas cronológicamente
-- Hoy destacado (borde o fondo diferenciado)
-- Scroll horizontal cuando hay muchas columnas
-- Dentro de cada columna: cards de pedido con número, cliente, ítems resumidos, badges
-
-**Mobile (lista agrupada):**
-- Encabezado de día: "Hoy — Lun 2 jun · 3 pedidos" + línea divisora
-- Pedidos debajo del encabezado como cards
-- Scroll vertical único
-
-**Ambas vistas muestran:**
-- Número de pedido
-- Nombre del cliente
-- Lista de productos con cantidades
-- Notas para producción
-- Badge "Bidón nuevo" si aplica
-- Hora de ingreso al estado actual
-- Sin precios ni totales
 
 ### F3.3 — Marcar como "Listo para reparto"
-- Botón prominente por pedido (mínimo 48px altura en mobile)
-- Confirmación simple (un tap de confirmación)
-- El pedido desaparece de la lista al avanzar
+- Botón por pedido (mínimo 44px) con confirmación simple
+- Transición `en_produccion` → `listo_reparto` vía RPC `cambiar_estado_pedido`
 
-### F3.4 — Vista de "Listos hoy"
-- Lista de pedidos marcados como listos ese día (solo lectura)
-- Para seguimiento del trabajo del día
+### F3.4 — Listos para reparto (`/produccion/listos`)
+- Vista de solo lectura: pedidos en `listo_reparto`, ya en cola para el repartidor
+- Sin acciones — informativa
+
+### Sin soporte offline
+- Producción no usa `useOffline`/IndexedDB (se asume con conectividad estable en planta)
 
 ---
 
-## MÓDULO 4: Vista del Repartidor
+## MÓDULO 4: Vista de Reparto
 
-### F4.1 — Lista de pedidos del día
-- Solo pedidos del día actual (fecha_produccion = hoy)
-- Estados visibles: EN PRODUCCIÓN, LISTO PARA REPARTO, EN REPARTO
-- Cards con: número, cliente, dirección, total a cobrar (destacado), badge de estado
-- Al tocar la card: expande detalle con lista completa de productos y cantidades
-- Ordenados por número de pedido
+> Rol `repartidor` activo: login propio en `/repartidor`. El Admin accede a la misma vista (mismo componente `RepartidorView`) en `/admin/repartidor`, sin restricción a un repartidor en particular. No hay asignación de pedido a un repartidor específico — cualquiera con el rol ve y opera toda la cola.
 
-### F4.2 — Avance de emergencia
-- Disponible si pedido está EN PRODUCCIÓN
-- Confirmación explícita: "¿Confirmás que ya retiraste este pedido?"
-- Registrado en historial con usuario y timestamp
+### F4.1 — Lista de pedidos
+- `/repartidor` (rol repartidor) o `/admin/repartidor` (Admin) — `RepartidorLayout` con bottom nav: Pedidos · Historial · Perfil
+- Muestra pedidos en `en_produccion` (con acción de emergencia, ver F4.4), `listo_reparto` y `en_reparto`
+- Cards expandibles: número, cliente, dirección, total a cobrar (destacado), badge de estado; al expandir, ítems del pedido
+- **Sin precios de catálogo ni costos** — solo cantidades e ítems
 
-### F4.3 — Iniciar reparto
-- Botón "Salir a repartir" pasa todos los LISTO PARA REPARTO a EN REPARTO de una vez
-- O acción individual por pedido
+### F4.2 — Salir a repartir
+- Botón "Salir a repartir" (individual por card, o en bloque desde la sección "Listos para salir")
+- Transición `listo_reparto` → `en_reparto`
 
-### F4.4 — Cerrar pedido (entrega + cobro)
-- Se abre mini-form inline en la card del pedido
-- Campos:
-  - Forma de cobro (radio: Efectivo / Transferencia / Pendiente de cobro)
-  - Fecha de cobro (date input, default hoy; visible solo si forma ≠ pendiente)
-  - Monto cobrado (obligatorio si forma ≠ pendiente; vacío/cero si es pendiente)
-  - Observaciones (opcional)
-- Estado de pago se deriva automáticamente:
-  - si forma = pendiente → estado_pago = 'pendiente', fecha_cobro = null
-  - si forma = efectivo o transferencia → estado_pago = 'cobrado', fecha_cobro = fecha seleccionada
-- Botón "Confirmar y cerrar pedido" (primary, 48px)
-- Al confirmar: pedido pasa a estado CERRADO (no a entregado)
-- Badge en la card pasa a CERRADO visualmente
+### F4.3 — Cerrar pedido (entrega + cobro)
+- Mini-form inline en la card del pedido ("Registrar entrega")
+- Campos: forma de cobro (Efectivo / Transferencia / Pendiente), fecha de cobro (default hoy, oculta si pendiente), monto cobrado, observaciones
+- Al confirmar: pedido pasa a `cerrado` vía RPC `cerrar_pedido` (no usa la RPC legacy `registrar_entrega`/estado `entregado`)
 
-### F4.5 — Registrar entrega fallida
-- Se abre drawer/sheet
-- Motivo: campo de texto libre obligatorio
-- Botón "Confirmar falla" (destructivo)
+### F4.4 — Registrar entrega fallida
+- Form inline con campo de motivo (texto libre, obligatorio)
+- Transición `en_reparto` → `entrega_fallida`
+- Reagendar: Admin puede devolver el pedido a `listo_reparto` desde su vista
 
-### F4.6 — Modo offline
-- Pedidos del día se descargan al abrir la app con conexión
-- Acciones sin conexión se guardan localmente (IndexedDB via `offlineQueue`)
-- Al reconectar: sincronización automática en orden cronológico
-- Indicador visible siempre: dot verde "En línea" / dot gris "Sin conexión"
-- Banner amarillo cuando hay cambios pendientes de sincronizar: "N cambios pendientes"
-- **Limitación conocida:** cambios de estado offline no escriben en `pedido_historial`.
-  La sincronización actualiza `pedidos.estado` directamente, sin pasar por la RPC `cambiar_estado_pedido`.
-  El historial queda incompleto para acciones tomadas sin conexión.
-- Acciones que se encolan offline: cambiarEstado, cerrarPedido, editarCobro
+### F4.5 — Avance de emergencia
+- Si un pedido sigue en `en_produccion` pero el repartidor ya lo retiró físicamente, botón "Ya retiré este pedido" con confirmación
+- Transición directa `en_produccion` → `en_reparto`, queda registrada en el historial con nota "Avance de emergencia — repartidor"
+
+### F4.6 — Historial (`/repartidor/historial`)
+- Vista de solo lectura: pedidos `cerrado` y `entrega_fallida` del día (selector de fecha)
+- Sin acciones — informativa
+
+### Soporte offline (exclusivo de este rol)
+- `useOffline` + IndexedDB (`offlineQueue`): si no hay conexión, las acciones (cambiar estado, cerrar pedido) se encolan localmente
+- Indicador de conexión en el header (En línea / Sin conexión) y banners de sincronización pendiente/en curso
+- Al recuperar conexión, sincroniza automáticamente la cola contra Supabase
 
 ---
 
 ## MÓDULO 5: Dashboard de Administración
 
 ### F5.1 — Resumen del día
-Cards KPI:
-- Total de pedidos
-- Pedidos en producción
-- Pedidos en reparto (listos + en camino)
-- Pedidos con entrega fallida (alerta visual)
-- **Cobrado hoy:** pedidos estado=cerrado AND estado_pago=cobrado · suma de monto_cobrado · desglose efectivo/transferencia
-- **Pendiente de cobro** (alerta visual): pedidos estado=cerrado AND estado_pago=pendiente · conteo + monto total · click abre panel con listado detallado
+Cards KPI (4 mínimo):
+- **Pedidos hoy:** total count filtrado por `fecha_produccion = hoy`
+- **Cobrado hoy:** suma de `monto_cobrado` donde `estado_pago = 'cobrado'` y `fecha_cobro = hoy` — con desglose efectivo / transferencia
+- **Pendiente de cobro:** count + monto total de pedidos `cerrado` con `estado_pago = 'pendiente'` — alerta visual; al hacer clic abre panel con listado
+- **Margen bruto:** `sum(monto_cobrado) - sum(costo_produccion × cantidad)` para pedidos cerrados del período — muestra porcentaje y monto absoluto
 
 ### F5.2 — Tablero de estados
-- Lista agrupada por estado con conteo por grupo
-- Cada pedido como card con: número, cliente, total, badge de estado
-- Clic → abre drawer lateral con detalle completo y acciones de override
+- Conteo de pedidos por estado (hoy)
+- Lista agrupada con badges; clic abre drawer con detalle y acciones
 
-### F5.3 — Seguimiento de cobros
-- Lista de pedidos cerrados con detalle de cobro
-- Total cobrado en efectivo / total por transferencia del día
-- Pedidos con estado_pago=pendiente resaltados con alerta visual
+### F5.3 — Evolución semanal (gráfico)
+- Barras de cobros agrupados por `fecha_cobro`, últimos 7 días
+- Hoy destacado visualmente
+- Totales: esta semana vs semana anterior
 
-### F5.4 — Dashboard de ventas (KPIs)
-- Selector de rango personalizado: inputs date [Desde] [Hasta]; default = primer día del mes → hoy
-- **Pedidos** (count, pendientes de cierre, panel de estados): filtrados por `fecha_produccion`
-- **Cobros** (total cobrado, efectivo, transferencia, delta vs mes anterior): filtrados por `fecha_cobro`
-  - Esto permite ver "hice 10 pedidos esta semana pero cobré algunos de la semana pasada"
-  - Registros sin `fecha_cobro` (pendientes o datos legacy) no aparecen en los KPIs de cobro
-- Gráfico de evolución: cobros agrupados por `fecha_cobro`, comparado con el mismo rango del mes anterior
+### F5.4 — Dashboard de ventas (KPIs con rango)
+- Selector de rango: [Desde] [Hasta]; default = primer día del mes → hoy
+- **Pedidos** (count, pendientes de cierre): filtrados por `fecha_produccion`
+- **Cobros** (total, efectivo, transferencia): filtrados por `fecha_cobro`
+- **Margen bruto del período:** `sum(monto_cobrado) - sum(costo_item × cantidad)` para pedidos cerrados en el rango
+- Gráfico de evolución comparado con el mismo rango del mes anterior
 
 ---
 
@@ -210,16 +181,11 @@ Cards KPI:
 - Botón "+ Nuevo cliente" abre drawer lateral
 
 ### F6.2 — Crear / editar cliente (en drawer)
-- Nombre y apellido (obligatorio)
-- Teléfono
-- Dirección de entrega (texto único)
-- Tipo de cliente: Mayorista / Minorista
-- Observaciones (opcional)
+- Nombre (obligatorio), teléfono, dirección, tipo (Mayorista / Minorista), observaciones
 
 ### F6.3 — Ingreso rápido desde formulario de pedido
 - Mini-form inline sin salir del drawer de pedido
 - Campos: nombre + teléfono + dirección
-- Perfil completable después desde el ABM
 
 ---
 
@@ -228,151 +194,97 @@ Cards KPI:
 ### F7.1 — Lista de productos
 - Búsqueda por nombre, filtro por categoría
 - Indicador activo / inactivo
-- Botón "+ Nuevo producto" abre drawer lateral
-- Gestión de categorías: editar nombre y borrar desde drawer accesible en la vista de productos.
-  Borrar una categoría no afecta los productos — quedan sin categoría.
-  No se puede borrar una categoría si tiene productos activos asociados.
+- Botón "+ Nuevo producto" abre drawer
 
 ### F7.2 — Crear / editar producto (en drawer)
 - Categoría, nombre (obligatorio), fragancia
 - Unidad: litros (fijo)
 - Presentación: lista fija `[0.5, 3, 5, 10, 20]` litros
 - Precio minorista y mayorista
+- **`costo_produccion`** (NUEVO): costo de fabricación por unidad — numérico, default 0 — se usa para calcular margen bruto en el dashboard
 - Activo / inactivo
 
 **Lógica de precios:**
-- Dos precios por producto: minorista y mayorista
-- Al crear pedido, sistema precarga según tipo de cliente
-- Admin puede editar precio por ítem en el pedido sin afectar el catálogo
-- Cambiar precios en ABM no modifica pedidos ya existentes
+- Dos precios de venta: minorista y mayorista
+- Un costo de producción: para cálculo de margen interno (no visible al cliente)
+- Cambiar precios en ABM no modifica pedidos ya existentes (snapshot)
 
 **Borrar producto:**
-- Disponible si el producto no tiene pedidos asociados. Si tiene historial de pedidos, solo se puede inactivar.
-- Cambiar el precio de un producto NO modifica pedidos existentes — cada ítem de pedido conserva el `precio_unitario` snapshot del momento de creación.
+- Solo si no tiene pedidos asociados. Si tiene historial, solo se puede inactivar.
 
 ---
 
-## MÓDULO 8B: Perfil y Cambio de Contraseña
+## MÓDULO 8: Perfil y Cambio de Contraseña
 
-### F8B.1 — Mi perfil (todos los roles)
+### F8.1 — Mi perfil (Admin)
+Accesible desde footer del sidebar → `/admin/perfil`.
 
-Accesible desde:
-- **Admin:** ítem "Mi perfil" en el sidebar (`/admin/perfil`)
-- **Producción:** tab "Perfil" en el bottom nav (`/produccion/perfil`)
-- **Repartidor:** tab "Perfil" en el bottom nav (`/repartidor/perfil`)
-
-Contenido de la página:
-- Card de identidad: avatar con iniciales, nombre completo, rol (solo lectura)
-- Formulario "Cambiar contraseña":
-  - Contraseña actual (obligatorio — se re-autentica antes de cambiar)
-  - Nueva contraseña (mínimo 8 caracteres)
-  - Confirmar nueva contraseña (debe coincidir)
-  - Toggle de visibilidad en cada campo (ojo)
-- La sesión se mantiene activa después del cambio
+- Card de identidad: avatar con iniciales, nombre, rol (solo lectura)
+- Formulario "Cambiar contraseña": contraseña actual + nueva + confirmar
+- Toggle visibilidad en cada campo
 - Implementación: `supabase.auth.updateUser({ password })` previo re-auth con `signInWithPassword`
 
-### F8B.2 — Resetear contraseña de un usuario (solo Admin)
+### F8.2 — Resetear contraseña de un usuario (Admin)
+Desde drawer de editar usuario en `/admin/usuarios`.
 
-Accesible desde: drawer de editar usuario en `/admin/usuarios`.
-
-- Sección colapsable "Restablecer contraseña" al final del formulario de editar
-- Campo: nueva contraseña (mínimo 6 caracteres, sin confirmar — el admin la define)
-- No requiere la contraseña actual del usuario
-- Implementación: `supabaseAdmin.auth.admin.updateUserById(userId, { password })`
-- Requiere `VITE_SUPABASE_SERVICE_ROLE_KEY` configurada (igual que crear usuarios)
-- Nota visible: "El usuario deberá usar esta contraseña en su próximo inicio de sesión"
-- El Admin no puede resetear su propia contraseña desde aquí — usa "Mi perfil"
+- Sección colapsable "Restablecer contraseña"
+- Campo: nueva contraseña (mínimo 6 caracteres)
+- Requiere `VITE_SUPABASE_SERVICE_ROLE_KEY`
+- El Admin no puede resetearse a sí mismo desde aquí — usa "Mi perfil"
 
 ---
 
-## MÓDULO 8: Gestión de Usuarios (Admin)
+## MÓDULO 9: Gestión de Usuarios (Admin)
 
-### F8.1 — Lista de usuarios
+### F9.1 — Lista de usuarios
 - Nombre, email, rol, activo/inactivo
 - Botón "+ Nuevo usuario" abre drawer
 
-### F8.2 — Crear usuario (en drawer)
+### F9.2 — Crear usuario (en drawer)
 - Nombre, email, contraseña temporal, rol
 
-### F8.3 — Editar / desactivar usuario
-- Cambiar nombre, rol o estado
+### F9.3 — Editar / desactivar usuario
+- Cambiar nombre, rol o estado activo
 - No se eliminan, solo se desactivan
 
 ---
 
-## MÓDULO 9: Generación de documentos
+## MÓDULO 10: Generación de documentos
 
-### F9.1 — Documento por pedido (para cliente)
-- Desde detalle del pedido por Admin
+### F10.1 — Documento por pedido (para cliente)
+- Desde detalle del pedido
 - Contenido: número, fecha, datos del cliente, productos, precios, total
-- Formato: PDF descargable o vista imprimible
+- Formato: vista imprimible / PDF
 
-### F9.2 — Listado del día para repartidor
-- Generado por Admin
-- Contenido: pedidos del día con cliente, dirección, productos resumidos, total a cobrar
-- Formato: PDF descargable o vista imprimible
-
-### F9.3 — Compartir factura por WhatsApp (JPG)
-- Disponible desde: detalle de pedido (drawer), tabla de pedidos (acción rápida), panel de pagos pendientes del dashboard
-- Genera la factura del pedido como imagen JPG (600px, escala 2x) usando html2canvas sobre el componente FacturaCanvas
-- En mobile con Web Share API disponible: abre el selector nativo de apps con el JPG adjunto
-- En desktop o mobile sin Web Share API: descarga el JPG automáticamente + abre WhatsApp Web con el número del cliente precargado y un mensaje predeterminado
-- Si el cliente tiene teléfono registrado: `wa.me/54[telefono]` (prefijo Argentina)
-- Si no tiene teléfono: `wa.me/?text=mensaje` (el usuario elige el contacto)
-- Loading state en el botón mientras se genera el JPG: deshabilitado + texto "Generando…"
-- Si html2canvas falla: toast de error "No se pudo generar la imagen"
-- Componentes: `FacturaCanvas`, `BtnWhatsapp` (variantes "icono" y "pill"), hook `useCompartirFactura`
-
----
-
-## MÓDULO 10: Notificaciones (fuera del MVP)
-Post-MVP. Web Push API cuando:
-- Pedido nuevo entra a EN PRODUCCIÓN → notifica a Producción
-- Pedido modificado en EN PRODUCCIÓN → notifica a Producción
-- Pedido pasa a LISTO PARA REPARTO → notifica a Repartidor
-- Entrega fallida → notifica a Admin
+### F10.2 — Compartir factura por WhatsApp (JPG)
+- Genera la factura como imagen JPG (html2canvas sobre `FacturaCanvas`)
+- Mobile con Web Share API: selector nativo de apps
+- Desktop: descarga JPG + abre WhatsApp Web con número del cliente (`wa.me/54[telefono]`)
+- Loading state en el botón: "Generando…"
+- Si falla: toast de error
 
 ---
 
 ## MÓDULO 11: Egresos (Admin)
 
 ### F11.1 — Listado de egresos
+- Tabla: Fecha · Categoría · Concepto · Registrado por · Monto · Acciones
+- Filtro por mes/año (default: mes actual) y por categoría
+- Total del período visible arriba
+- Botón "+ Agregar egreso" abre drawer
 
-- Solo accesible para rol Admin
-- Tabla con columnas: Fecha · Categoría · Concepto · Registrado por · Monto · Acciones
-- Filtro por mes/año: selector mes + año, default mes actual
-- Filtro por categoría: select con todas las categorías + "Todas"
-- Total del período: suma del monto filtrado, visible arriba de la tabla
-  formato: "$X.XXX,00 en [mes año]"
-- Botón "+ Agregar egreso" abre drawer lateral
-- Acciones por fila: editar (lápiz) · eliminar (papelera con confirmación)
-- Estado vacío: "Sin egresos para este período"
-
-### F11.2 — Registrar egreso (drawer)
-
-Campos:
-- Fecha (DATE, obligatorio, default hoy)
-- Categoría (select obligatorio):
-    sueldos | alquiler | droguería | gráfica | packaging | luz | otros
+### F11.2 — Registrar / editar egreso (drawer)
+- Fecha (obligatorio, default hoy)
+- Categoría (obligatorio): sueldos · alquiler · droguería · gráfica · packaging · luz · otros
 - Concepto (texto libre, obligatorio)
-- Monto (numérico, obligatorio, inputMode decimal)
-- Registrado por (select de usuarios activos, default usuario actual)
+- Monto (numérico, obligatorio)
+- Registrado por (select usuarios activos, default usuario actual)
 
-### F11.3 — Editar egreso
+### F11.3 — Eliminar egreso
+- Confirmación antes de borrar definitivamente
+- No hay soft delete
 
-Mismos campos que registrar.
-Se abre en el mismo drawer con datos precargados.
+---
 
-### F11.4 — Eliminar egreso
-
-Confirmación inline antes de eliminar:
-"¿Eliminar este egreso? Esta acción no se puede deshacer."
-Botones: [Sí, eliminar] (error) · [Cancelar]
-
-### Categorías disponibles (enum fijo en DB):
-  sueldos · alquiler · droguería · gráfica · packaging · luz · otros
-
-### Reglas:
-- Solo Admin puede ver, crear, editar y eliminar egresos
-- No hay soft delete — se borra definitivamente
-- El campo registrado_por guarda quién cargó el egreso
+## MÓDULO 12: Notificaciones (fuera del MVP)
+Post-MVP. Web Push API.

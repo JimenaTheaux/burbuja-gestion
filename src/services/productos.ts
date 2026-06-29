@@ -13,6 +13,7 @@ function parseProducto(row: any): Producto {
     presentacion:     Number(row.presentacion),
     precio_minorista: Number(row.precio_minorista),
     precio_mayorista: Number(row.precio_mayorista),
+    costo_produccion: Number(row.costo_produccion ?? 0),
     categorias_producto: row.categorias_producto ?? null,
   } as Producto
 }
@@ -69,6 +70,7 @@ export const useCrearProducto = () => {
           presentacion:     payload.presentacion,
           precio_minorista: payload.precio_minorista,
           precio_mayorista: payload.precio_mayorista,
+          costo_produccion: payload.costo_produccion ?? 0,
           activo:           payload.activo ?? true,
           codigo:           payload.codigo || null,
         })
@@ -94,6 +96,7 @@ export const useEditarProducto = () => {
       if (payload.presentacion     !== undefined) patch.presentacion     = payload.presentacion
       if (payload.precio_minorista !== undefined) patch.precio_minorista = payload.precio_minorista
       if (payload.precio_mayorista !== undefined) patch.precio_mayorista = payload.precio_mayorista
+      if (payload.costo_produccion !== undefined) patch.costo_produccion = payload.costo_produccion
       if (payload.activo           !== undefined) patch.activo           = payload.activo
       if (payload.codigo           !== undefined) patch.codigo           = payload.codigo || null
 

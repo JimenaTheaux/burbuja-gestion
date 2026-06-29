@@ -14,6 +14,8 @@ const AdminClientes   = lazy(() => import('@/pages/admin/ClientesPage'))
 const AdminProductos  = lazy(() => import('@/pages/admin/ProductosPage'))
 const AdminUsuarios   = lazy(() => import('@/pages/admin/UsuariosPage'))
 const AdminEgresos    = lazy(() => import('@/pages/admin/EgresosPage'))
+const AdminProduccion = lazy(() => import('@/pages/admin/ProduccionPage'))
+const AdminRepartidor = lazy(() => import('@/pages/admin/RepartidorPage'))
 
 const ProduccionHome   = lazy(() => import('@/pages/produccion/ProduccionPage'))
 const ProduccionListos = lazy(() => import('@/pages/produccion/ListosPage'))
@@ -37,7 +39,7 @@ function PageLoader() {
     }}>
       <div style={{
         width: 36, height: 36, borderRadius: '50%',
-        border: '3px solid #D1D5DB', borderTopColor: '#0D5C8A',
+        border: '3px solid #E5E5EA', borderTopColor: '#3DD6B5',
         animation: 'spin 0.8s linear infinite',
       }} />
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
@@ -66,14 +68,16 @@ export default function App() {
         <Route path="productos" element={<Suspense fallback={<PageLoader />}><AdminProductos /></Suspense>} />
         <Route path="egresos"   element={<Suspense fallback={<PageLoader />}><AdminEgresos /></Suspense>} />
         <Route path="usuarios"  element={<Suspense fallback={<PageLoader />}><AdminUsuarios /></Suspense>} />
+        <Route path="produccion" element={<Suspense fallback={<PageLoader />}><AdminProduccion /></Suspense>} />
+        <Route path="repartidor" element={<Suspense fallback={<PageLoader />}><AdminRepartidor /></Suspense>} />
         <Route path="perfil"    element={<Suspense fallback={<PageLoader />}><PerfilPage /></Suspense>} />
       </Route>
 
-      {/* Producción */}
+      {/* Producción — exclusivo del rol producción (el admin tiene su propia vista en /admin/produccion) */}
       <Route
         path="/produccion"
         element={
-          <ProtectedRoute roles={['produccion', 'admin', 'superadmin']}>
+          <ProtectedRoute roles={['produccion']}>
             <ProduccionLayout />
           </ProtectedRoute>
         }
@@ -83,11 +87,11 @@ export default function App() {
         <Route path="perfil"  element={<Suspense fallback={<PageLoader />}><PerfilPage /></Suspense>} />
       </Route>
 
-      {/* Repartidor */}
+      {/* Repartidor — exclusivo del rol repartidor (el admin tiene su propia vista en /admin/repartidor) */}
       <Route
         path="/repartidor"
         element={
-          <ProtectedRoute roles={['repartidor', 'admin', 'superadmin']}>
+          <ProtectedRoute roles={['repartidor']}>
             <RepartidorLayout />
           </ProtectedRoute>
         }

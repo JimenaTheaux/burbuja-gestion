@@ -53,7 +53,7 @@ export default function LoginPage() {
     <div
       style={{
         minHeight: '100vh',
-        background: '#0D5C8A',
+        background: '#3DD6B5',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -71,9 +71,9 @@ export default function LoginPage() {
         preserveAspectRatio="xMidYMid slice"
         aria-hidden="true"
       >
-        <path d="M0 480 C80 460, 160 500, 240 475 S340 450, 390 470 L390 600 L0 600Z" fill="#1B9ED6"/>
+        <path d="M0 480 C80 460, 160 500, 240 475 S340 450, 390 470 L390 600 L0 600Z" fill="#7EB8E8"/>
         <path d="M0 510 C90 490, 180 530, 270 505 S360 480, 390 500 L390 600 L0 600Z" fill="rgba(255,255,255,0.06)"/>
-        <path d="M40 80 C40 60, 28 40, 28 25 C28 11, 38 2, 48 2 C58 2, 68 11, 68 25 C68 40, 56 60, 56 80 C56 90, 40 90, 40 80Z" fill="#1B9ED6"/>
+        <path d="M40 80 C40 60, 28 40, 28 25 C28 11, 38 2, 48 2 C58 2, 68 11, 68 25 C68 40, 56 60, 56 80 C56 90, 40 90, 40 80Z" fill="#7EB8E8"/>
         <path d="M330 50 C330 36, 321 20, 321 9 C321 -1, 329 -7, 337 -7 C345 -7, 353 -1, 353 9 C353 20, 344 36, 344 50 C344 58, 330 58, 330 50Z" fill="rgba(255,255,255,0.25)"/>
         <path d="M360 200 C360 191, 354 181, 354 174 C354 167, 359 163, 364 163 C369 163, 374 167, 374 174 C374 181, 368 191, 368 200 C368 206, 360 206, 360 200Z" fill="rgba(255,255,255,0.15)"/>
         <circle cx="22" cy="280" r="14" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1"/>
@@ -111,10 +111,10 @@ export default function LoginPage() {
             justifyContent: 'center',
           }}
         >
-          <img src="/logo-mark.png" width={32} height={32} alt="" />
+          <img src="/icons/icon-192.png" width={32} height={32} alt="" />
         </div>
         <div style={{ fontSize: 22, fontWeight: 600, color: '#fff', letterSpacing: '-0.3px' }}>
-          Limpimax
+          Burbuja
         </div>
         <div style={{ fontSize: 12, fontWeight: 400, color: 'rgba(255,255,255,0.55)', marginTop: 4 }}>
           Sistema de gestión de pedidos
@@ -132,7 +132,7 @@ export default function LoginPage() {
           padding: '28px 24px',
         }}
       >
-        <div style={{ fontSize: 15, fontWeight: 500, color: '#1A2B3C', marginBottom: 20 }}>
+        <div style={{ fontSize: 15, fontWeight: 500, color: '#1C1C1E', marginBottom: 20 }}>
           Iniciá sesión
         </div>
 
@@ -173,7 +173,7 @@ export default function LoginPage() {
                     background: 'transparent', border: 'none', cursor: 'pointer',
                     color: '#9CA3AF', padding: 0, lineHeight: 0,
                   }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#0D5C8A' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#3DD6B5' }}
                   onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#9CA3AF' }}
                 >
                   {mostrarPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -199,7 +199,7 @@ export default function LoginPage() {
             style={{
               width: '100%',
               height: 48,
-              background: canSubmit ? '#0D5C8A' : 'rgba(13,92,138,0.5)',
+              background: canSubmit ? '#3DD6B5' : 'rgba(61,214,181,0.5)',
               color: '#fff',
               border: 'none',
               borderRadius: 10,
@@ -213,8 +213,8 @@ export default function LoginPage() {
               alignItems: 'center',
               justifyContent: 'center',
             }}
-            onMouseEnter={e => { if (canSubmit) (e.currentTarget as HTMLButtonElement).style.background = '#0a4f7a' }}
-            onMouseLeave={e => { if (canSubmit) (e.currentTarget as HTMLButtonElement).style.background = '#0D5C8A' }}
+            onMouseEnter={e => { if (canSubmit) (e.currentTarget as HTMLButtonElement).style.background = '#28B99A' }}
+            onMouseLeave={e => { if (canSubmit) (e.currentTarget as HTMLButtonElement).style.background = '#3DD6B5' }}
             onMouseDown={e => { if (canSubmit) (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.98)' }}
             onMouseUp={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)' }}
           >

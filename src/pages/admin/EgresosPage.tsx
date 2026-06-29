@@ -20,13 +20,13 @@ import { CATEGORIA_EGRESO_LABELS } from '@/types'
 // ─── Colores por categoría ────────────────────────────────────────────────────
 
 const CATEGORIA_COLORS: Record<CategoriaEgreso, { bg: string; color: string }> = {
-  sueldos:   { bg: '#E8F4FF', color: '#0D5C8A' },
+  sueldos:   { bg: '#EBF5FF', color: '#3DD6B5' },
   alquiler:  { bg: '#FFF3E0', color: '#E65100' },
   drogueria: { bg: '#E8F8F0', color: '#145A32' },
   grafica:   { bg: '#F3E8FF', color: '#6B21A8' },
   packaging: { bg: '#FFF9E6', color: '#B45309' },
   luz:       { bg: '#FFFDE7', color: '#F57F17' },
-  otros:     { bg: '#F4F6F8', color: '#4A5568' },
+  otros:     { bg: '#F5F7F9', color: '#8E8E93' },
 }
 
 // ─── Helpers de fecha ─────────────────────────────────────────────────────────
@@ -111,7 +111,7 @@ function ShimmerRow() {
   return (
     <tr>
       {[80, 90, 180, 100, 70, 56].map((w, i) => (
-        <td key={i} style={{ padding: '10px 14px', borderBottom: '0.5px solid #F4F6F8' }}>
+        <td key={i} style={{ padding: '10px 14px', borderBottom: '0.5px solid #F5F7F9' }}>
           <Skeleton style={{ height: 13, width: w, borderRadius: 6 }} />
         </td>
       ))}
@@ -121,7 +121,7 @@ function ShimmerRow() {
 
 function ShimmerCard() {
   return (
-    <div style={{ background: '#fff', borderRadius: 12, border: '0.5px solid #D1D5DB', padding: '12px 16px', marginBottom: 6 }}>
+    <div style={{ background: '#fff', borderRadius: 12, border: '0.5px solid #E5E5EA', padding: '12px 16px', marginBottom: 6 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
         <Skeleton style={{ height: 12, width: 80, borderRadius: 6 }} />
         <Skeleton style={{ height: 14, width: 70, borderRadius: 6 }} />
@@ -138,8 +138,8 @@ function ShimmerCard() {
 // ─── Select estilizado ────────────────────────────────────────────────────────
 
 const SELECT_STYLE: React.CSSProperties = {
-  height: 36, border: '0.5px solid #D1D5DB', borderRadius: 8,
-  padding: '0 28px 0 10px', fontSize: 12, color: '#1A2B3C',
+  height: 36, border: '0.5px solid #E5E5EA', borderRadius: 8,
+  padding: '0 28px 0 10px', fontSize: 12, color: '#1C1C1E',
   background: '#fff', outline: 'none', appearance: 'none',
   cursor: 'pointer', fontFamily: 'Inter, sans-serif',
 }
@@ -197,18 +197,18 @@ function EgresoDrawer({ open, onClose, egreso, onSaved }: EgresoDrawerProps) {
   }
 
   const labelStyle: React.CSSProperties = {
-    fontSize: 10, fontWeight: 500, color: '#4A5568',
+    fontSize: 10, fontWeight: 500, color: '#8E8E93',
     textTransform: 'uppercase', letterSpacing: '0.06em',
     display: 'block', marginBottom: 5,
   }
   const inputBase: React.CSSProperties = {
-    width: '100%', border: '0.5px solid #D1D5DB', borderRadius: 8,
-    fontFamily: 'Inter, sans-serif', color: '#1A2B3C', outline: 'none',
+    width: '100%', border: '0.5px solid #E5E5EA', borderRadius: 8,
+    fontFamily: 'Inter, sans-serif', color: '#1C1C1E', outline: 'none',
     background: '#fff', boxSizing: 'border-box', fontSize: 14,
     transition: 'border-color 0.15s',
   }
-  const focusOn  = (e: React.FocusEvent<HTMLElement>) => { (e.currentTarget as HTMLElement).style.borderColor = '#1B9ED6' }
-  const focusOff = (e: React.FocusEvent<HTMLElement>) => { (e.currentTarget as HTMLElement).style.borderColor = '#D1D5DB' }
+  const focusOn  = (e: React.FocusEvent<HTMLElement>) => { (e.currentTarget as HTMLElement).style.borderColor = '#7EB8E8' }
+  const focusOff = (e: React.FocusEvent<HTMLElement>) => { (e.currentTarget as HTMLElement).style.borderColor = '#E5E5EA' }
 
   const footer = (
     <>
@@ -218,7 +218,7 @@ function EgresoDrawer({ open, onClose, egreso, onSaved }: EgresoDrawerProps) {
         disabled={saving}
         className="btn-press"
         style={{
-          background: saving ? 'rgba(13,92,138,0.5)' : '#0D5C8A',
+          background: saving ? 'rgba(61,214,181,0.5)' : '#3DD6B5',
           color: '#fff', border: 'none', borderRadius: 10,
           height: 44, fontSize: 14, fontWeight: 600,
           cursor: saving ? 'not-allowed' : 'pointer', width: '100%',
@@ -231,7 +231,7 @@ function EgresoDrawer({ open, onClose, egreso, onSaved }: EgresoDrawerProps) {
         onClick={onClose}
         className="btn-press"
         style={{
-          background: 'transparent', color: '#4A5568', border: 'none',
+          background: 'transparent', color: '#8E8E93', border: 'none',
           height: 36, fontSize: 13, cursor: 'pointer', width: '100%',
         }}
       >
@@ -294,7 +294,7 @@ function EgresoDrawer({ open, onClose, egreso, onSaved }: EgresoDrawerProps) {
                   </select>
                 )}
               />
-              <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#4A5568', fontSize: 10 }}>▼</span>
+              <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#8E8E93', fontSize: 10 }}>▼</span>
             </div>
             {errors.categoria && (
               <span style={{ color: '#D32F2F', fontSize: 11, marginTop: 4, display: 'block' }}>
@@ -320,7 +320,7 @@ function EgresoDrawer({ open, onClose, egreso, onSaved }: EgresoDrawerProps) {
             <div style={{ position: 'relative' }}>
               <span style={{
                 position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
-                fontSize: 13, color: '#4A5568', pointerEvents: 'none', userSelect: 'none',
+                fontSize: 13, color: '#8E8E93', pointerEvents: 'none', userSelect: 'none',
               }}>$</span>
               <input
                 id="egreso-monto"
@@ -362,7 +362,7 @@ function EgresoDrawer({ open, onClose, egreso, onSaved }: EgresoDrawerProps) {
                   </select>
                 )}
               />
-              <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#4A5568', fontSize: 10 }}>▼</span>
+              <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#8E8E93', fontSize: 10 }}>▼</span>
             </div>
           </div>
         </div>
@@ -422,9 +422,9 @@ export default function EgresosPage() {
         .eg-table tbody tr { transition: background 0.1s; }
         .eg-table tbody tr:hover { background: #F9FAFB !important; }
         .eg-btn { display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; cursor: pointer; transition: all 0.1s; }
-        .eg-btn:focus-visible { outline: 2px solid #1B9ED6; outline-offset: 2px; }
+        .eg-btn:focus-visible { outline: 2px solid #7EB8E8; outline-offset: 2px; }
         .eg-sel { position: relative; display: inline-block; }
-        .eg-sel::after { content: '▼'; position: absolute; right: 9px; top: 50%; transform: translateY(-50%); font-size: 9px; color: #4A5568; pointer-events: none; }
+        .eg-sel::after { content: '▼'; position: absolute; right: 9px; top: 50%; transform: translateY(-50%); font-size: 9px; color: #8E8E93; pointer-events: none; }
         @media (max-width: 1023px) { .eg-desktop { display: none !important; } }
         @media (min-width: 1024px) { .eg-mobile  { display: none !important; } }
       `}</style>
@@ -436,7 +436,7 @@ export default function EgresosPage() {
           onClick={handleNew}
           className="btn-press"
           style={{
-            background: '#0D5C8A', color: '#fff', border: 'none',
+            background: '#3DD6B5', color: '#fff', border: 'none',
             borderRadius: 10, height: 36, padding: '0 14px',
             fontSize: 13, fontWeight: 600, cursor: 'pointer',
             display: 'flex', alignItems: 'center', gap: 6,
@@ -491,25 +491,25 @@ export default function EgresosPage() {
 
       {/* ── Resumen del período ──────────────────────────────────────────────── */}
       <div style={{
-        background: '#fff', border: '0.5px solid #D1D5DB', borderRadius: 10,
+        background: '#fff', border: '0.5px solid #E5E5EA', borderRadius: 10,
         padding: '12px 16px', display: 'flex', justifyContent: 'space-between',
         alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8,
       }}>
-        <span style={{ fontSize: 12, color: '#4A5568' }}>
+        <span style={{ fontSize: 12, color: '#8E8E93' }}>
           Total en {mesLabel} {anio}
           {categoriaActiva && ` · ${CATEGORIA_EGRESO_LABELS[categoriaActiva]}`}
         </span>
-        <span style={{ fontSize: 18, fontWeight: 500, color: '#1A2B3C', letterSpacing: '-0.3px' }}>
+        <span style={{ fontSize: 18, fontWeight: 500, color: '#1C1C1E', letterSpacing: '-0.3px' }}>
           {formatMonto(totalPeriodo)}
         </span>
       </div>
 
       {/* ── DESKTOP ─────────────────────────────────────────────────────────── */}
       <div className="eg-desktop">
-        <div style={{ background: '#fff', borderRadius: 10, border: '0.5px solid #D1D5DB', overflow: 'hidden' }}>
+        <div style={{ background: '#fff', borderRadius: 10, border: '0.5px solid #E5E5EA', overflow: 'hidden' }}>
           <table className="eg-table" aria-label="Listado de egresos">
             <thead>
-              <tr style={{ background: '#F9FAFB', borderBottom: '0.5px solid #D1D5DB' }}>
+              <tr style={{ background: '#F9FAFB', borderBottom: '0.5px solid #E5E5EA' }}>
                 {['Fecha','Categoría','Concepto','Registrado por','Monto','Acciones'].map((h, i) => (
                   <th
                     key={h}
@@ -517,7 +517,7 @@ export default function EgresosPage() {
                     style={{
                       padding: '8px 14px', fontSize: 10, fontWeight: 500,
                       textTransform: 'uppercase', letterSpacing: '0.06em',
-                      color: '#4A5568', textAlign: i === 4 ? 'right' : i === 5 ? 'right' : 'left',
+                      color: '#8E8E93', textAlign: i === 4 ? 'right' : i === 5 ? 'right' : 'left',
                       whiteSpace: 'nowrap',
                     }}
                   >
@@ -533,18 +533,18 @@ export default function EgresosPage() {
                 <tr>
                   <td colSpan={6}>
                     <div style={{ padding: '48px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-                      <Receipt size={36} strokeWidth={1.2} color="#D1D5DB" />
-                      <p style={{ fontSize: 14, fontWeight: 500, color: '#1A2B3C', margin: 0 }}>
+                      <Receipt size={36} strokeWidth={1.2} color="#E5E5EA" />
+                      <p style={{ fontSize: 14, fontWeight: 500, color: '#1C1C1E', margin: 0 }}>
                         Sin egresos para {mesLabel} {anio}
                       </p>
-                      <p style={{ fontSize: 12, color: '#4A5568', margin: 0 }}>
+                      <p style={{ fontSize: 12, color: '#8E8E93', margin: 0 }}>
                         Registrá el primer egreso del período
                       </p>
                       <button
                         onClick={handleNew}
                         className="btn-press"
                         style={{
-                          marginTop: 4, background: '#0D5C8A', color: '#fff', border: 'none',
+                          marginTop: 4, background: '#3DD6B5', color: '#fff', border: 'none',
                           borderRadius: 10, padding: '10px 20px', fontSize: 13, fontWeight: 600,
                           cursor: 'pointer', minHeight: 40,
                         }}
@@ -558,37 +558,37 @@ export default function EgresosPage() {
                 egresos.map(e => (
                   <tr key={e.id} style={{ background: '#fff' }}>
                     {/* Fecha */}
-                    <td style={{ padding: '0 14px', height: 48, fontSize: 12, color: '#4A5568', borderBottom: '0.5px solid #F4F6F8', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '0 14px', height: 48, fontSize: 12, color: '#8E8E93', borderBottom: '0.5px solid #F5F7F9', whiteSpace: 'nowrap' }}>
                       {formatFecha(e.fecha_egreso)}
                     </td>
 
                     {/* Categoría */}
-                    <td style={{ padding: '0 14px', height: 48, borderBottom: '0.5px solid #F4F6F8', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '0 14px', height: 48, borderBottom: '0.5px solid #F5F7F9', whiteSpace: 'nowrap' }}>
                       <BadgeCategoria categoria={e.categoria} />
                     </td>
 
                     {/* Concepto */}
-                    <td style={{ padding: '0 14px', height: 48, borderBottom: '0.5px solid #F4F6F8', maxWidth: 260 }}>
-                      <span style={{ fontSize: 13, color: '#1A2B3C', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '0 14px', height: 48, borderBottom: '0.5px solid #F5F7F9', maxWidth: 260 }}>
+                      <span style={{ fontSize: 13, color: '#1C1C1E', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {e.concepto}
                       </span>
                     </td>
 
                     {/* Registrado por */}
-                    <td style={{ padding: '0 14px', height: 48, fontSize: 12, color: '#4A5568', borderBottom: '0.5px solid #F4F6F8', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '0 14px', height: 48, fontSize: 12, color: '#8E8E93', borderBottom: '0.5px solid #F5F7F9', whiteSpace: 'nowrap' }}>
                       {e.perfiles?.nombre ?? '—'}
                     </td>
 
                     {/* Monto */}
-                    <td style={{ padding: '0 14px', height: 48, fontSize: 13, fontWeight: 500, color: '#1A2B3C', borderBottom: '0.5px solid #F4F6F8', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '0 14px', height: 48, fontSize: 13, fontWeight: 500, color: '#1C1C1E', borderBottom: '0.5px solid #F5F7F9', textAlign: 'right', whiteSpace: 'nowrap' }}>
                       {formatMonto(e.monto)}
                     </td>
 
                     {/* Acciones */}
-                    <td style={{ padding: '0 14px', height: 48, borderBottom: '0.5px solid #F4F6F8', textAlign: 'right' }}>
+                    <td style={{ padding: '0 14px', height: 48, borderBottom: '0.5px solid #F5F7F9', textAlign: 'right' }}>
                       {confirmId === e.id ? (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: 11, color: '#4A5568', whiteSpace: 'nowrap' }}>¿Eliminar?</span>
+                          <span style={{ fontSize: 11, color: '#8E8E93', whiteSpace: 'nowrap' }}>¿Eliminar?</span>
                           <button
                             onClick={() => handleEliminar(e.id)}
                             disabled={eliminar.isPending}
@@ -604,7 +604,7 @@ export default function EgresosPage() {
                           <button
                             onClick={() => setConfirmId(null)}
                             className="eg-btn btn-press"
-                            style={{ background: 'transparent', border: 'none', color: '#4A5568', height: 28, padding: '0 8px', fontSize: 11 }}
+                            style={{ background: 'transparent', border: 'none', color: '#8E8E93', height: 28, padding: '0 8px', fontSize: 11 }}
                           >
                             Cancelar
                           </button>
@@ -617,9 +617,9 @@ export default function EgresosPage() {
                             aria-label={`Editar egreso ${e.concepto}`}
                             style={{
                               width: 28, height: 28, background: 'transparent',
-                              border: '0.5px solid #D1D5DB', color: '#4A5568',
+                              border: '0.5px solid #E5E5EA', color: '#8E8E93',
                             }}
-                            onMouseEnter={ev => { (ev.currentTarget as HTMLButtonElement).style.background = '#F4F6F8' }}
+                            onMouseEnter={ev => { (ev.currentTarget as HTMLButtonElement).style.background = '#F5F7F9' }}
                             onMouseLeave={ev => { (ev.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
                           >
                             <Pencil size={12} />
@@ -630,7 +630,7 @@ export default function EgresosPage() {
                             aria-label={`Eliminar egreso ${e.concepto}`}
                             style={{
                               width: 28, height: 28, background: 'transparent',
-                              border: '0.5px solid #D1D5DB', color: '#4A5568',
+                              border: '0.5px solid #E5E5EA', color: '#8E8E93',
                             }}
                             onMouseEnter={ev => {
                               const b = ev.currentTarget as HTMLButtonElement
@@ -640,8 +640,8 @@ export default function EgresosPage() {
                             }}
                             onMouseLeave={ev => {
                               const b = ev.currentTarget as HTMLButtonElement
-                              b.style.color = '#4A5568'
-                              b.style.borderColor = '#D1D5DB'
+                              b.style.color = '#8E8E93'
+                              b.style.borderColor = '#E5E5EA'
                               b.style.background = 'transparent'
                             }}
                           >
@@ -657,8 +657,8 @@ export default function EgresosPage() {
           </table>
 
           {!isLoading && !!egresos?.length && (
-            <div style={{ padding: '10px 14px', borderTop: '0.5px solid #F4F6F8' }}>
-              <span style={{ fontSize: 12, color: '#4A5568' }}>
+            <div style={{ padding: '10px 14px', borderTop: '0.5px solid #F5F7F9' }}>
+              <span style={{ fontSize: 12, color: '#8E8E93' }}>
                 {egresos.length} {egresos.length === 1 ? 'egreso' : 'egresos'}
               </span>
             </div>
@@ -672,18 +672,18 @@ export default function EgresosPage() {
           Array.from({ length: 4 }).map((_, i) => <ShimmerCard key={i} />)
         ) : !egresos?.length ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', gap: 12, textAlign: 'center' }}>
-            <Receipt size={36} strokeWidth={1.2} color="#D1D5DB" />
-            <p style={{ fontSize: 14, fontWeight: 500, color: '#1A2B3C', margin: 0 }}>
+            <Receipt size={36} strokeWidth={1.2} color="#E5E5EA" />
+            <p style={{ fontSize: 14, fontWeight: 500, color: '#1C1C1E', margin: 0 }}>
               Sin egresos para {mesLabel} {anio}
             </p>
-            <p style={{ fontSize: 12, color: '#4A5568', margin: 0 }}>
+            <p style={{ fontSize: 12, color: '#8E8E93', margin: 0 }}>
               Registrá el primer egreso del período
             </p>
             <button
               onClick={handleNew}
               className="btn-press"
               style={{
-                background: '#0D5C8A', color: '#fff', border: 'none',
+                background: '#3DD6B5', color: '#fff', border: 'none',
                 borderRadius: 10, padding: '12px 24px', fontSize: 14, fontWeight: 600,
                 cursor: 'pointer', minHeight: 44,
               }}
@@ -697,20 +697,20 @@ export default function EgresosPage() {
               <div
                 key={e.id}
                 style={{
-                  background: '#fff', borderRadius: 12, border: '0.5px solid #D1D5DB',
+                  background: '#fff', borderRadius: 12, border: '0.5px solid #E5E5EA',
                   padding: '12px 16px', marginBottom: 6,
                 }}
               >
                 {/* Línea 1: fecha + monto */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
-                  <span style={{ fontSize: 12, color: '#4A5568' }}>{formatFecha(e.fecha_egreso)}</span>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: '#1A2B3C' }}>{formatMonto(e.monto)}</span>
+                  <span style={{ fontSize: 12, color: '#8E8E93' }}>{formatFecha(e.fecha_egreso)}</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: '#1C1C1E' }}>{formatMonto(e.monto)}</span>
                 </div>
 
                 {/* Línea 2: badge + concepto */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, overflow: 'hidden' }}>
                   <BadgeCategoria categoria={e.categoria} />
-                  <span style={{ fontSize: 13, color: '#1A2B3C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span style={{ fontSize: 13, color: '#1C1C1E', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {e.concepto}
                   </span>
                 </div>
@@ -724,7 +724,7 @@ export default function EgresosPage() {
                   {/* Acciones o confirmación */}
                   {confirmId === e.id ? (
                     <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                      <span style={{ fontSize: 11, color: '#4A5568' }}>¿Eliminar?</span>
+                      <span style={{ fontSize: 11, color: '#8E8E93' }}>¿Eliminar?</span>
                       <button
                         onClick={() => handleEliminar(e.id)}
                         disabled={eliminar.isPending}
@@ -740,7 +740,7 @@ export default function EgresosPage() {
                       <button
                         onClick={() => setConfirmId(null)}
                         className="eg-btn btn-press"
-                        style={{ background: 'transparent', border: 'none', color: '#4A5568', height: 28, padding: '0 6px', fontSize: 11 }}
+                        style={{ background: 'transparent', border: 'none', color: '#8E8E93', height: 28, padding: '0 6px', fontSize: 11 }}
                       >
                         No
                       </button>
@@ -751,7 +751,7 @@ export default function EgresosPage() {
                         onClick={() => handleEdit(e)}
                         className="eg-btn btn-press"
                         aria-label={`Editar ${e.concepto}`}
-                        style={{ width: 32, height: 32, background: 'transparent', border: '0.5px solid #D1D5DB', color: '#4A5568' }}
+                        style={{ width: 32, height: 32, background: 'transparent', border: '0.5px solid #E5E5EA', color: '#8E8E93' }}
                       >
                         <Pencil size={13} />
                       </button>
@@ -759,7 +759,7 @@ export default function EgresosPage() {
                         onClick={() => setConfirmId(e.id)}
                         className="eg-btn btn-press"
                         aria-label={`Eliminar ${e.concepto}`}
-                        style={{ width: 32, height: 32, background: 'transparent', border: '0.5px solid #D1D5DB', color: '#4A5568' }}
+                        style={{ width: 32, height: 32, background: 'transparent', border: '0.5px solid #E5E5EA', color: '#8E8E93' }}
                       >
                         <Trash2 size={13} />
                       </button>
@@ -768,7 +768,7 @@ export default function EgresosPage() {
                 </div>
               </div>
             ))}
-            <p style={{ fontSize: 12, color: '#4A5568', textAlign: 'center', padding: '12px 0', margin: 0 }}>
+            <p style={{ fontSize: 12, color: '#8E8E93', textAlign: 'center', padding: '12px 0', margin: 0 }}>
               {egresos.length} {egresos.length === 1 ? 'egreso' : 'egresos'}
             </p>
           </>

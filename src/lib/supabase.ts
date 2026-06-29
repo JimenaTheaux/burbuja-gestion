@@ -12,6 +12,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession:     true,
     detectSessionInUrl: false,
     autoRefreshToken:   true,
-    storageKey:         'limpimax-supabase-session',
+    storageKey:         'burbuja-supabase-session',
   },
 })

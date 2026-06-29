@@ -56,7 +56,7 @@ export function BottomNav({ items, logoutAction }: Props) {
           right:          0,
           height:         'calc(56px + env(safe-area-inset-bottom))',
           background:     '#fff',
-          borderTop:      '0.5px solid #D1D5DB',
+          borderTop:      '0.5px solid #E5E5EA',
           display:        'flex',
           alignItems:     'stretch',
           justifyContent: 'space-around',
@@ -97,7 +97,7 @@ export function BottomNav({ items, logoutAction }: Props) {
                       alignItems: 'center',
                     }}
                   >
-                    <Icon size={22} color={isActive ? '#0D5C8A' : '#9A9A9A'} />
+                    <Icon size={22} color={isActive ? '#3DD6B5' : '#9A9A9A'} />
                   </div>
 
                   {isActive && (
@@ -105,7 +105,7 @@ export function BottomNav({ items, logoutAction }: Props) {
                       style={{
                         fontSize:   10,
                         fontWeight: 600,
-                        color:      '#0D5C8A',
+                        color:      '#3DD6B5',
                         lineHeight: 1,
                         animation:  'fadeIn 0.15s ease',
                       }}
@@ -120,7 +120,7 @@ export function BottomNav({ items, logoutAction }: Props) {
                         width:        4,
                         height:       4,
                         borderRadius: '50%',
-                        background:   '#0D5C8A',
+                        background:   '#3DD6B5',
                         animation:    'fadeIn 0.2s ease',
                       }}
                     />
@@ -185,10 +185,10 @@ export function BottomNav({ items, logoutAction }: Props) {
               paddingBottom: 'max(20px, env(safe-area-inset-bottom))',
             }}
           >
-            <p style={{ fontSize: 14, fontWeight: 500, color: '#1A2B3C', marginBottom: 6, textAlign: 'center' }}>
+            <p style={{ fontSize: 14, fontWeight: 500, color: '#1C1C1E', marginBottom: 6, textAlign: 'center' }}>
               ¿Cerrar sesión?
             </p>
-            <p style={{ fontSize: 12, color: '#4A5568', marginBottom: 20, textAlign: 'center' }}>
+            <p style={{ fontSize: 12, color: '#8E8E93', marginBottom: 20, textAlign: 'center' }}>
               Vas a volver a la pantalla de inicio.
             </p>
             <button
@@ -215,7 +215,7 @@ export function BottomNav({ items, logoutAction }: Props) {
                 width:      '100%',
                 height:     44,
                 background: 'transparent',
-                color:      '#4A5568',
+                color:      '#8E8E93',
                 border:     'none',
                 fontSize:   14,
                 cursor:     'pointer',

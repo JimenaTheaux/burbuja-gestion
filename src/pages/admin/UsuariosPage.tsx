@@ -20,7 +20,7 @@ import {
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
 const ROL_OPTIONS = [
-  { value: 'admin',      label: 'Admin',      color: '#1B9ED6' },
+  { value: 'admin',      label: 'Admin',      color: '#7EB8E8' },
   { value: 'produccion', label: 'Producción', color: '#F57C00' },
   { value: 'repartidor', label: 'Repartidor', color: '#2E9E5C' },
 ]
@@ -80,7 +80,7 @@ function CrearUsuarioDrawer({ open, onClose, onSaved }: CrearDrawerProps) {
         disabled={saving}
         className="btn-press"
         style={{
-          background: saving ? 'rgba(13,92,138,0.5)' : '#0D5C8A', color: '#fff',
+          background: saving ? 'rgba(61,214,181,0.5)' : '#3DD6B5', color: '#fff',
           border: 'none', borderRadius: 10, height: 44, width: '100%',
           fontSize: 14, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer',
         }}
@@ -92,7 +92,7 @@ function CrearUsuarioDrawer({ open, onClose, onSaved }: CrearDrawerProps) {
         onClick={onClose}
         className="btn-press"
         style={{
-          background: 'transparent', color: '#4A5568', border: 'none',
+          background: 'transparent', color: '#8E8E93', border: 'none',
           height: 36, width: '100%', fontSize: 13, cursor: 'pointer',
         }}
       >
@@ -131,7 +131,7 @@ function CrearUsuarioDrawer({ open, onClose, onSaved }: CrearDrawerProps) {
           options={ROL_OPTIONS}
         />
 
-        <p style={{ fontSize: 12, color: '#4A5568', background: '#F4F6F8', borderRadius: 8, padding: '8px 10px', margin: 0 }}>
+        <p style={{ fontSize: 12, color: '#8E8E93', background: '#F5F7F9', borderRadius: 8, padding: '8px 10px', margin: 0 }}>
           El usuario recibirá sus credenciales. Pedile que cambie la contraseña al ingresar.
         </p>
       </form>
@@ -168,7 +168,7 @@ function ResetPasswordSection({ userId, onSaved }: { userId: string; onSaved: (m
   }
 
   return (
-    <div style={{ border: '0.5px solid #D1D5DB', borderRadius: 10, overflow: 'hidden' }}>
+    <div style={{ border: '0.5px solid #E5E5EA', borderRadius: 10, overflow: 'hidden' }}>
       {/* Header colapsable */}
       <button
         type="button"
@@ -180,12 +180,12 @@ function ResetPasswordSection({ userId, onSaved }: { userId: string; onSaved: (m
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <KeyRound size={14} color="#4A5568" />
-          <span style={{ fontSize: 13, color: '#1A2B3C', fontWeight: 500 }}>Restablecer contraseña</span>
+          <KeyRound size={14} color="#8E8E93" />
+          <span style={{ fontSize: 13, color: '#1C1C1E', fontWeight: 500 }}>Restablecer contraseña</span>
         </div>
         <ChevronDown
           size={14}
-          color="#4A5568"
+          color="#8E8E93"
           style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
         />
       </button>
@@ -198,7 +198,7 @@ function ResetPasswordSection({ userId, onSaved }: { userId: string; onSaved: (m
       }}>
         <div style={{ overflow: 'hidden' }}>
           <div style={{ padding: '0 14px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <p style={{ margin: '0 0 4px', fontSize: 12, color: '#4A5568', background: '#FFF3E0', borderRadius: 6, padding: '6px 10px' }}>
+            <p style={{ margin: '0 0 4px', fontSize: 12, color: '#8E8E93', background: '#FFF3E0', borderRadius: 6, padding: '6px 10px' }}>
               El usuario deberá usar esta contraseña en su próximo inicio de sesión.
             </p>
 
@@ -213,7 +213,7 @@ function ResetPasswordSection({ userId, onSaved }: { userId: string; onSaved: (m
                   tabIndex={-1}
                   onClick={() => setShowPw(v => !v)}
                   aria-label={showPw ? 'Ocultar' : 'Mostrar'}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#4A5568', padding: 0, display: 'flex' }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8E8E93', padding: 0, display: 'flex' }}
                 >
                   {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
                 </button>
@@ -227,7 +227,7 @@ function ResetPasswordSection({ userId, onSaved }: { userId: string; onSaved: (m
               disabled={resetPw.isPending}
               className="btn-press"
               style={{
-                background:   resetPw.isPending ? 'rgba(13,92,138,0.5)' : '#0D5C8A',
+                background:   resetPw.isPending ? 'rgba(61,214,181,0.5)' : '#3DD6B5',
                 color:        '#fff',
                 border:       'none',
                 borderRadius: 8,
@@ -287,7 +287,7 @@ function EditarUsuarioDrawer({ open, onClose, usuario, onSaved, selfId }: Editar
         disabled={saving}
         className="btn-press"
         style={{
-          background: saving ? 'rgba(13,92,138,0.5)' : '#0D5C8A', color: '#fff',
+          background: saving ? 'rgba(61,214,181,0.5)' : '#3DD6B5', color: '#fff',
           border: 'none', borderRadius: 10, height: 44, width: '100%',
           fontSize: 14, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer',
         }}
@@ -319,7 +319,7 @@ function EditarUsuarioDrawer({ open, onClose, usuario, onSaved, selfId }: Editar
         onClick={onClose}
         className="btn-press"
         style={{
-          background: 'transparent', color: '#4A5568', border: 'none',
+          background: 'transparent', color: '#8E8E93', border: 'none',
           height: 36, width: '100%', fontSize: 13, cursor: 'pointer',
         }}
       >
@@ -336,9 +336,9 @@ function EditarUsuarioDrawer({ open, onClose, usuario, onSaved, selfId }: Editar
           onSubmit={handleSubmit(onSubmit)}
           style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 10px', background: '#F4F6F8', borderRadius: 8 }}>
-            <Mail size={13} color="#4A5568" />
-            <span style={{ fontSize: 13, color: '#4A5568' }}>{usuario.email}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 10px', background: '#F5F7F9', borderRadius: 8 }}>
+            <Mail size={13} color="#8E8E93" />
+            <span style={{ fontSize: 13, color: '#8E8E93' }}>{usuario.email}</span>
           </div>
 
           <FloatInput label="Nombre *" error={errors.nombre?.message} {...register('nombre')} />
@@ -385,7 +385,7 @@ function UsuarioCard({
       display: 'flex', alignItems: 'center', gap: 14,
     }}>
       <div style={{
-        width: 44, height: 44, borderRadius: '50%', background: '#0D5C8A',
+        width: 44, height: 44, borderRadius: '50%', background: '#3DD6B5',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         color: '#fff', fontSize: 14, fontWeight: 700, flexShrink: 0,
       }}>
@@ -394,21 +394,21 @@ function UsuarioCard({
 
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
-          <span style={{ fontWeight: 600, fontSize: 14, color: '#1A2B3C' }}>
+          <span style={{ fontWeight: 600, fontSize: 14, color: '#1C1C1E' }}>
             {usuario.nombre}
-            {isSelf && <span style={{ fontSize: 11, color: '#4A5568', fontWeight: 400 }}> (vos)</span>}
+            {isSelf && <span style={{ fontSize: 11, color: '#8E8E93', fontWeight: 400 }}> (vos)</span>}
           </span>
           <BadgeRol rol={usuario.rol} />
           <BadgeActivo activo={usuario.activo ?? true} />
         </div>
-        <p style={{ fontSize: 12, color: '#4A5568', margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+        <p style={{ fontSize: 12, color: '#8E8E93', margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
           <Mail size={12} /> {usuario.email}
         </p>
       </div>
 
       <button onClick={onEdit} style={{
         background: 'transparent', border: 'none', cursor: 'pointer',
-        color: '#4A5568', padding: 6, borderRadius: 8,
+        color: '#8E8E93', padding: 6, borderRadius: 8,
         display: 'flex', alignItems: 'center', flexShrink: 0,
       }} title="Editar">
         <Edit2 size={16} />
@@ -439,7 +439,7 @@ export default function UsuariosPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
         <h1 className="section-title">Usuarios</h1>
         <button onClick={() => setCrear(true)} style={{
-          background: '#0D5C8A', color: '#fff', border: 'none',
+          background: '#3DD6B5', color: '#fff', border: 'none',
           borderRadius: 10, padding: '10px 16px', minHeight: 40,
           fontSize: 14, fontWeight: 600, cursor: 'pointer',
           display: 'flex', alignItems: 'center', gap: 6,
@@ -459,7 +459,7 @@ export default function UsuariosPage() {
           message="Creá el primer usuario del sistema."
           action={
             <button onClick={() => setCrear(true)} style={{
-              background: '#0D5C8A', color: '#fff', border: 'none',
+              background: '#3DD6B5', color: '#fff', border: 'none',
               borderRadius: 10, padding: '10px 20px', fontSize: 14,
               fontWeight: 600, cursor: 'pointer', minHeight: 44,
             }}>
@@ -477,7 +477,7 @@ export default function UsuariosPage() {
               isSelf={u.user_id === self?.id}
             />
           ))}
-          <p style={{ fontSize: 12, color: '#4A5568', textAlign: 'center', marginTop: 4 }}>
+          <p style={{ fontSize: 12, color: '#8E8E93', textAlign: 'center', marginTop: 4 }}>
             {usuarios.length} {usuarios.length === 1 ? 'usuario' : 'usuarios'}
           </p>
         </div>

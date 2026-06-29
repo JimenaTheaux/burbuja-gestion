@@ -25,7 +25,7 @@ export function BadgeEstado({ estado }: Props) {
 
 // Badge genérico de rol
 const ROL_CONFIG: Record<string, { bg: string; color: string; label: string }> = {
-  admin:      { bg: '#E8F4FF', color: '#1B9ED6', label: 'ADMIN' },
+  admin:      { bg: '#EBF5FF', color: '#7EB8E8', label: 'ADMIN' },
   superadmin: { bg: '#EDE9FE', color: '#7C3AED', label: 'SUPERADMIN' },
   produccion: { bg: '#FFF3E0', color: '#F57C00', label: 'PRODUCCIÓN' },
   repartidor: { bg: '#E8F8F0', color: '#2E9E5C', label: 'REPARTIDOR' },

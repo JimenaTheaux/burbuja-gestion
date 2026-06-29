@@ -10,11 +10,11 @@ export default defineConfig({
       registerType: 'autoUpdate',
 
       manifest: {
-        name:             'Limpimax',
-        short_name:       'Limpimax',
-        description:      'Sistema de gestión de pedidos — Limpimax Productos Químicos',
-        theme_color:      '#0D5C8A',
-        background_color: '#F4F6F8',
+        name:             'Burbuja Gestión',
+        short_name:       'Burbuja',
+        description:      'Sistema de gestión de pedidos — Burbuja',
+        theme_color:      '#3DD6B5',
+        background_color: '#F5F7F9',
         display:          'standalone',
         orientation:      'portrait',
         start_url:        '/',

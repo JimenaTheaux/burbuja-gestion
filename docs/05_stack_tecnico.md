@@ -3,34 +3,31 @@
 ## Decisiones tecnológicas
 
 ### Frontend
-- **Framework:** React 18+ con Vite
-- **Tipo de app:** PWA (Progressive Web App)
-  - Instalable en Android desde Chrome
-  - Soporte offline con Service Worker + Cache API
-  - Manifest con íconos e identidad visual
-- **Estilos:** Tailwind CSS
-- **Componentes UI:** shadcn/ui (sobre Tailwind, headless y accesible)
+- **Framework:** React 19 + Vite 8 (TypeScript)
+- **Tipo de app:** PWA (Progressive Web App) — instalable en Android desde Chrome
+- **Estilos:** Tailwind CSS v3
+- **Componentes UI:** shadcn/ui sobre Radix UI primitives + `class-variance-authority` + `tailwind-merge` + `clsx`
 - **Routing:** React Router v6
-- **Estado global:** Zustand
-- **Formularios:** React Hook Form + Zod
-- **Offline:** Workbox + IndexedDB (via `idb`)
-- **Data fetching:** TanStack Query v5
+- **Estado global:** Zustand (solo `authStore` — perfil/sesión)
+- **Data fetching / cache:** TanStack Query v5
+- **Formularios:** React Hook Form + Zod v4 (`@hookform/resolvers`)
+- **Íconos:** `lucide-react` exclusivamente — cero emojis en la UI
+- **Gráficos:** Chart.js
+- **Documentos imprimibles / JPG:** html2canvas
+- **Offline:** `idb` (IndexedDB) — activo en el rol Repartidor (`useOffline`, `offlineQueue`): encola cambios de estado y cierres de pedido sin conexión, sincroniza al volver online
+- **PWA:** `vite-plugin-pwa` + Workbox
 
 ### Backend / Base de datos
-- **Base de datos:** Neon (PostgreSQL serverless en la nube)
-- **ORM:** Drizzle ORM (TypeScript-first, genera tipos automáticos desde el esquema)
-- **API:** Hono (framework web ultraliviano para Vercel Edge Functions)
-- **Auth:** better-auth (manejo de sesiones JWT, email+password)
-
-**Por qué Neon + Drizzle + Hono:**
-- Neon: PostgreSQL real sin servidor propio, plan gratuito suficiente para MVP, escalable
-- Drizzle: tipos TypeScript automáticos desde el esquema, migraciones simples, sin magia
-- Hono: router extremadamente rápido en Vercel Edge, API en el mismo repo que el frontend
-- better-auth: reemplaza Supabase Auth con control total del JWT y sesiones
+- **Todo en Supabase** — no hay backend propio:
+  - **Base de datos:** PostgreSQL administrado por Supabase
+  - **Auth:** Supabase Auth (email + password), tabla `perfiles` extiende `auth.users`
+  - **Acceso a datos:** el frontend llama directamente a Supabase vía `@supabase/supabase-js`
+  - **Lógica atómica:** RPCs en PL/pgSQL (`SECURITY DEFINER`) para operaciones multi-tabla (ej. `cambiar_estado_pedido`)
+  - **Autorización:** Row Level Security (RLS) por rol en Postgres
 
 ### Deploy
-- **Frontend + API:** Vercel (monorepo, un solo deploy)
-- **Base de datos:** Neon (serverless, conectada vía connection string en variables de entorno)
+- **Frontend:** Vercel — SPA estática (`vite build → dist/`)
+- **Base de datos / Auth:** Supabase (proyecto "burbuja")
 
 ---
 
@@ -40,38 +37,34 @@
 ┌──────────────────────────────────────────────┐
 │              CLIENTE (PWA)                   │
 │                                              │
-│  React + Vite                                │
-│  ┌──────────┐ ┌────────────┐ ┌───────────┐  │
-│  │ Admin UI │ │Produccion  │ │Repartidor │  │
-│  └────┬─────┘ └─────┬──────┘ └─────┬─────┘  │
-│       │             │              │         │
-│  ┌────▼─────────────▼──────────────▼──────┐  │
-│  │     TanStack Query + Zustand           │  │
-│  └────────────────────┬───────────────────┘  │
+│  React 19 + Vite 8                           │
+│  ┌─────────────────────────────────────────┐ │
+│  │  Admin UI                               │ │
+│  │  Dashboard · Pedidos · Egresos          │ │
+│  │  Clientes · Productos · Usuarios        │ │
+│  │  /produccion (vista operativa)          │ │
+│  │  /reparto    (vista operativa)          │ │
+│  └────────────────────┬────────────────────┘ │
 │                       │                      │
-│  ┌────────────────────▼───────────────────┐  │
-│  │     Service Worker + IndexedDB         │  │
-│  └────────────────────────────────────────┘  │
+│  ┌────────────────────▼────────────────────┐ │
+│  │   TanStack Query + Zustand (authStore)  │ │
+│  └────────────────────┬────────────────────┘ │
+│                       │                      │
+│  ┌────────────────────▼────────────────────┐ │
+│  │  Service Worker (Workbox) — assets      │ │
+│  │  idb — preparado para cola offline      │ │
+│  └────────────────────────────────────────-┘ │
 └───────────────────────┬──────────────────────┘
-                        │ HTTPS (fetch)
+                        │ HTTPS (@supabase/supabase-js)
 ┌───────────────────────▼──────────────────────┐
-│           VERCEL EDGE FUNCTIONS              │
-│                                              │
-│  Hono Router                                 │
-│  ┌─────────────┐  ┌────────────────────┐     │
-│  │ better-auth │  │  API Routes        │     │
-│  │ (JWT, sesión│  │  /api/pedidos      │     │
-│  │  por rol)   │  │  /api/clientes     │     │
-│  └──────┬──────┘  │  /api/productos    │     │
-│         │         │  /api/produccion   │     │
-│         │         └──────────┬─────────┘     │
-└─────────┼────────────────────┼───────────────┘
-          │                    │
-┌─────────▼────────────────────▼───────────────┐
-│                   NEON                       │
-│           PostgreSQL Serverless              │
-│                                              │
-│  Drizzle ORM schema + migrations             │
+│                   SUPABASE                   │
+│  ┌─────────────┐  ┌──────────────────────┐   │
+│  │ Auth (JWT)  │  │ PostgreSQL           │   │
+│  │             │  │ + RLS por rol        │   │
+│  └──────┬──────┘  │ + RPC (PL/pgSQL)     │   │
+│         │         └──────────────────────┘   │
+│   tabla perfiles                             │
+│   (rol, activo)                              │
 └──────────────────────────────────────────────┘
 ```
 
@@ -80,54 +73,48 @@
 ## Estructura de carpetas
 
 ```
-limpimax-app/
+burbuja-gestion/
 ├── public/
 │   ├── manifest.json
-│   └── icons/
+│   ├── Logo_sin_fondo_negro.png
+│   └── icons/              # 192x192, 512x512, apple-touch-icon
 │
 ├── src/
 │   ├── assets/
 │   ├── components/
-│   │   ├── ui/              # shadcn/ui generados
-│   │   ├── common/          # Layout, Sidebar, Drawer, BadgeEstado, etc.
-│   │   ├── pedidos/
-│   │   ├── produccion/
-│   │   └── repartidor/
+│   │   ├── ui/             # shadcn/ui sobre Radix
+│   │   ├── common/         # AdminLayout, Sidebar, HamburgerMenu,
+│   │   │                   # BottomNav, Drawer, BadgeEstado,
+│   │   │                   # ProtectedRoute, TopBar, etc.
+│   │   └── pedidos/        # DrawerPedido, DrawerDetalle, FacturaCanvas
 │   │
 │   ├── pages/
-│   │   ├── admin/
-│   │   ├── produccion/
-│   │   └── repartidor/
+│   │   ├── admin/          # Dashboard, Pedidos, Clientes, Productos,
+│   │   │                   # Usuarios, Egresos, Perfil
+│   │   ├── produccion/     # ProduccionPage (accesible al Admin)
+│   │   ├── reparto/        # RepartoPage (accesible al Admin)
+│   │   ├── print/          # Facturas, PrintPedido
+│   │   └── LoginPage.tsx
 │   │
-│   ├── hooks/               # useAuth, usePedidos, useOffline, useSidebar
-│   ├── store/               # Zustand stores
+│   ├── hooks/              # useAuth, useSidebar, useToast,
+│   │                       # useDebounce, useCompartirFactura
+│   ├── store/              # authStore.ts (Zustand)
 │   ├── lib/
-│   │   ├── api.ts           # Fetch wrapper con auth headers
+│   │   ├── supabase.ts     # Cliente Supabase
+│   │   ├── offlineQueue.ts # Cola offline (preparada, no activa en MVP)
 │   │   └── utils.ts
-│   ├── services/            # Llamadas a la API por entidad
-│   ├── types/               # TypeScript types + Zod schemas
-│   └── sw.ts                # Service Worker (Workbox)
+│   ├── services/           # pedidos, clientes, productos,
+│   │                       # usuarios, egresos, produccion
+│   └── types/              # Pedido, Cliente, Producto, Perfil,
+│                           # Egreso, EstadoPedido, etc.
 │
-├── api/                     # Hono — Vercel Edge Functions
-│   ├── index.ts             # Router principal
-│   ├── auth.ts              # better-auth handlers
-│   ├── pedidos.ts
-│   ├── clientes.ts
-│   ├── productos.ts
-│   ├── produccion.ts
-│   └── middleware/
-│       └── auth.ts          # Verificar JWT + rol por ruta
+├── supabase/
+│   └── rpcs_and_indexes.sql
 │
-├── db/
-│   ├── schema.ts            # Drizzle schema (todas las tablas)
-│   ├── migrations/          # Archivos de migración generados
-│   └── index.ts             # Cliente Drizzle + conexión Neon
-│
-├── .env.local               # Variables locales (nunca al repo)
-├── vercel.json              # Config Vercel (rewrites para la API)
+├── .env.local              # VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
+├── vercel.json
 ├── vite.config.ts
 ├── tailwind.config.ts
-├── drizzle.config.ts
 └── package.json
 ```
 
@@ -136,15 +123,9 @@ limpimax-app/
 ## Variables de entorno
 
 ```env
-# Neon
-DATABASE_URL=postgresql://[user]:[password]@[host]/[db]?sslmode=require
-
-# better-auth
-BETTER_AUTH_SECRET=[string aleatorio seguro, mínimo 32 chars]
-BETTER_AUTH_URL=https://[tu-dominio].vercel.app
-
-# Frontend (prefijo VITE_ para que Vite las exponga al cliente)
-VITE_API_URL=https://[tu-dominio].vercel.app/api
+VITE_SUPABASE_URL=https://[proyecto].supabase.co
+VITE_SUPABASE_ANON_KEY=[anon key]
+VITE_SUPABASE_SERVICE_ROLE_KEY=[service role key — solo para gestión de usuarios]
 ```
 
 ---
@@ -154,28 +135,30 @@ VITE_API_URL=https://[tu-dominio].vercel.app/api
 ```json
 {
   "dependencies": {
-    "react": "^18",
-    "react-dom": "^18",
+    "react": "^19",
+    "react-dom": "^19",
     "react-router-dom": "^6",
     "@tanstack/react-query": "^5",
     "zustand": "^4",
     "react-hook-form": "^7",
-    "zod": "^3",
-    "tailwindcss": "^3",
-    "hono": "^4",
-    "better-auth": "^1",
-    "drizzle-orm": "^0.30",
-    "@neondatabase/serverless": "^0.9",
-    "idb": "^8"
+    "@hookform/resolvers": "^5",
+    "zod": "^4",
+    "@supabase/supabase-js": "^2",
+    "lucide-react": "^1",
+    "chart.js": "^4",
+    "html2canvas": "^1",
+    "idb": "^8",
+    "workbox-window": "^7",
+    "class-variance-authority": "^0.7",
+    "clsx": "^2",
+    "tailwind-merge": "^3"
   },
   "devDependencies": {
-    "vite": "^5",
-    "vite-plugin-pwa": "^0.19",
-    "workbox-window": "^7",
-    "drizzle-kit": "^0.20",
-    "vitest": "^1",
-    "@types/react": "^18",
-    "@types/react-dom": "^18"
+    "vite": "^8",
+    "vite-plugin-pwa": "^1",
+    "typescript": "~6",
+    "tailwindcss": "^3",
+    "@vitejs/plugin-react": "^6"
   }
 }
 ```
@@ -184,20 +167,16 @@ VITE_API_URL=https://[tu-dominio].vercel.app/api
 
 ## Seguridad
 
-- **Auth por API:** cada request a la API lleva el JWT en `Authorization: Bearer`. La capa `middleware/auth.ts` de Hono verifica el token y extrae el rol antes de ejecutar cualquier handler.
-- **Autorización por rol en cada ruta:** el middleware verifica que el rol del usuario tenga permiso para la acción solicitada. No hay lógica de permisos en el frontend — solo ocultamiento visual.
-- **No exponer datos sensibles por rol:** las queries de producción no devuelven precios. Las queries del repartidor no devuelven datos internos.
-- **Variables de entorno:** nunca hardcodeadas en el código. `DATABASE_URL` y `BETTER_AUTH_SECRET` solo en el servidor (sin prefijo `VITE_`).
+- **Auth:** Supabase Auth (JWT en sesión, persistido en `localStorage`).
+- **Autorización real:** RLS en Postgres — el frontend solo hace ocultamiento visual.
+- **Perfil y rol:** tabla `perfiles` con columna `activo` — usuario desactivado pierde acceso (`useAuth` cierra sesión si `activo = false`).
+- **Variables de entorno:** `VITE_SUPABASE_ANON_KEY` es pública por diseño de Supabase; la seguridad depende de RLS. `SERVICE_ROLE_KEY` nunca va al cliente — solo usada en funciones administrativas con el cliente admin de Supabase.
 
 ---
 
-## Polling para sincronización en tiempo real
+## Sincronización
 
-Sin Supabase Realtime, la sincronización entre roles se maneja con polling:
-- **Dashboard Admin:** refresca cada 30 segundos (TanStack Query `refetchInterval`)
-- **Vista Producción:** refresca cada 60 segundos
-- **Vista Repartidor:** sin polling — el repartidor actúa sobre su lista descargada al inicio del día
-- Si en el futuro se necesita tiempo real estricto, se agrega Server-Sent Events en Hono
+Sin Supabase Realtime ni WebSockets. Cada vista hace refetch con TanStack Query al entrar o tras una acción. En el MVP no hay polling ni modo offline activo.
 
 ---
 
@@ -205,8 +184,10 @@ Sin Supabase Realtime, la sincronización entre roles se maneja con polling:
 
 ```json
 {
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index.ts" }
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
 ```
@@ -218,24 +199,30 @@ Sin Supabase Realtime, la sincronización entre roles se maneja con polling:
 ```typescript
 import { VitePWA } from 'vite-plugin-pwa'
 
-export default {
-  plugins: [
-    VitePWA({
-      registerType: 'autoUpdate',
-      manifest: {
-        name: 'Limpimax',
-        short_name: 'Limpimax',
-        theme_color: '#0D5C8A',
-        background_color: '#F4F6F8',
-        display: 'standalone',
-        orientation: 'portrait',
-        icons: [/* 192x192 y 512x512 */]
+VitePWA({
+  registerType: 'autoUpdate',
+  devOptions: { enabled: true },
+  manifest: {
+    name: 'Burbuja Gestión',
+    short_name: 'Burbuja',
+    theme_color: '#3DD6B5',
+    background_color: '#F5F7F9',
+    display: 'standalone',
+    orientation: 'portrait',
+    icons: [/* 192x192, 512x512, apple-touch-icon */],
+  },
+  workbox: {
+    globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+    runtimeCaching: [
+      {
+        urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
+        handler: 'NetworkFirst',
+        options: {
+          cacheName: 'supabase-cache',
+          expiration: { maxEntries: 100, maxAgeSeconds: 300 },
+        },
       },
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
-        runtimeCaching: [/* cache para llamadas a /api */]
-      }
-    })
-  ]
-}
+    ],
+  },
+})
 ```

@@ -3,7 +3,7 @@ import type { CSSProperties, ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Search, Edit2, Package, MoreHorizontal, Eye, EyeOff, Trash2, Pencil, ChevronDown } from 'lucide-react'
+import { Plus, Search, Edit2, Package, MoreHorizontal, Eye, EyeOff, Trash2, Pencil, ChevronDown, Check, X } from 'lucide-react'
 import { Skeleton }       from '@/components/ui/skeleton'
 import { Drawer }         from '@/components/common/Drawer'
 import { FloatInput }     from '@/components/common/FloatInput'
@@ -26,6 +26,7 @@ const schema = z.object({
   presentacion:    z.enum(['0.5', '3', '5', '10', '20'], { message: 'Seleccioná una presentación' }),
   precioMinorista: z.string().min(1, 'Requerido').regex(/^\d+(\.\d{0,2})?$/, 'Precio inválido'),
   precioMayorista: z.string().min(1, 'Requerido').regex(/^\d+(\.\d{0,2})?$/, 'Precio inválido'),
+  costoProduccion: z.string().optional().refine(v => !v || /^\d+(\.\d{0,2})?$/.test(v), 'Costo inválido'),
   codigo:          z.string().optional(),
 })
 
@@ -41,7 +42,7 @@ interface DrawerProps {
 }
 
 const LABEL_S: React.CSSProperties = {
-  fontSize: 10, fontWeight: 500, color: '#4A5568',
+  fontSize: 10, fontWeight: 500, color: '#8E8E93',
   textTransform: 'uppercase', letterSpacing: '0.06em',
   display: 'block', marginBottom: 5,
 }
@@ -76,6 +77,7 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
     const presentacionNum = parseFloat(data.presentacion)
     const minorista       = parseFloat(data.precioMinorista)
     const mayorista       = parseFloat(data.precioMayorista)
+    const costoProduccion = data.costoProduccion ? parseFloat(data.costoProduccion) : 0
     try {
       if (producto) {
         await editar.mutateAsync({
@@ -86,6 +88,7 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
           presentacion:     presentacionNum,
           precio_minorista: minorista,
           precio_mayorista: mayorista,
+          costo_produccion: costoProduccion,
           codigo:           data.codigo      || null,
           activo,
         })
@@ -99,6 +102,7 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
           presentacion:     presentacionNum,
           precio_minorista: minorista,
           precio_mayorista: mayorista,
+          costo_produccion: costoProduccion,
           activo,
           codigo:           data.codigo      || null,
         })
@@ -122,6 +126,7 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
       presentacion:    (producto?.presentacion != null ? String(producto.presentacion) : '5') as FormData['presentacion'],
       precioMinorista: producto?.precio_minorista != null ? String(producto.precio_minorista) : '',
       precioMayorista: producto?.precio_mayorista != null ? String(producto.precio_mayorista) : '',
+      costoProduccion: producto?.costo_produccion != null ? String(producto.costo_produccion) : '0',
       codigo:          producto?.codigo                                                    ?? '',
     })
     setActivo(producto?.activo ?? true)
@@ -165,7 +170,7 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
         disabled={saving}
         className="btn-press"
         style={{
-          background: saving ? 'rgba(13,92,138,0.5)' : '#0D5C8A', color: '#fff',
+          background: saving ? 'rgba(61,214,181,0.5)' : '#3DD6B5', color: '#fff',
           border: 'none', borderRadius: 10, height: 44, width: '100%',
           fontSize: 14, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer',
         }}
@@ -177,7 +182,7 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
         onClick={onClose}
         className="btn-press"
         style={{
-          background: 'transparent', color: '#4A5568',
+          background: 'transparent', color: '#8E8E93',
           border: 'none', height: 36, width: '100%',
           fontSize: 13, cursor: 'pointer',
         }}
@@ -189,10 +194,10 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
 
   const selectStyle: CSSProperties = {
     width: '100%', padding: '0 28px 0 12px',
-    border: '0.5px solid #D1D5DB', borderRadius: 8,
+    border: '0.5px solid #E5E5EA', borderRadius: 8,
     fontFamily: 'Inter, sans-serif', background: '#fff',
     appearance: 'none', outline: 'none', cursor: 'pointer',
-    color: '#1A2B3C', boxSizing: 'border-box',
+    color: '#1C1C1E', boxSizing: 'border-box',
   }
 
   return (
@@ -218,13 +223,13 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
             {categoriaVal ? (
               <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '0 10px 0 12px', background: '#E8F4FF', borderRadius: 8,
-                border: '0.5px solid #1B9ED6', height: 40,
+                padding: '0 10px 0 12px', background: '#EBF5FF', borderRadius: 8,
+                border: '0.5px solid #7EB8E8', height: 40,
               }}>
-                <span style={{ fontSize: 13, fontWeight: 500, color: '#1A2B3C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{catText}</span>
+                <span style={{ fontSize: 13, fontWeight: 500, color: '#1C1C1E', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{catText}</span>
                 <button type="button"
                   onClick={() => { setValue('categoriaId', ''); setCatText(''); setCatErr('') }}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1B9ED6', fontSize: 11, fontWeight: 600, flexShrink: 0, marginLeft: 6 }}>
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7EB8E8', fontSize: 11, fontWeight: 600, flexShrink: 0, marginLeft: 6 }}>
                   Cambiar
                 </button>
               </div>
@@ -241,18 +246,18 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
                   }}
                   placeholder="Buscar o crear…"
                   className="fi-input"
-                  style={{ padding: '0 12px', border: '0.5px solid #D1D5DB', borderRadius: 8, outline: 0, width: '100%', fontFamily: 'Inter, sans-serif', boxSizing: 'border-box', background: '#fff', color: '#1A2B3C' }}
+                  style={{ padding: '0 12px', border: '0.5px solid #E5E5EA', borderRadius: 8, outline: 0, width: '100%', fontFamily: 'Inter, sans-serif', boxSizing: 'border-box', background: '#fff', color: '#1C1C1E' }}
                 />
                 {catDrop && (
                   <div style={{
                     position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
-                    background: '#fff', border: '1px solid #D1D5DB', borderRadius: 8,
+                    background: '#fff', border: '1px solid #E5E5EA', borderRadius: 8,
                     boxShadow: '0 8px 24px rgba(0,0,0,0.12)', maxHeight: 200, overflowY: 'auto', marginTop: 4,
                   }}>
                     {catsFiltradas.map(cat => (
                       <button key={cat.id} type="button"
                         onClick={() => { setValue('categoriaId', cat.id); setCatText(cat.nombre); setCatDrop(false) }}
-                        style={{ width: '100%', textAlign: 'left', padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer', display: 'block', borderBottom: '0.5px solid #F4F6F8', fontSize: 13 }}>
+                        style={{ width: '100%', textAlign: 'left', padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer', display: 'block', borderBottom: '0.5px solid #F5F7F9', fontSize: 13 }}>
                         {cat.nombre}
                       </button>
                     ))}
@@ -262,14 +267,14 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
                           width: '100%', textAlign: 'left', padding: '8px 12px',
                           background: '#F0F7FF', border: 'none',
                           cursor: crearCat.isPending ? 'not-allowed' : 'pointer',
-                          fontSize: 12, color: '#0D5C8A', fontWeight: 600,
-                          borderTop: catsFiltradas.length > 0 ? '0.5px solid #F4F6F8' : 'none',
+                          fontSize: 12, color: '#3DD6B5', fontWeight: 600,
+                          borderTop: catsFiltradas.length > 0 ? '0.5px solid #F5F7F9' : 'none',
                         }}>
                         {crearCat.isPending ? 'Creando…' : `+ Crear "${catText.trim()}"`}
                       </button>
                     )}
                     {catsFiltradas.length === 0 && !puedeCrear && (
-                      <div style={{ padding: '8px 12px', fontSize: 12, color: '#4A5568' }}>
+                      <div style={{ padding: '8px 12px', fontSize: 12, color: '#8E8E93' }}>
                         {catText.trim() ? 'Sin coincidencias' : 'Escribí para buscar o crear'}
                       </div>
                     )}
@@ -291,7 +296,7 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
               <select
                 {...register('presentacion')}
                 className="fi-input"
-                style={{ ...selectStyle, borderColor: errors.presentacion ? '#D32F2F' : '#D1D5DB' }}
+                style={{ ...selectStyle, borderColor: errors.presentacion ? '#D32F2F' : '#E5E5EA' }}
               >
                 <option value="0.5">500 ml</option>
                 <option value="3">3 L</option>
@@ -299,7 +304,7 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
                 <option value="10">10 L</option>
                 <option value="20">20 L</option>
               </select>
-              <ChevronDown size={13} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#4A5568' }} />
+              <ChevronDown size={13} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#8E8E93' }} />
             </div>
             {errors.presentacion && <span style={{ color: '#D32F2F', fontSize: 11, marginTop: 4 }}>{errors.presentacion.message}</span>}
           </div>
@@ -311,11 +316,18 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
           <FloatInput label="Precio mayorista *" error={errors.precioMayorista?.message} {...register('precioMayorista')} inputMode="decimal" />
         </div>
 
+        <div>
+          <FloatInput label="Costo de producción" error={errors.costoProduccion?.message} {...register('costoProduccion')} inputMode="decimal" />
+          <p style={{ fontSize: 11, color: '#8E8E93', margin: '5px 0 0' }}>
+            Costo interno de fabricación. No visible para clientes. Se usa para calcular el margen.
+          </p>
+        </div>
+
         <FloatInput label="Código (opcional)" {...register('codigo')} />
 
         {/* Toggle activo/inactivo */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', background: '#F9FAFB', borderRadius: 8, border: '0.5px solid #D1D5DB' }}>
-          <span style={{ fontSize: 13, color: '#4A5568' }}>Producto activo</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', background: '#F9FAFB', borderRadius: 8, border: '0.5px solid #E5E5EA' }}>
+          <span style={{ fontSize: 13, color: '#8E8E93' }}>Producto activo</span>
           <button
             type="button"
             role="switch"
@@ -323,7 +335,7 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
             onClick={() => setActivo(v => !v)}
             style={{
               width: 36, height: 20, borderRadius: 99,
-              background: activo ? '#0D5C8A' : '#D1D5DB',
+              background: activo ? '#3DD6B5' : '#E5E5EA',
               border: 'none', cursor: 'pointer', position: 'relative',
               transition: 'background 0.2s ease', flexShrink: 0, padding: 0,
             }}
@@ -361,7 +373,7 @@ function ShimmerRow() {
   return (
     <tr>
       {[160, 90, 55, 90, 90, 55, 28].map((w, i) => (
-        <td key={i} style={{ padding: '10px 14px', borderBottom: '0.5px solid #F4F6F8' }}>
+        <td key={i} style={{ padding: '10px 14px', borderBottom: '0.5px solid #F5F7F9' }}>
           <Skeleton style={{ height: 13, width: w, borderRadius: 6 }} />
         </td>
       ))}
@@ -371,7 +383,7 @@ function ShimmerRow() {
 
 function ShimmerCard() {
   return (
-    <div style={{ background: '#fff', borderRadius: 12, border: '0.5px solid #D1D5DB', padding: '12px 16px', marginBottom: 6 }}>
+    <div style={{ background: '#fff', borderRadius: 12, border: '0.5px solid #E5E5EA', padding: '12px 16px', marginBottom: 6 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
         <Skeleton style={{ height: 13, width: 140, borderRadius: 6 }} />
         <Skeleton style={{ height: 18, width: 56, borderRadius: 99 }} />
@@ -463,7 +475,7 @@ function CategoriasDrawer({ open, onClose, onMsg }: CatDrawerProps) {
       type="button"
       onClick={onClose}
       className="btn-press"
-      style={{ background: 'transparent', color: '#4A5568', border: 'none', height: 40, width: '100%', fontSize: 14, cursor: 'pointer' }}
+      style={{ background: 'transparent', color: '#8E8E93', border: 'none', height: 40, width: '100%', fontSize: 14, cursor: 'pointer' }}
     >
       Cerrar
     </button>
@@ -471,7 +483,7 @@ function CategoriasDrawer({ open, onClose, onMsg }: CatDrawerProps) {
 
   const inputStyle: CSSProperties = {
     flex: 1, height: 32, padding: '0 10px',
-    border: '1.5px solid #1B9ED6', borderRadius: 6,
+    border: '1.5px solid #7EB8E8', borderRadius: 6,
     fontSize: 13, outline: 0, fontFamily: 'Inter, sans-serif', boxSizing: 'border-box',
   }
   const btnIconStyle: CSSProperties = {
@@ -499,7 +511,7 @@ function CategoriasDrawer({ open, onClose, onMsg }: CatDrawerProps) {
             onClick={handleCrear}
             disabled={crear.isPending || !newNombre.trim()}
             style={{
-              height: 36, padding: '0 14px', background: '#0D5C8A', color: '#fff',
+              height: 36, padding: '0 14px', background: '#3DD6B5', color: '#fff',
               border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600,
               cursor: crear.isPending ? 'not-allowed' : 'pointer', flexShrink: 0,
             }}
@@ -508,9 +520,9 @@ function CategoriasDrawer({ open, onClose, onMsg }: CatDrawerProps) {
           </button>
           <button
             onClick={() => { setShowNew(false); setNewNombre('') }}
-            style={{ ...btnIconStyle, border: '0.5px solid #D1D5DB', width: 36, height: 36, flexShrink: 0 }}
+            style={{ ...btnIconStyle, border: '0.5px solid #E5E5EA', width: 36, height: 36, flexShrink: 0 }}
           >
-            ✗
+            <X size={14} />
           </button>
         </div>
       ) : (
@@ -518,9 +530,9 @@ function CategoriasDrawer({ open, onClose, onMsg }: CatDrawerProps) {
           onClick={() => setShowNew(true)}
           className="btn-press"
           style={{
-            width: '100%', height: 40, background: '#F4F6F8',
-            border: '0.5px dashed #1B9ED6', borderRadius: 10,
-            color: '#1B9ED6', fontSize: 13, fontWeight: 600,
+            width: '100%', height: 40, background: '#F5F7F9',
+            border: '0.5px dashed #7EB8E8', borderRadius: 10,
+            color: '#7EB8E8', fontSize: 13, fontWeight: 600,
             cursor: 'pointer', marginBottom: 12,
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
           }}
@@ -531,13 +543,13 @@ function CategoriasDrawer({ open, onClose, onMsg }: CatDrawerProps) {
 
       {/* Lista */}
       {isLoading ? (
-        <div style={{ padding: 24, textAlign: 'center', color: '#4A5568', fontSize: 13 }}>Cargando…</div>
+        <div style={{ padding: 24, textAlign: 'center', color: '#8E8E93', fontSize: 13 }}>Cargando…</div>
       ) : !categorias?.length ? (
-        <div style={{ padding: 24, textAlign: 'center', color: '#4A5568', fontSize: 13 }}>No hay categorías aún</div>
+        <div style={{ padding: 24, textAlign: 'center', color: '#8E8E93', fontSize: 13 }}>No hay categorías aún</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           {categorias.map(cat => (
-            <div key={cat.id} style={{ background: '#fff', borderRadius: 10, border: '0.5px solid #D1D5DB', overflow: 'hidden' }}>
+            <div key={cat.id} style={{ background: '#fff', borderRadius: 10, border: '0.5px solid #E5E5EA', overflow: 'hidden' }}>
               {editId === cat.id ? (
                 <div style={{ display: 'flex', gap: 8, padding: '8px 12px', alignItems: 'center' }}>
                   <input
@@ -554,25 +566,25 @@ function CategoriasDrawer({ open, onClose, onMsg }: CatDrawerProps) {
                     onClick={handleSaveEdit}
                     disabled={editar.isPending || !editNombre.trim()}
                     style={{
-                      height: 32, padding: '0 10px', background: '#0D5C8A', color: '#fff',
+                      height: 32, padding: '0 10px', background: '#3DD6B5', color: '#fff',
                       border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600,
                       cursor: editar.isPending ? 'not-allowed' : 'pointer', flexShrink: 0,
                     }}
                   >
-                    ✓
+                    <Check size={14} />
                   </button>
                   <button
                     onClick={() => setEditId(null)}
-                    style={{ ...btnIconStyle, border: '0.5px solid #D1D5DB', flexShrink: 0 }}
+                    style={{ ...btnIconStyle, border: '0.5px solid #E5E5EA', flexShrink: 0 }}
                   >
-                    ✗
+                    <X size={14} />
                   </button>
                 </div>
               ) : deleteId === cat.id ? (
                 <div style={{ padding: '10px 14px' }}>
-                  <p style={{ margin: '0 0 10px', fontSize: 13, color: '#1A2B3C' }}>
+                  <p style={{ margin: '0 0 10px', fontSize: 13, color: '#1C1C1E' }}>
                     ¿Borrar <strong>{cat.nombre}</strong>?{' '}
-                    <span style={{ color: '#4A5568' }}>Los productos quedarán sin categoría.</span>
+                    <span style={{ color: '#8E8E93' }}>Los productos quedarán sin categoría.</span>
                   </p>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <button
@@ -589,8 +601,8 @@ function CategoriasDrawer({ open, onClose, onMsg }: CatDrawerProps) {
                     <button
                       onClick={() => setDeleteId(null)}
                       style={{
-                        flex: 1, height: 36, background: 'transparent', color: '#4A5568',
-                        border: '0.5px solid #D1D5DB', borderRadius: 8, fontSize: 13, cursor: 'pointer',
+                        flex: 1, height: 36, background: 'transparent', color: '#8E8E93',
+                        border: '0.5px solid #E5E5EA', borderRadius: 8, fontSize: 13, cursor: 'pointer',
                       }}
                     >
                       Cancelar
@@ -599,12 +611,12 @@ function CategoriasDrawer({ open, onClose, onMsg }: CatDrawerProps) {
                 </div>
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', padding: '0 8px 0 14px', height: 48 }}>
-                  <span style={{ flex: 1, fontSize: 13, color: '#1A2B3C' }}>{cat.nombre}</span>
+                  <span style={{ flex: 1, fontSize: 13, color: '#1C1C1E' }}>{cat.nombre}</span>
                   <button
                     onClick={() => { setEditId(cat.id); setEditNombre(cat.nombre); setDeleteId(null) }}
                     aria-label={`Editar ${cat.nombre}`}
-                    style={{ ...btnIconStyle, color: '#4A5568' }}
-                    onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = '#F4F6F8')}
+                    style={{ ...btnIconStyle, color: '#8E8E93' }}
+                    onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = '#F5F7F9')}
                     onMouseLeave={e => ((e.currentTarget as HTMLElement).style.background = 'transparent')}
                   >
                     <Pencil size={14} />
@@ -675,15 +687,15 @@ function ProductActionSheet({ product, step, onClose, onStep, onToggle, onDelete
       >
         {step === 'menu' && (
           <>
-            <p style={{ margin: '0 0 16px', fontSize: 13, fontWeight: 600, color: '#1A2B3C' }}>
+            <p style={{ margin: '0 0 16px', fontSize: 13, fontWeight: 600, color: '#1C1C1E' }}>
               {product.nombre}
-              {product.fragancia && <span style={{ fontWeight: 400, color: '#4A5568' }}> — {product.fragancia}</span>}
+              {product.fragancia && <span style={{ fontWeight: 400, color: '#8E8E93' }}> — {product.fragancia}</span>}
             </p>
             {sheetBtn(
               () => onStep('confirm-toggle'), false,
-              { background: '#F4F6F8', color: '#1A2B3C', marginBottom: 4 },
+              { background: '#F5F7F9', color: '#1C1C1E', marginBottom: 4 },
               <>
-                {product.activo ? <EyeOff size={16} color="#4A5568" /> : <Eye size={16} color="#4A5568" />}
+                {product.activo ? <EyeOff size={16} color="#8E8E93" /> : <Eye size={16} color="#8E8E93" />}
                 {product.activo ? 'Inactivar producto' : 'Activar producto'}
               </>
             )}
@@ -693,7 +705,7 @@ function ProductActionSheet({ product, step, onClose, onStep, onToggle, onDelete
               { background: '#FFF5F5', color: '#D32F2F', fontWeight: 600, marginBottom: 8 },
               <><Trash2 size={16} /> Borrar producto</>
             )}
-            <button onClick={onClose} style={{ width: '100%', height: 44, background: 'transparent', color: '#4A5568', border: 'none', fontSize: 14, cursor: 'pointer' }}>
+            <button onClick={onClose} style={{ width: '100%', height: 44, background: 'transparent', color: '#8E8E93', border: 'none', fontSize: 14, cursor: 'pointer' }}>
               Cancelar
             </button>
           </>
@@ -701,24 +713,24 @@ function ProductActionSheet({ product, step, onClose, onStep, onToggle, onDelete
 
         {step === 'confirm-toggle' && (
           <>
-            <p style={{ margin: '0 0 6px', fontSize: 14, fontWeight: 600, color: '#1A2B3C' }}>
+            <p style={{ margin: '0 0 6px', fontSize: 14, fontWeight: 600, color: '#1C1C1E' }}>
               {product.activo ? `¿Inactivar "${product.nombre}"?` : `¿Activar "${product.nombre}"?`}
             </p>
             {product.activo && (
-              <p style={{ margin: '0 0 16px', fontSize: 13, color: '#4A5568' }}>No aparecerá en nuevos pedidos.</p>
+              <p style={{ margin: '0 0 16px', fontSize: 13, color: '#8E8E93' }}>No aparecerá en nuevos pedidos.</p>
             )}
             <div style={{ display: 'flex', gap: 8, marginTop: product.activo ? 0 : 16 }}>
               <button
                 onClick={onToggle}
                 disabled={toggling}
                 className="btn-press"
-                style={{ flex: 1, height: 44, background: '#0D5C8A', color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: toggling ? 'not-allowed' : 'pointer' }}
+                style={{ flex: 1, height: 44, background: '#3DD6B5', color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: toggling ? 'not-allowed' : 'pointer' }}
               >
                 {toggling ? '…' : 'Confirmar'}
               </button>
               <button
                 onClick={() => onStep('menu')}
-                style={{ flex: 1, height: 44, background: 'transparent', color: '#4A5568', border: '0.5px solid #D1D5DB', borderRadius: 10, fontSize: 14, cursor: 'pointer' }}
+                style={{ flex: 1, height: 44, background: 'transparent', color: '#8E8E93', border: '0.5px solid #E5E5EA', borderRadius: 10, fontSize: 14, cursor: 'pointer' }}
               >
                 Cancelar
               </button>
@@ -728,10 +740,10 @@ function ProductActionSheet({ product, step, onClose, onStep, onToggle, onDelete
 
         {step === 'confirm-delete' && (
           <>
-            <p style={{ margin: '0 0 6px', fontSize: 14, fontWeight: 600, color: '#1A2B3C' }}>
+            <p style={{ margin: '0 0 6px', fontSize: 14, fontWeight: 600, color: '#1C1C1E' }}>
               ¿Borrar &ldquo;{product.nombre}&rdquo;?
             </p>
-            <p style={{ margin: '0 0 16px', fontSize: 13, color: '#4A5568' }}>
+            <p style={{ margin: '0 0 16px', fontSize: 13, color: '#8E8E93' }}>
               Esta acción no se puede deshacer. Los pedidos existentes no se verán afectados — conservan el precio snapshot.
             </p>
             <button
@@ -744,7 +756,7 @@ function ProductActionSheet({ product, step, onClose, onStep, onToggle, onDelete
             </button>
             <button
               onClick={() => onStep('menu')}
-              style={{ width: '100%', height: 44, background: 'transparent', color: '#4A5568', border: 'none', fontSize: 14, cursor: 'pointer' }}
+              style={{ width: '100%', height: 44, background: 'transparent', color: '#8E8E93', border: 'none', fontSize: 14, cursor: 'pointer' }}
             >
               Cancelar
             </button>
@@ -826,8 +838,8 @@ export default function ProductosPage() {
         .prd-table { width: 100%; border-collapse: collapse; }
         .prd-table tbody tr { transition: background 0.1s; cursor: default; }
         .prd-table tbody tr:hover { background: #F9FAFB !important; }
-        .prd-edit-btn:focus-visible { outline: 2px solid #1B9ED6; outline-offset: 2px; }
-        .prd-card:focus-visible { outline: 2px solid #1B9ED6; outline-offset: 2px; }
+        .prd-edit-btn:focus-visible { outline: 2px solid #7EB8E8; outline-offset: 2px; }
+        .prd-card:focus-visible { outline: 2px solid #7EB8E8; outline-offset: 2px; }
         @media (max-width: 1023px) { .prd-desktop { display: none !important; } }
         @media (min-width: 1024px) { .prd-mobile  { display: none !important; } }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
@@ -840,7 +852,7 @@ export default function ProductosPage() {
           onClick={handleNew}
           className="btn-press"
           style={{
-            background: '#0D5C8A', color: '#fff', border: 'none',
+            background: '#3DD6B5', color: '#fff', border: 'none',
             borderRadius: 10, height: 40, padding: '0 16px',
             fontSize: 13, fontWeight: 600, cursor: 'pointer',
             display: 'flex', alignItems: 'center', gap: 6,
@@ -856,7 +868,7 @@ export default function ProductosPage() {
           <label htmlFor="prd-search" className="sr-only">Buscar productos</label>
           <Search
             size={14}
-            style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#4A5568', pointerEvents: 'none' }}
+            style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#8E8E93', pointerEvents: 'none' }}
           />
           <input
             id="prd-search"
@@ -865,12 +877,12 @@ export default function ProductosPage() {
             placeholder="Buscar por nombre..."
             style={{
               width: '100%', height: 36, padding: '0 12px 0 32px',
-              border: '0.5px solid #D1D5DB', borderRadius: 8,
+              border: '0.5px solid #E5E5EA', borderRadius: 8,
               fontSize: 13, outline: 0, background: '#fff',
               boxSizing: 'border-box', fontFamily: 'Inter, sans-serif',
             }}
-            onFocus={e => (e.target.style.borderColor = '#1B9ED6')}
-            onBlur={e  => (e.target.style.borderColor = '#D1D5DB')}
+            onFocus={e => (e.target.style.borderColor = '#7EB8E8')}
+            onBlur={e  => (e.target.style.borderColor = '#E5E5EA')}
           />
         </div>
 
@@ -880,8 +892,8 @@ export default function ProductosPage() {
             onChange={e => setCat(e.target.value)}
             style={{
               height: 36, padding: '0 10px',
-              border: '0.5px solid #D1D5DB', borderRadius: 8,
-              fontSize: 12, color: '#1A2B3C', background: '#fff',
+              border: '0.5px solid #E5E5EA', borderRadius: 8,
+              fontSize: 12, color: '#1C1C1E', background: '#fff',
               cursor: 'pointer', outline: 0,
             }}
           >
@@ -892,7 +904,7 @@ export default function ProductosPage() {
             onClick={() => setCatDrawer(true)}
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
-              color: '#1B9ED6', fontSize: 11, fontWeight: 500,
+              color: '#7EB8E8', fontSize: 11, fontWeight: 500,
               whiteSpace: 'nowrap', padding: '0 2px',
               textDecoration: 'underline', textUnderlineOffset: 2,
             }}
@@ -910,9 +922,9 @@ export default function ProductosPage() {
                 onClick={() => setActivo(v)}
                 style={{
                   height: 32, padding: '0 12px', borderRadius: 99,
-                  border: `1px solid ${isActive ? '#0D5C8A' : '#D1D5DB'}`,
-                  background: isActive ? '#0D5C8A' : '#fff',
-                  color: isActive ? '#fff' : '#4A5568',
+                  border: `1px solid ${isActive ? '#3DD6B5' : '#E5E5EA'}`,
+                  background: isActive ? '#3DD6B5' : '#fff',
+                  color: isActive ? '#fff' : '#8E8E93',
                   fontSize: 12, fontWeight: isActive ? 500 : 400,
                   cursor: 'pointer', whiteSpace: 'nowrap',
                   transition: 'all 0.1s',
@@ -927,10 +939,10 @@ export default function ProductosPage() {
 
       {/* ── DESKTOP ─────────────────────────────────────────────────────────── */}
       <div className="prd-desktop">
-        <div style={{ background: '#fff', borderRadius: 12, border: '0.5px solid #D1D5DB', overflow: 'hidden' }}>
+        <div style={{ background: '#fff', borderRadius: 12, border: '0.5px solid #E5E5EA', overflow: 'hidden' }}>
           <table className="prd-table" aria-label="Listado de productos">
             <thead>
-              <tr style={{ background: '#F4F6F8', borderBottom: '0.5px solid #D1D5DB' }}>
+              <tr style={{ background: '#F5F7F9', borderBottom: '0.5px solid #E5E5EA' }}>
                 {['Producto', 'Categoría', 'Presentación', 'Precio min.', 'Precio may.', 'Estado', 'Acciones'].map((h, i) => (
                   <th
                     key={h}
@@ -938,7 +950,7 @@ export default function ProductosPage() {
                     style={{
                       padding: '8px 14px',
                       fontSize: 10, fontWeight: 500, textTransform: 'uppercase',
-                      letterSpacing: '0.06em', color: '#4A5568',
+                      letterSpacing: '0.06em', color: '#8E8E93',
                       textAlign: i === 6 ? 'right' : 'left',
                       whiteSpace: 'nowrap',
                     }}
@@ -955,14 +967,14 @@ export default function ProductosPage() {
                 <tr>
                   <td colSpan={7}>
                     <div style={{ padding: '48px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-                      <Package size={40} strokeWidth={1.2} color="#D1D5DB" />
-                      <p style={{ fontSize: 14, fontWeight: 500, color: '#1A2B3C', margin: 0 }}>Sin productos</p>
-                      <p style={{ fontSize: 12, color: '#4A5568', margin: 0 }}>
+                      <Package size={40} strokeWidth={1.2} color="#E5E5EA" />
+                      <p style={{ fontSize: 14, fontWeight: 500, color: '#1C1C1E', margin: 0 }}>Sin productos</p>
+                      <p style={{ fontSize: 12, color: '#8E8E93', margin: 0 }}>
                         {q ? 'No hay productos que coincidan' : 'Agregá productos al catálogo'}
                       </p>
                       {!q && (
                         <button onClick={handleNew} className="btn-press" style={{
-                          marginTop: 4, background: '#0D5C8A', color: '#fff', border: 'none',
+                          marginTop: 4, background: '#3DD6B5', color: '#fff', border: 'none',
                           borderRadius: 10, padding: '10px 20px', fontSize: 13, fontWeight: 600,
                           cursor: 'pointer', minHeight: 40,
                         }}>
@@ -979,38 +991,38 @@ export default function ProductosPage() {
                       scope="row"
                       style={{
                         padding: '0 14px', height: 48,
-                        fontSize: 13, fontWeight: 500, color: '#1A2B3C',
-                        textAlign: 'left', borderBottom: '0.5px solid #F4F6F8',
+                        fontSize: 13, fontWeight: 500, color: '#1C1C1E',
+                        textAlign: 'left', borderBottom: '0.5px solid #F5F7F9',
                         whiteSpace: 'nowrap',
                       }}
                     >
                       {p.nombre}
                       {p.fragancia && (
-                        <span style={{ fontWeight: 400, color: '#4A5568', fontSize: 12 }}> — {p.fragancia}</span>
+                        <span style={{ fontWeight: 400, color: '#8E8E93', fontSize: 12 }}> — {p.fragancia}</span>
                       )}
                     </th>
-                    <td style={{ padding: '0 14px', height: 48, fontSize: 12, color: p.categorias_producto?.nombre ? '#4A5568' : '#D1D5DB', borderBottom: '0.5px solid #F4F6F8', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '0 14px', height: 48, fontSize: 12, color: p.categorias_producto?.nombre ? '#8E8E93' : '#E5E5EA', borderBottom: '0.5px solid #F5F7F9', whiteSpace: 'nowrap' }}>
                       {p.categorias_producto?.nombre ?? '—'}
                     </td>
-                    <td style={{ padding: '0 14px', height: 48, fontSize: 12, color: '#1A2B3C', borderBottom: '0.5px solid #F4F6F8', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '0 14px', height: 48, fontSize: 12, color: '#1C1C1E', borderBottom: '0.5px solid #F5F7F9', whiteSpace: 'nowrap' }}>
                       {presentacionLabel(p.presentacion)}
                     </td>
-                    <td style={{ padding: '0 14px', height: 48, borderBottom: '0.5px solid #F4F6F8', whiteSpace: 'nowrap' }}>
-                      <span style={{ fontSize: 9, color: '#4A5568', marginRight: 3 }}>Min</span>
-                      <span style={{ fontSize: 12, fontWeight: 500, color: '#4A5568' }}>
+                    <td style={{ padding: '0 14px', height: 48, borderBottom: '0.5px solid #F5F7F9', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: 9, color: '#8E8E93', marginRight: 3 }}>Min</span>
+                      <span style={{ fontSize: 12, fontWeight: 500, color: '#8E8E93' }}>
                         ${Number(p.precio_minorista).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                       </span>
                     </td>
-                    <td style={{ padding: '0 14px', height: 48, borderBottom: '0.5px solid #F4F6F8', whiteSpace: 'nowrap' }}>
-                      <span style={{ fontSize: 9, color: '#4A5568', marginRight: 3 }}>May</span>
-                      <span style={{ fontSize: 12, fontWeight: 500, color: '#0D5C8A' }}>
+                    <td style={{ padding: '0 14px', height: 48, borderBottom: '0.5px solid #F5F7F9', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: 9, color: '#8E8E93', marginRight: 3 }}>May</span>
+                      <span style={{ fontSize: 12, fontWeight: 500, color: '#3DD6B5' }}>
                         ${Number(p.precio_mayorista).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                       </span>
                     </td>
-                    <td style={{ padding: '0 14px', height: 48, borderBottom: '0.5px solid #F4F6F8', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '0 14px', height: 48, borderBottom: '0.5px solid #F5F7F9', whiteSpace: 'nowrap' }}>
                       <BadgeActivo activo={p.activo ?? true} />
                     </td>
-                    <td style={{ padding: '0 14px', height: 48, borderBottom: '0.5px solid #F4F6F8', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '0 14px', height: 48, borderBottom: '0.5px solid #F5F7F9', textAlign: 'right', whiteSpace: 'nowrap' }}>
                       <button
                         onClick={() => handleEdit(p)}
                         className="prd-edit-btn"
@@ -1018,13 +1030,13 @@ export default function ProductosPage() {
                         style={{
                           width: 28, height: 28,
                           background: 'transparent',
-                          border: '0.5px solid #D1D5DB',
+                          border: '0.5px solid #E5E5EA',
                           borderRadius: 6,
                           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                          cursor: 'pointer', color: '#4A5568',
+                          cursor: 'pointer', color: '#8E8E93',
                           transition: 'background 0.1s',
                         }}
-                        onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = '#F4F6F8')}
+                        onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = '#F5F7F9')}
                         onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = 'transparent')}
                       >
                         <Edit2 size={13} />
@@ -1036,13 +1048,13 @@ export default function ProductosPage() {
                         style={{
                           width: 28, height: 28, marginLeft: 4,
                           background: 'transparent',
-                          border: '0.5px solid #D1D5DB',
+                          border: '0.5px solid #E5E5EA',
                           borderRadius: 6,
                           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                          cursor: 'pointer', color: '#4A5568',
+                          cursor: 'pointer', color: '#8E8E93',
                           transition: 'background 0.1s',
                         }}
-                        onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = '#F4F6F8')}
+                        onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = '#F5F7F9')}
                         onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = 'transparent')}
                       >
                         <MoreHorizontal size={13} />
@@ -1055,8 +1067,8 @@ export default function ProductosPage() {
           </table>
 
           {!isLoading && !!productos?.length && (
-            <div style={{ padding: '10px 14px', borderTop: '0.5px solid #F4F6F8' }}>
-              <span style={{ fontSize: 12, color: '#4A5568' }}>
+            <div style={{ padding: '10px 14px', borderTop: '0.5px solid #F5F7F9' }}>
+              <span style={{ fontSize: 12, color: '#8E8E93' }}>
                 {productos.length} {productos.length === 1 ? 'producto' : 'productos'}
               </span>
             </div>
@@ -1070,14 +1082,14 @@ export default function ProductosPage() {
           Array.from({ length: 4 }).map((_, i) => <ShimmerCard key={i} />)
         ) : !productos?.length ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', gap: 12, textAlign: 'center' }}>
-            <Package size={40} strokeWidth={1.2} color="#D1D5DB" />
-            <p style={{ fontSize: 14, fontWeight: 500, color: '#1A2B3C', margin: 0 }}>Sin productos</p>
-            <p style={{ fontSize: 12, color: '#4A5568', margin: 0 }}>
+            <Package size={40} strokeWidth={1.2} color="#E5E5EA" />
+            <p style={{ fontSize: 14, fontWeight: 500, color: '#1C1C1E', margin: 0 }}>Sin productos</p>
+            <p style={{ fontSize: 12, color: '#8E8E93', margin: 0 }}>
               {q ? 'No hay productos que coincidan' : 'Agregá productos al catálogo'}
             </p>
             {!q && (
               <button onClick={handleNew} className="btn-press" style={{
-                background: '#0D5C8A', color: '#fff', border: 'none',
+                background: '#3DD6B5', color: '#fff', border: 'none',
                 borderRadius: 10, padding: '12px 24px', fontSize: 14, fontWeight: 600,
                 cursor: 'pointer', minHeight: 44,
               }}>
@@ -1097,7 +1109,7 @@ export default function ProductosPage() {
                 onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleEdit(p) } }}
                 aria-label={`Editar producto ${p.nombre}`}
                 style={{
-                  background: '#fff', borderRadius: 12, border: '0.5px solid #D1D5DB',
+                  background: '#fff', borderRadius: 12, border: '0.5px solid #E5E5EA',
                   padding: '12px 16px', marginBottom: 6,
                   display: 'flex', alignItems: 'center', gap: 10,
                   cursor: 'pointer',
@@ -1106,21 +1118,21 @@ export default function ProductosPage() {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   {/* Línea 1 */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
-                    <span style={{ fontWeight: 500, fontSize: 13, color: '#1A2B3C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, marginRight: 8 }}>
+                    <span style={{ fontWeight: 500, fontSize: 13, color: '#1C1C1E', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, marginRight: 8 }}>
                       {p.nombre}
                     </span>
                     <BadgeActivo activo={p.activo ?? true} />
                   </div>
                   {/* Línea 2 */}
-                  <p style={{ fontSize: 12, color: '#4A5568', margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <p style={{ fontSize: 12, color: '#8E8E93', margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {presentacionLabel(p.presentacion)}
                     {p.categorias_producto?.nombre ? ` · ${p.categorias_producto.nombre}` : ''}
                   </p>
                   {/* Línea 3 */}
-                  <p style={{ fontSize: 11, color: '#4A5568', margin: 0 }}>
+                  <p style={{ fontSize: 11, color: '#8E8E93', margin: 0 }}>
                     Min ${Number(p.precio_minorista).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                     {' · '}
-                    <span style={{ color: '#0D5C8A' }}>
+                    <span style={{ color: '#3DD6B5' }}>
                       May ${Number(p.precio_mayorista).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                     </span>
                   </p>
@@ -1131,16 +1143,16 @@ export default function ProductosPage() {
                   aria-label={`Más acciones para ${p.nombre}`}
                   style={{
                     width: 36, height: 36, flexShrink: 0,
-                    background: 'transparent', border: '0.5px solid #D1D5DB', borderRadius: 6,
+                    background: 'transparent', border: '0.5px solid #E5E5EA', borderRadius: 6,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    cursor: 'pointer', color: '#4A5568',
+                    cursor: 'pointer', color: '#8E8E93',
                   }}
                 >
                   <MoreHorizontal size={14} />
                 </button>
               </div>
             ))}
-            <p style={{ fontSize: 12, color: '#4A5568', textAlign: 'center', padding: '12px 0', margin: 0 }}>
+            <p style={{ fontSize: 12, color: '#8E8E93', textAlign: 'center', padding: '12px 0', margin: 0 }}>
               {productos.length} {productos.length === 1 ? 'producto' : 'productos'}
             </p>
           </>

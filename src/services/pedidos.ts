@@ -36,6 +36,7 @@ export interface ItemForm {
   cantidad:          string
   precio_unitario:   string
   precio_referencia: string
+  costo_snapshot:    string
   bidon_nuevo:       boolean
 }
 
@@ -75,6 +76,7 @@ function parseItemDetalle(item: any): ItemDetalle {
     cantidad:          Number(item.cantidad),
     precio_unitario:   Number(item.precio_unitario),
     precio_referencia: Number(item.precio_referencia),
+    costo_snapshot:    Number(item.costo_snapshot ?? 0),
     bidon_nuevo:       item.bidon_nuevo ?? false,
     productos: item.productos
       ? {
@@ -274,6 +276,7 @@ export const useCrearPedido = () => {
             cantidad:          parseFloat(item.cantidad),
             precio_unitario:   parseFloat(item.precio_unitario),
             precio_referencia: parseFloat(item.precio_referencia),
+            costo_snapshot:    parseFloat(item.costo_snapshot) || 0,
             bidon_nuevo:       item.bidon_nuevo,
           }))
         ),
@@ -333,6 +336,7 @@ export const useEditarPedido = () => {
             cantidad:          parseFloat(item.cantidad),
             precio_unitario:   parseFloat(item.precio_unitario),
             precio_referencia: parseFloat(item.precio_referencia),
+            costo_snapshot:    parseFloat(item.costo_snapshot) || 0,
             bidon_nuevo:       item.bidon_nuevo,
           }))
         )
@@ -468,6 +472,10 @@ export const useCerrarPedido = () => {
       notas_entrega?:  string
       fecha_cobro?:    string
     }) => {
+      const fechaCobroFinal = forma_cobro === 'pendiente'
+        ? null
+        : (fecha_cobro ?? new Date().toISOString().split('T')[0])
+
       const { error } = await supabase.rpc('cerrar_pedido', {
         p_pedido_id:       id,
         p_estado_anterior: estadoActual,
@@ -475,19 +483,10 @@ export const useCerrarPedido = () => {
         p_monto_cobrado:   monto_cobrado ? parseFloat(monto_cobrado) : null,
         p_estado_pago:     estado_pago,
         p_notas_entrega:   notas_entrega ?? null,
+        p_fecha_cobro:     fechaCobroFinal,
         p_usuario_id:      usuario?.id ?? null,
       })
       if (error) throw new Error(error.message)
-
-      const fechaCobroFinal = forma_cobro === 'pendiente'
-        ? null
-        : (fecha_cobro ?? new Date().toISOString().split('T')[0])
-
-      const { error: fechaErr } = await supabase
-        .from('pedidos')
-        .update({ fecha_cobro: fechaCobroFinal })
-        .eq('id', id)
-      if (fechaErr) throw new Error(fechaErr.message)
     },
 
     onMutate: async ({ id }) => {

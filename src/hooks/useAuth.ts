@@ -4,7 +4,7 @@ import { useAuthStore } from '@/store/authStore'
 import type { Rol } from '@/types'
 
 // Perfil en localStorage para evitar parpadeo al recargar
-const CACHE_KEY = 'limpimax-perfil-v2'
+const CACHE_KEY = 'burbuja-perfil-v2'
 
 function getCachedPerfil() {
   try {

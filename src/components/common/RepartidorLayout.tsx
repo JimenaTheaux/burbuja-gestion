@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
 import {
-  IconWifi, IconWifiOff, IconLogout, IconTruck, IconClockHour3, IconRefresh, IconUser,
-} from '@tabler/icons-react'
+  Wifi, WifiOff, LogOut, Truck, Clock, RefreshCw, User,
+} from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { BottomNav }          from './BottomNav'
 import { RefreshBar }         from './RefreshBar'
@@ -25,7 +25,7 @@ export function RepartidorLayout() {
   }
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#F4F6F8', overflowX: 'hidden' }}>
+    <div style={{ minHeight: '100dvh', background: '#F5F7F9', overflowX: 'hidden' }}>
       <RefreshBar />
       {/* Topbar — se oculta al scrollear hacia abajo en mobile */}
       <header
@@ -34,7 +34,7 @@ export function RepartidorLayout() {
           height:         56,
           background:     'rgba(255,255,255,0.9)',
           backdropFilter: 'blur(8px)',
-          borderBottom:   '1px solid #D1D5DB',
+          borderBottom:   '1px solid #E5E5EA',
           padding:      '0 16px',
           display:      'flex',
           alignItems:   'center',
@@ -52,7 +52,7 @@ export function RepartidorLayout() {
             width:          28,
             height:         28,
             borderRadius:   6,
-            background:     '#1B9ED6',
+            background:     '#7EB8E8',
             display:        'flex',
             alignItems:     'center',
             justifyContent: 'center',
@@ -68,10 +68,10 @@ export function RepartidorLayout() {
 
         {/* Título */}
         <div style={{ flex: 1, display: 'flex', alignItems: 'baseline', gap: 4 }}>
-          <span style={{ fontSize: 13, fontWeight: 500, color: '#1A2B3C' }}>
+          <span style={{ fontSize: 13, fontWeight: 500, color: '#1C1C1E' }}>
             Reparto
           </span>
-          <span style={{ fontSize: 12, color: '#4A5568' }}>
+          <span style={{ fontSize: 12, color: '#8E8E93' }}>
             — Repartidor
           </span>
         </div>
@@ -88,14 +88,14 @@ export function RepartidorLayout() {
         >
           {isOnline ? (
             <>
-              <IconWifi size={13} color="#2E9E5C" aria-label="En línea" />
+              <Wifi size={13} color="#2E9E5C" aria-label="En línea" />
               <span className="hidden sm:inline" style={{ fontSize: 11, color: '#2E9E5C' }}>
                 En línea
               </span>
             </>
           ) : (
             <>
-              <IconWifiOff size={13} color="#9A9A9A" aria-label="Sin conexión" />
+              <WifiOff size={13} color="#9A9A9A" aria-label="Sin conexión" />
               <span className="hidden sm:inline" style={{ fontSize: 11, color: '#9A9A9A' }}>
                 Sin conexión
               </span>
@@ -109,14 +109,14 @@ export function RepartidorLayout() {
           onMouseEnter={() => setLogoutHover(true)}
           onMouseLeave={() => setLogoutHover(false)}
           aria-label="Cerrar sesión"
-          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B9ED6] focus-visible:ring-offset-2"
+          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7EB8E8] focus-visible:ring-offset-2"
           style={{
             width:        32,
             height:       32,
             background:   'transparent',
             border:       'none',
             cursor:       'pointer',
-            color:        logoutHover ? '#D32F2F' : '#4A5568',
+            color:        logoutHover ? '#D32F2F' : '#8E8E93',
             display:      'flex',
             alignItems:   'center',
             justifyContent: 'center',
@@ -125,7 +125,7 @@ export function RepartidorLayout() {
             transition:   'color 0.15s ease',
           }}
         >
-          <IconLogout size={16} color={logoutHover ? '#D32F2F' : '#4A5568'} />
+          <LogOut size={16} color={logoutHover ? '#D32F2F' : '#8E8E93'} />
         </button>
       </header>
 
@@ -162,17 +162,17 @@ export function RepartidorLayout() {
       {syncing && (
         <div
           style={{
-            background:   '#E8F4FF',
-            borderBottom: '0.5px solid #1B9ED6',
+            background:   '#EBF5FF',
+            borderBottom: '0.5px solid #7EB8E8',
             padding:      '6px 16px',
             fontSize:     11,
-            color:        '#0D5C8A',
+            color:        '#3DD6B5',
             display:      'flex',
             alignItems:   'center',
             gap:          6,
           }}
         >
-          <IconRefresh size={12} style={{ animation: 'spin 0.8s linear infinite' }} />
+          <RefreshCw size={12} style={{ animation: 'spin 0.8s linear infinite' }} />
           Sincronizando…
         </div>
       )}
@@ -202,9 +202,9 @@ export function RepartidorLayout() {
       {/* Bottom nav */}
       <BottomNav
         items={[
-          { to: '/repartidor',           icon: IconTruck,      label: 'Pedidos',   end: true },
-          { to: '/repartidor/historial', icon: IconClockHour3, label: 'Historial' },
-          { to: '/repartidor/perfil',    icon: IconUser,       label: 'Perfil' },
+          { to: '/repartidor',           icon: Truck,      label: 'Pedidos',   end: true },
+          { to: '/repartidor/historial', icon: Clock, label: 'Historial' },
+          { to: '/repartidor/perfil',    icon: User,       label: 'Perfil' },
         ]}
         logoutAction={handleLogout}
       />

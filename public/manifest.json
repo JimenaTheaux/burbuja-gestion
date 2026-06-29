@@ -1,14 +1,19 @@
 {
-  "name": "Limpimax",
-  "short_name": "Limpimax",
+  "name": "Burbuja Gestión",
+  "short_name": "Burbuja",
   "description": "Sistema de gestión de pedidos",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0D5C8A",
-  "theme_color": "#0D5C8A",
+  "background_color": "#F5F7F9",
+  "theme_color": "#3DD6B5",
   "icons": [
     {
-      "src": "/logo-mark.png",
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

@@ -42,11 +42,11 @@ const PRIMARY_ACTION: Partial<Record<EstadoPedido, { label: string; labelCorto: 
 const hoy = new Date().toISOString().slice(0, 10)
 
 function fechaColor(fecha: string | null, estado: EstadoPedido): string {
-  if (!fecha) return '#4A5568'
-  if (fecha === hoy) return '#0D5C8A'
+  if (!fecha) return '#8E8E93'
+  if (fecha === hoy) return '#3DD6B5'
   const activo = !['cerrado', 'anulado', 'entregado'].includes(estado)
   if (fecha < hoy && activo) return '#D32F2F'
-  return '#4A5568'
+  return '#8E8E93'
 }
 
 function fechaLabel(fecha: string | null): string {
@@ -71,7 +71,7 @@ function ShimmerRow() {
 
 function ShimmerCard() {
   return (
-    <div style={{ background: '#fff', borderRadius: 16, padding: '14px 16px', borderLeft: '3px solid #D1D5DB' }}>
+    <div style={{ background: '#fff', borderRadius: 16, padding: '14px 16px', borderLeft: '3px solid #E5E5EA' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
         <Skeleton style={{ height: 12, width: 60, borderRadius: 6 }} />
         <Skeleton style={{ height: 12, width: 50, borderRadius: 6 }} />
@@ -122,12 +122,12 @@ function AccionesDropdown({ pedido, onVerDetalle, onEditar, onAnular }: {
         aria-expanded={open}
         className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-blue-500"
         style={{
-          background: open ? '#F4F6F8' : 'transparent',
-          border: '1px solid #D1D5DB',
+          background: open ? '#F5F7F9' : 'transparent',
+          border: '1px solid #E5E5EA',
           borderRadius: 6,
           width: 28, height: 28,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          cursor: 'pointer', color: '#4A5568', flexShrink: 0,
+          cursor: 'pointer', color: '#8E8E93', flexShrink: 0,
         }}
       >
         <MoreHorizontal size={14} />
@@ -163,7 +163,7 @@ function AccionesDropdown({ pedido, onVerDetalle, onEditar, onAnular }: {
           )}
           {canAnular && (
             <>
-              <div style={{ borderTop: '1px solid #F4F6F8', margin: '4px 0' }} />
+              <div style={{ borderTop: '1px solid #F5F7F9', margin: '4px 0' }} />
               <button
                 role="menuitem"
                 onClick={() => { setOpen(false); onAnular() }}
@@ -182,7 +182,7 @@ function AccionesDropdown({ pedido, onVerDetalle, onEditar, onAnular }: {
 const menuItemStyle: React.CSSProperties = {
   display: 'block', width: '100%', textAlign: 'left',
   padding: '8px 14px', background: 'none', border: 'none',
-  fontSize: 13, cursor: 'pointer', color: '#1A2B3C',
+  fontSize: 13, cursor: 'pointer', color: '#1C1C1E',
 }
 
 // ─── Modal de anulación ───────────────────────────────────────────────────────
@@ -226,10 +226,10 @@ function ModalAnular({ pedido, onConfirm, onCancel, loading }: {
           boxShadow: '0 8px 32px rgba(0,0,0,0.16)',
         }}
       >
-        <p style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700, color: '#1A2B3C' }}>
+        <p style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700, color: '#1C1C1E' }}>
           Anular pedido P-{String(pedido.numero).padStart(5, '0')}
         </p>
-        <p style={{ margin: '0 0 16px', fontSize: 13, color: '#4A5568' }}>
+        <p style={{ margin: '0 0 16px', fontSize: 13, color: '#8E8E93' }}>
           Esta acción no se puede deshacer.
         </p>
         <textarea
@@ -240,12 +240,12 @@ function ModalAnular({ pedido, onConfirm, onCancel, loading }: {
           rows={3}
           style={{
             width: '100%', padding: '10px 12px',
-            border: '1.5px solid #D1D5DB', borderRadius: 10,
+            border: '1.5px solid #E5E5EA', borderRadius: 10,
             fontSize: 13, resize: 'none', fontFamily: 'Inter, sans-serif',
             outline: 0, boxSizing: 'border-box', marginBottom: 12,
           }}
           onFocus={e => (e.target.style.borderColor = '#D32F2F')}
-          onBlur={e  => (e.target.style.borderColor = '#D1D5DB')}
+          onBlur={e  => (e.target.style.borderColor = '#E5E5EA')}
         />
         <div style={{ display: 'flex', gap: 8 }}>
           <button
@@ -263,8 +263,8 @@ function ModalAnular({ pedido, onConfirm, onCancel, loading }: {
           <button
             onClick={onCancel}
             style={{
-              flex: 1, background: 'transparent', color: '#4A5568',
-              border: '1.5px solid #D1D5DB', borderRadius: 10,
+              flex: 1, background: 'transparent', color: '#8E8E93',
+              border: '1.5px solid #E5E5EA', borderRadius: 10,
               padding: '10px', fontSize: 14, cursor: 'pointer', minHeight: 44,
             }}
           >
@@ -328,7 +328,7 @@ function FilaPedido({ pedido, onVerDetalle, onEditar, onAnularRequest, selected,
   const fBold  = pedido.fecha_produccion === hoy
 
   const baseBg = selected ? '#EFF6FF' : vencida ? '#FFF8F8' : '#fff'
-  const hoverBg = selected ? '#DBEAFE' : vencida ? '#FFF0F0' : '#F4F6F8'
+  const hoverBg = selected ? '#DBEAFE' : vencida ? '#FFF0F0' : '#F5F7F9'
 
   return (
     <tr
@@ -338,13 +338,13 @@ function FilaPedido({ pedido, onVerDetalle, onEditar, onAnularRequest, selected,
       onMouseLeave={e => ((e.currentTarget as HTMLElement).style.background = baseBg)}
     >
       {/* N° pedido */}
-      <td style={{ padding: '10px 12px', borderBottom: '0.5px solid #F4F6F8', whiteSpace: 'nowrap' }}>
+      <td style={{ padding: '10px 12px', borderBottom: '0.5px solid #F5F7F9', whiteSpace: 'nowrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {onSelect && (
             <div style={{
               width: 16, height: 16, borderRadius: 4, flexShrink: 0,
-              background: selected ? '#0D5C8A' : '#fff',
-              border: `1.5px solid ${selected ? '#0D5C8A' : '#D1D5DB'}`,
+              background: selected ? '#3DD6B5' : '#fff',
+              border: `1.5px solid ${selected ? '#3DD6B5' : '#E5E5EA'}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               {selected && (
@@ -354,41 +354,41 @@ function FilaPedido({ pedido, onVerDetalle, onEditar, onAnularRequest, selected,
               )}
             </div>
           )}
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#0D5C8A', fontVariantNumeric: 'tabular-nums' }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#3DD6B5', fontVariantNumeric: 'tabular-nums' }}>
             P-{String(pedido.numero).padStart(5, '0')}
           </span>
         </div>
       </td>
 
       {/* Cliente + dirección */}
-      <td style={{ padding: '10px 12px', borderBottom: '0.5px solid #F4F6F8', maxWidth: 260 }}>
+      <td style={{ padding: '10px 12px', borderBottom: '0.5px solid #F5F7F9', maxWidth: 260 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2, flexWrap: 'wrap' }}>
-          <span style={{ fontWeight: 600, fontSize: 13, color: '#1A2B3C' }}>
+          <span style={{ fontWeight: 600, fontSize: 13, color: '#1C1C1E' }}>
             {pedido.clientes?.nombre ?? '—'}
           </span>
           <span style={{
             fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 99,
-            background: pedido.tipo_precio === 'mayorista' ? '#E8F4FF' : '#F4F6F8',
-            color:      pedido.tipo_precio === 'mayorista' ? '#1B9ED6' : '#4A5568',
+            background: pedido.tipo_precio === 'mayorista' ? '#EBF5FF' : '#F5F7F9',
+            color:      pedido.tipo_precio === 'mayorista' ? '#7EB8E8' : '#8E8E93',
             flexShrink: 0,
           }}>
             {pedido.tipo_precio === 'mayorista' ? 'MAYORISTA' : 'MINORISTA'}
           </span>
         </div>
-        <div style={{ fontSize: 11, color: '#4A5568', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div style={{ fontSize: 11, color: '#8E8E93', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {pedido.direccion_entrega ?? '—'}
         </div>
       </td>
 
       {/* Fecha prod. */}
-      <td style={{ padding: '10px 12px', borderBottom: '0.5px solid #F4F6F8', whiteSpace: 'nowrap' }}>
+      <td style={{ padding: '10px 12px', borderBottom: '0.5px solid #F5F7F9', whiteSpace: 'nowrap' }}>
         <span style={{ fontSize: 12, color: fColor, fontWeight: fBold ? 600 : 400 }}>
           {fechaLabel(pedido.fecha_produccion)}
         </span>
       </td>
 
       {/* Estado */}
-      <td style={{ padding: '10px 12px', borderBottom: '0.5px solid #F4F6F8' }}>
+      <td style={{ padding: '10px 12px', borderBottom: '0.5px solid #F5F7F9' }}>
         <span style={{
           backgroundColor: cfg.bg,
           color: cfg.color,
@@ -401,8 +401,8 @@ function FilaPedido({ pedido, onVerDetalle, onEditar, onAnularRequest, selected,
       </td>
 
       {/* Total */}
-      <td style={{ padding: '10px 12px', borderBottom: '0.5px solid #F4F6F8', textAlign: 'right', whiteSpace: 'nowrap' }}>
-        <span style={{ fontSize: 13, fontWeight: 700, color: '#1A2B3C' }}>
+      <td style={{ padding: '10px 12px', borderBottom: '0.5px solid #F5F7F9', textAlign: 'right', whiteSpace: 'nowrap' }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: '#1C1C1E' }}>
           ${total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
         </span>
         {pedido.total_manual && (
@@ -411,7 +411,7 @@ function FilaPedido({ pedido, onVerDetalle, onEditar, onAnularRequest, selected,
       </td>
 
       {/* Acciones */}
-      <td style={{ padding: '10px 12px', borderBottom: '0.5px solid #F4F6F8' }}>
+      <td style={{ padding: '10px 12px', borderBottom: '0.5px solid #F5F7F9' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end' }}>
           {error && (
             <span style={{ fontSize: 10, color: '#D32F2F', maxWidth: 100 }}>{error}</span>
@@ -434,12 +434,14 @@ function FilaPedido({ pedido, onVerDetalle, onEditar, onAnularRequest, selected,
               {loading ? '…' : action.labelCorto}
             </button>
           )}
-          <BtnWhatsapp
-            variante="icono"
-            onClick={handleWhatsapp}
-            loading={loadingWA}
-            numeroLabel={formatNumero(pedido.numero)}
-          />
+          {pedido.estado === 'cerrado' && (
+            <BtnWhatsapp
+              variante="icono"
+              onClick={handleWhatsapp}
+              loading={loadingWA}
+              numeroLabel={formatNumero(pedido.numero)}
+            />
+          )}
           <AccionesDropdown
             pedido={pedido}
             onVerDetalle={onVerDetalle}
@@ -526,8 +528,8 @@ function CardMobile({ pedido, expandida, onToggle, onVerDetalle, onAnularRequest
           {modoSeleccion && (
             <div style={{
               width: 20, height: 20, borderRadius: 4, flexShrink: 0, marginRight: 8,
-              background: selected ? '#0D5C8A' : '#fff',
-              border: `1.5px solid ${selected ? '#0D5C8A' : '#D1D5DB'}`,
+              background: selected ? '#3DD6B5' : '#fff',
+              border: `1.5px solid ${selected ? '#3DD6B5' : '#E5E5EA'}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               {selected && (
@@ -537,7 +539,7 @@ function CardMobile({ pedido, expandida, onToggle, onVerDetalle, onAnularRequest
               )}
             </div>
           )}
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#0D5C8A', fontVariantNumeric: 'tabular-nums' }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#3DD6B5', fontVariantNumeric: 'tabular-nums' }}>
             P-{String(pedido.numero).padStart(5, '0')}
           </span>
           <span style={{
@@ -547,13 +549,13 @@ function CardMobile({ pedido, expandida, onToggle, onVerDetalle, onAnularRequest
           }}>
             {cfg.label}
           </span>
-          <span style={{ marginLeft: 'auto', fontSize: 13, fontWeight: 700, color: '#1A2B3C' }}>
+          <span style={{ marginLeft: 'auto', fontSize: 13, fontWeight: 700, color: '#1C1C1E' }}>
             ${total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
           </span>
         </div>
         {/* Línea 2 */}
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: '#1A2B3C', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: '#1C1C1E', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {pedido.clientes?.nombre ?? '—'}
           </span>
           <span style={{
@@ -566,7 +568,7 @@ function CardMobile({ pedido, expandida, onToggle, onVerDetalle, onAnularRequest
         </div>
         {/* Línea 3 */}
         {pedido.direccion_entrega && (
-          <div style={{ fontSize: 11, color: '#4A5568' }}>
+          <div style={{ fontSize: 11, color: '#8E8E93' }}>
             {pedido.direccion_entrega}
           </div>
         )}
@@ -578,10 +580,10 @@ function CardMobile({ pedido, expandida, onToggle, onVerDetalle, onAnularRequest
         overflow: 'hidden',
         transition: 'max-height 0.25s ease',
       }}>
-        <div style={{ padding: '0 16px 14px', borderTop: '1px solid #F4F6F8' }}>
+        <div style={{ padding: '0 16px 14px', borderTop: '1px solid #F5F7F9' }}>
           {confirmando && action && nextCfg ? (
             <div style={{ paddingTop: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 13, fontWeight: 600, color: '#1A2B3C', flex: 1 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#1C1C1E', flex: 1 }}>
                 ¿Confirmás?
               </span>
               <button
@@ -598,8 +600,8 @@ function CardMobile({ pedido, expandida, onToggle, onVerDetalle, onAnularRequest
               <button
                 onClick={() => setConfirmando(false)}
                 style={{
-                  background: 'transparent', color: '#4A5568',
-                  border: '1.5px solid #D1D5DB', borderRadius: 8,
+                  background: 'transparent', color: '#8E8E93',
+                  border: '1.5px solid #E5E5EA', borderRadius: 8,
                   padding: '8px 16px', fontSize: 13, cursor: 'pointer', minHeight: 36,
                 }}
               >
@@ -628,7 +630,7 @@ function CardMobile({ pedido, expandida, onToggle, onVerDetalle, onAnularRequest
                 onClick={onVerDetalle}
                 style={{
                   background: 'none', border: 'none',
-                  color: '#1B9ED6', fontSize: 13, fontWeight: 600,
+                  color: '#7EB8E8', fontSize: 13, fontWeight: 600,
                   cursor: 'pointer', padding: '4px 0', textAlign: 'center',
                 }}
               >
@@ -699,9 +701,9 @@ function PillsFiltro({ pedidos, estadoFiltro, setEstado }: {
   const pillBase = (active: boolean): React.CSSProperties => ({
     flexShrink: 0, height: 32,
     padding: '0 14px', borderRadius: 99,
-    border: `0.5px solid ${active ? '#0D5C8A' : '#D1D5DB'}`,
-    background: active ? '#0D5C8A' : '#fff',
-    color: active ? '#fff' : '#4A5568',
+    border: `0.5px solid ${active ? '#3DD6B5' : '#E5E5EA'}`,
+    background: active ? '#3DD6B5' : '#fff',
+    color: active ? '#fff' : '#8E8E93',
     fontSize: 12, fontWeight: active ? 600 : 400,
     cursor: 'pointer', whiteSpace: 'nowrap',
     display: 'flex', alignItems: 'center', gap: 5,
@@ -737,8 +739,8 @@ function PillsFiltro({ pedidos, estadoFiltro, setEstado }: {
           aria-expanded={masOpen}
           style={{
             ...pillBase(false),
-            borderColor: masActivo ? '#0D5C8A' : '#D1D5DB',
-            color:       masActivo ? '#0D5C8A' : '#4A5568',
+            borderColor: masActivo ? '#3DD6B5' : '#E5E5EA',
+            color:       masActivo ? '#3DD6B5' : '#8E8E93',
           }}
         >
           Más <ChevronDown size={12} />
@@ -749,7 +751,7 @@ function PillsFiltro({ pedidos, estadoFiltro, setEstado }: {
             role="listbox"
             style={{
               position: 'absolute', top: 'calc(100% + 6px)', left: 0,
-              background: '#fff', border: '0.5px solid #D1D5DB', borderRadius: 10,
+              background: '#fff', border: '0.5px solid #E5E5EA', borderRadius: 10,
               boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
               zIndex: 50, minWidth: 180, padding: '4px 0',
             }}
@@ -769,18 +771,18 @@ function PillsFiltro({ pedidos, estadoFiltro, setEstado }: {
                     width: '100%', padding: '8px 14px',
                     background: 'none', border: 'none',
                     fontSize: 12, cursor: 'pointer',
-                    color: isActive ? '#0D5C8A' : '#4A5568',
+                    color: isActive ? '#3DD6B5' : '#8E8E93',
                     fontWeight: isActive ? 500 : 400,
                     textAlign: 'left',
                   }}
-                  onMouseEnter={ev => (ev.currentTarget.style.background = '#F4F6F8')}
+                  onMouseEnter={ev => (ev.currentTarget.style.background = '#F5F7F9')}
                   onMouseLeave={ev => (ev.currentTarget.style.background = 'none')}
                 >
                   {e.label}
                   {count !== null && (
                     <span style={{
-                      fontSize: 10, fontWeight: 500, color: '#4A5568',
-                      background: '#F4F6F8', borderRadius: 99, padding: '1px 6px',
+                      fontSize: 10, fontWeight: 500, color: '#8E8E93',
+                      background: '#F5F7F9', borderRadius: 99, padding: '1px 6px',
                     }}>
                       {count}
                     </span>
@@ -893,8 +895,8 @@ export default function PedidosPage() {
               <button
                 onClick={() => setModoSeleccion(true)}
                 style={{
-                  background: '#fff', color: '#4A5568',
-                  border: '1.5px solid #D1D5DB', borderRadius: 10,
+                  background: '#fff', color: '#8E8E93',
+                  border: '1.5px solid #E5E5EA', borderRadius: 10,
                   padding: '8px 14px', minHeight: 40, fontSize: 13,
                   fontWeight: 600, cursor: 'pointer',
                   display: 'flex', alignItems: 'center', gap: 6,
@@ -903,7 +905,7 @@ export default function PedidosPage() {
                 <Printer size={14} /> Imprimir
               </button>
               <button onClick={handleNuevo} style={{
-                background: '#0D5C8A', color: '#fff', border: 'none',
+                background: '#3DD6B5', color: '#fff', border: 'none',
                 borderRadius: 10, padding: '10px 16px', minHeight: 40,
                 fontSize: 14, fontWeight: 600, cursor: 'pointer',
                 display: 'flex', alignItems: 'center', gap: 6,
@@ -913,14 +915,14 @@ export default function PedidosPage() {
             </>
           ) : (
             <>
-              <span style={{ fontSize: 13, color: '#4A5568', fontWeight: 600 }}>
+              <span style={{ fontSize: 13, color: '#8E8E93', fontWeight: 600 }}>
                 {nSel} seleccionado{nSel !== 1 ? 's' : ''}
               </span>
               {nSel > 0 && (
                 <button
                   onClick={imprimirSeleccionados}
                   style={{
-                    background: '#0D5C8A', color: '#fff', border: 'none',
+                    background: '#3DD6B5', color: '#fff', border: 'none',
                     borderRadius: 10, padding: '8px 14px', minHeight: 40,
                     fontSize: 13, fontWeight: 600, cursor: 'pointer',
                     display: 'flex', alignItems: 'center', gap: 6,
@@ -932,8 +934,8 @@ export default function PedidosPage() {
               <button
                 onClick={() => { setModoSeleccion(false); setSeleccionados(new Set()) }}
                 style={{
-                  background: 'transparent', color: '#4A5568',
-                  border: '1.5px solid #D1D5DB', borderRadius: 10,
+                  background: 'transparent', color: '#8E8E93',
+                  border: '1.5px solid #E5E5EA', borderRadius: 10,
                   padding: '8px 12px', minHeight: 40, fontSize: 13,
                   fontWeight: 600, cursor: 'pointer',
                   display: 'flex', alignItems: 'center', gap: 5,
@@ -954,13 +956,13 @@ export default function PedidosPage() {
             <PillsFiltro pedidos={pedidos} estadoFiltro={estadoFiltro} setEstado={setEstado} />
           </div>
           <div style={{ position: 'relative', flexShrink: 0, width: 240 }}>
-            <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#4A5568' }} />
+            <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#8E8E93' }} />
             <input
               value={q} onChange={e => setQ(e.target.value)}
               placeholder="Buscar…"
               style={{
                 width: '100%', padding: '7px 10px 7px 30px',
-                border: '1px solid #D1D5DB', borderRadius: 8,
+                border: '1px solid #E5E5EA', borderRadius: 8,
                 fontSize: 13, outline: 0, background: '#fff',
                 boxSizing: 'border-box',
               }}
@@ -972,7 +974,7 @@ export default function PedidosPage() {
         <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
           <table className="pedidos-table" role="grid" aria-label="Listado de pedidos">
             <thead>
-              <tr style={{ borderBottom: '1px solid #D1D5DB' }}>
+              <tr style={{ borderBottom: '1px solid #E5E5EA' }}>
                 {['N° Pedido', 'Cliente', 'Fecha prod.', 'Estado', 'Total', 'Acciones'].map((h, i) => (
                   <th
                     key={h}
@@ -980,7 +982,7 @@ export default function PedidosPage() {
                     style={{
                       padding: '8px 12px',
                       fontSize: 10, fontWeight: 600, textTransform: 'uppercase',
-                      letterSpacing: '0.08em', color: '#4A5568',
+                      letterSpacing: '0.08em', color: '#8E8E93',
                       textAlign: i >= 4 ? 'right' : 'left',
                       whiteSpace: 'nowrap',
                     }}
@@ -997,14 +999,14 @@ export default function PedidosPage() {
                 <tr>
                   <td colSpan={6}>
                     <div style={{ padding: '48px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-                      <ShoppingCart size={40} strokeWidth={1.2} color="#D1D5DB" />
-                      <p style={{ fontSize: 14, fontWeight: 500, color: '#1A2B3C', margin: 0 }}>Sin pedidos</p>
-                      <p style={{ fontSize: 12, color: '#4A5568', margin: 0 }}>
+                      <ShoppingCart size={40} strokeWidth={1.2} color="#E5E5EA" />
+                      <p style={{ fontSize: 14, fontWeight: 500, color: '#1C1C1E', margin: 0 }}>Sin pedidos</p>
+                      <p style={{ fontSize: 12, color: '#8E8E93', margin: 0 }}>
                         {q || estadoFiltro ? 'No hay pedidos para este filtro' : 'Creá el primer pedido del día'}
                       </p>
                       {!(q || estadoFiltro) && (
                         <button onClick={handleNuevo} className="btn-press" style={{
-                          marginTop: 4, background: '#0D5C8A', color: '#fff', border: 'none',
+                          marginTop: 4, background: '#3DD6B5', color: '#fff', border: 'none',
                           borderRadius: 10, padding: '10px 20px', fontSize: 13, fontWeight: 600,
                           cursor: 'pointer', minHeight: 40,
                         }}>
@@ -1032,8 +1034,8 @@ export default function PedidosPage() {
           </table>
 
           {!isLoading && !!pedidosFiltrados?.length && (
-            <div style={{ padding: '10px 12px', borderTop: '0.5px solid #F4F6F8' }}>
-              <span style={{ fontSize: 12, color: '#4A5568' }}>
+            <div style={{ padding: '10px 12px', borderTop: '0.5px solid #F5F7F9' }}>
+              <span style={{ fontSize: 12, color: '#8E8E93' }}>
                 {pedidosFiltrados.length} {pedidosFiltrados.length === 1 ? 'pedido' : 'pedidos'}
               </span>
             </div>
@@ -1045,13 +1047,13 @@ export default function PedidosPage() {
       <div className="pedidos-mobile">
         {/* Buscador mobile encima de las pills */}
         <div style={{ position: 'relative', marginBottom: 10 }}>
-          <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#4A5568' }} />
+          <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#8E8E93' }} />
           <input
             value={q} onChange={e => setQ(e.target.value)}
             placeholder="Buscar por N° o cliente…"
             style={{
               width: '100%', padding: '10px 10px 10px 36px',
-              border: '1px solid #D1D5DB', borderRadius: 10,
+              border: '1px solid #E5E5EA', borderRadius: 10,
               fontSize: 14, outline: 0, background: '#fff',
               boxSizing: 'border-box',
             }}
@@ -1068,14 +1070,14 @@ export default function PedidosPage() {
           </div>
         ) : !pedidosFiltrados?.length ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', gap: 12, textAlign: 'center' }}>
-            <ShoppingCart size={40} strokeWidth={1.2} color="#D1D5DB" />
-            <p style={{ fontSize: 14, fontWeight: 500, color: '#1A2B3C', margin: 0 }}>Sin pedidos</p>
-            <p style={{ fontSize: 12, color: '#4A5568', margin: 0 }}>
+            <ShoppingCart size={40} strokeWidth={1.2} color="#E5E5EA" />
+            <p style={{ fontSize: 14, fontWeight: 500, color: '#1C1C1E', margin: 0 }}>Sin pedidos</p>
+            <p style={{ fontSize: 12, color: '#8E8E93', margin: 0 }}>
               {q || estadoFiltro ? 'No hay pedidos para este filtro' : 'Creá el primer pedido del día'}
             </p>
             {!(q || estadoFiltro) && (
               <button onClick={handleNuevo} className="btn-press" style={{
-                background: '#0D5C8A', color: '#fff', border: 'none',
+                background: '#3DD6B5', color: '#fff', border: 'none',
                 borderRadius: 10, padding: '12px 24px', fontSize: 14,
                 fontWeight: 600, cursor: 'pointer', minHeight: 44,
               }}>
@@ -1101,7 +1103,7 @@ export default function PedidosPage() {
                 }}
               />
             ))}
-            <p style={{ fontSize: 12, color: '#4A5568', textAlign: 'center', marginTop: 4 }}>
+            <p style={{ fontSize: 12, color: '#8E8E93', textAlign: 'center', marginTop: 4 }}>
               {pedidosFiltrados.length} {pedidosFiltrados.length === 1 ? 'pedido' : 'pedidos'}
             </p>
           </div>
@@ -1114,7 +1116,7 @@ export default function PedidosPage() {
           position: 'fixed',
           bottom: 'calc(64px + env(safe-area-inset-bottom) + 8px)',
           left: 16, right: 16,
-          background: '#1A2B3C', color: '#fff',
+          background: '#1C1C1E', color: '#fff',
           borderRadius: 12, padding: '12px 16px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           zIndex: 200,
@@ -1137,7 +1139,7 @@ export default function PedidosPage() {
             <button
               onClick={imprimirSeleccionados}
               style={{
-                background: '#1B9ED6', border: 'none',
+                background: '#7EB8E8', border: 'none',
                 color: '#fff', borderRadius: 8, padding: '6px 12px',
                 fontSize: 12, fontWeight: 600, cursor: 'pointer',
                 display: 'flex', alignItems: 'center', gap: 4,

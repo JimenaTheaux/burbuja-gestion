@@ -19,7 +19,7 @@ export function ProduccionLayout() {
   }
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#F4F6F8', overflowX: 'hidden' }}>
+    <div style={{ minHeight: '100dvh', background: '#F5F7F9', overflowX: 'hidden' }}>
       <RefreshBar />
       {/* Topbar — se oculta al scrollear hacia abajo en mobile */}
       <header
@@ -28,7 +28,7 @@ export function ProduccionLayout() {
           height:         56,
           background:     'rgba(255,255,255,0.9)',
           backdropFilter: 'blur(8px)',
-          borderBottom:   '1px solid #D1D5DB',
+          borderBottom:   '1px solid #E5E5EA',
           padding:        '0 16px',
           display:        'flex',
           alignItems:     'center',
@@ -45,7 +45,7 @@ export function ProduccionLayout() {
             width:          28,
             height:         28,
             borderRadius:   6,
-            background:     '#1B9ED6',
+            background:     '#7EB8E8',
             display:        'flex',
             alignItems:     'center',
             justifyContent: 'center',
@@ -59,11 +59,11 @@ export function ProduccionLayout() {
         </div>
 
         <div style={{ flex: 1 }}>
-          <span style={{ fontSize: 14, fontWeight: 600, color: '#1A2B3C' }}>
+          <span style={{ fontSize: 14, fontWeight: 600, color: '#1C1C1E' }}>
             Producción
           </span>
           {usuario && (
-            <span style={{ fontSize: 12, color: '#4A5568', marginLeft: 6 }}>
+            <span style={{ fontSize: 12, color: '#8E8E93', marginLeft: 6 }}>
               — {usuario.nombre}
             </span>
           )}
@@ -75,7 +75,7 @@ export function ProduccionLayout() {
             background:  'transparent',
             border:      'none',
             cursor:      'pointer',
-            color:       '#4A5568',
+            color:       '#8E8E93',
             padding:     6,
             borderRadius:6,
             display:     'flex',

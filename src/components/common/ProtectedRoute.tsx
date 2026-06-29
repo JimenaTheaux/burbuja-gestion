@@ -15,20 +15,20 @@ export function ProtectedRoute({ children, roles }: Props) {
     return (
       <div
         className="min-h-screen flex items-center justify-center"
-        style={{ background: '#F4F6F8' }}
+        style={{ background: '#F5F7F9' }}
       >
         <div style={{ textAlign: 'center' }}>
           <div
             style={{
               width: 40, height: 40,
               borderRadius: '50%',
-              border: '3px solid #D1D5DB',
-              borderTopColor: '#0D5C8A',
+              border: '3px solid #E5E5EA',
+              borderTopColor: '#3DD6B5',
               animation: 'spin 0.8s linear infinite',
               margin: '0 auto 12px',
             }}
           />
-          <p style={{ color: '#4A5568', fontSize: 14 }}>Cargando…</p>
+          <p style={{ color: '#8E8E93', fontSize: 14 }}>Cargando…</p>
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>

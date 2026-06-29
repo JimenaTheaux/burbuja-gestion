@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { Printer, MapPin } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
 interface ItemDia {
@@ -118,17 +119,17 @@ export default function ListadoDiaPage() {
           .pedido-block { break-inside: avoid; }
         }
         @media screen {
-          body { background: #f4f6f8; font-family: Arial, sans-serif; }
+          body { background: #f5f7f9; font-family: Arial, sans-serif; }
           .doc-wrapper { max-width: 760px; margin: 0 auto; background: white; padding: 24px 20px; min-height: 100vh; }
         }
       `}</style>
 
       {/* Barra de controles — no se imprime */}
       <div className="no-print" style={{
-        background: '#1A2B3C', padding: '10px 20px',
+        background: '#1C1C1E', padding: '10px 20px',
         display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
       }}>
-        <span style={{ color: '#fff', fontWeight: 700, fontSize: 14 }}>LIMPIMAX — Listado del día</span>
+        <span style={{ color: '#fff', fontWeight: 700, fontSize: 14 }}>BURBUJA — Listado del día</span>
         <input
           type="date"
           value={fecha}
@@ -138,7 +139,7 @@ export default function ListadoDiaPage() {
         <button
           onClick={() => cargar(fecha)}
           style={{
-            height: 34, background: '#0D5C8A', color: '#fff', border: 'none',
+            height: 34, background: '#3DD6B5', color: '#fff', border: 'none',
             borderRadius: 8, padding: '0 16px', fontWeight: 700, cursor: 'pointer', fontSize: 13,
           }}
         >
@@ -149,9 +150,10 @@ export default function ListadoDiaPage() {
           style={{
             height: 34, background: '#2E9E5C', color: '#fff', border: 'none',
             borderRadius: 8, padding: '0 16px', fontWeight: 700, cursor: 'pointer', fontSize: 13,
+            display: 'flex', alignItems: 'center', gap: 6,
           }}
         >
-          🖨️ Imprimir / PDF
+          <Printer size={14} /> Imprimir / PDF
         </button>
         <button
           onClick={() => window.close()}
@@ -170,14 +172,14 @@ export default function ListadoDiaPage() {
 
       <div className="doc-wrapper">
         {/* Encabezado */}
-        <div style={{ borderBottom: '2px solid #0D5C8A', paddingBottom: 14, marginBottom: 24 }}>
+        <div style={{ borderBottom: '2px solid #3DD6B5', paddingBottom: 14, marginBottom: 24 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
-              <div style={{ fontSize: 22, fontWeight: 900, color: '#0D5C8A', letterSpacing: -0.5 }}>LIMPIMAX</div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: '#3DD6B5', letterSpacing: -0.5 }}>BURBUJA</div>
               <div style={{ fontSize: 11, color: '#555', marginTop: 2 }}>Productos Químicos de Limpieza</div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#1A2B3C' }}>Listado de reparto</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#1C1C1E' }}>Listado de reparto</div>
               <div style={{ fontSize: 12, color: '#555', marginTop: 2, textTransform: 'capitalize' }}>{fechaFormateada}</div>
             </div>
           </div>
@@ -213,11 +215,12 @@ export default function ListadoDiaPage() {
             {/* Dirección */}
             {pedido.direccionEntrega && (
               <div style={{
-                fontSize: 15, fontWeight: 700, color: '#0D5C8A',
+                fontSize: 15, fontWeight: 700, color: '#3DD6B5',
                 marginBottom: 8, padding: '6px 10px',
-                background: '#E8F4FF', borderRadius: 6,
+                background: '#EBF5FF', borderRadius: 6,
+                display: 'flex', alignItems: 'center', gap: 6,
               }}>
-                📍 {pedido.direccionEntrega}
+                <MapPin size={15} /> {pedido.direccionEntrega}
               </div>
             )}
 
@@ -247,7 +250,7 @@ export default function ListadoDiaPage() {
             )}
 
             {/* Total */}
-            <div style={{ textAlign: 'right', fontSize: 18, fontWeight: 900, color: '#0D5C8A' }}>
+            <div style={{ textAlign: 'right', fontSize: 18, fontWeight: 900, color: '#3DD6B5' }}>
               Total: ${Number(pedido.totalManual ?? pedido.totalCalculado).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
             </div>
           </div>
@@ -257,7 +260,7 @@ export default function ListadoDiaPage() {
         {!loading && pedidos.length > 0 && (
           <div style={{
             marginTop: 8, padding: '12px 16px',
-            background: '#0D5C8A', borderRadius: 8, color: 'white',
+            background: '#3DD6B5', borderRadius: 8, color: 'white',
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           }}>
             <span style={{ fontWeight: 700, fontSize: 14 }}>TOTAL A COBRAR</span>

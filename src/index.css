@@ -70,8 +70,8 @@
     width: 100%;
     overflow-x: hidden;
     font-family: 'Inter', system-ui, sans-serif;
-    background-color: #F4F6F8;
-    color: #1A2B3C;
+    background-color: #F5F7F9;
+    color: #1C1C1E;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     margin: 0;
@@ -139,7 +139,7 @@
   .section-title {
     font-size: 20px;
     font-weight: 600;
-    color: #0D5C8A;
+    color: #3DD6B5;
     letter-spacing: -0.3px;
     line-height: 1.2;
     margin: 0;
@@ -186,7 +186,7 @@
   }
 
   .form-label .input:focus {
-    border-color: #1B9ED6;
+    border-color: #3DD6B5;
   }
 
   .form-label span {
@@ -205,7 +205,7 @@
     top: 4px;
     font-size: 10px;
     font-weight: 600;
-    color: #1B9ED6;
+    color: #3DD6B5;
   }
 }
 

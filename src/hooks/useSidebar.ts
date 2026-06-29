@@ -16,6 +16,6 @@ export const useSidebar = create<SidebarState>()(
       open:   () => set({ isOpen: true }),
       close:  () => set({ isOpen: false }),
     }),
-    { name: 'limpimax-sidebar' }
+    { name: 'burbuja-sidebar' }
   )
 )

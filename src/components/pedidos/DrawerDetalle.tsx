@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Clock, Edit2, XCircle, ChevronRight, Printer } from 'lucide-react'
+import { Clock, Edit2, XCircle, ChevronRight, Printer, Check } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { BadgeEstado }   from '@/components/common/BadgeEstado'
 import { BtnWhatsapp }  from '@/components/common/BtnWhatsapp'
@@ -50,10 +50,10 @@ function ConfirmModal({ mensaje, onConfirm, onCancel }: {
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div style={{ background: '#fff', borderRadius: 20, padding: 24, maxWidth: 380, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
-        <p style={{ fontSize: 15, color: '#1A2B3C', margin: '0 0 20px', lineHeight: 1.5 }}>{mensaje}</p>
+        <p style={{ fontSize: 15, color: '#1C1C1E', margin: '0 0 20px', lineHeight: 1.5 }}>{mensaje}</p>
         <div style={{ display: 'flex', gap: 10 }}>
-          <button onClick={onConfirm} style={{ flex: 1, background: '#0D5C8A', color: '#fff', border: 'none', borderRadius: 10, padding: '12px', fontSize: 14, fontWeight: 600, cursor: 'pointer', minHeight: 44 }}>Confirmar</button>
-          <button onClick={onCancel}  style={{ flex: 1, background: 'transparent', color: '#4A5568', border: '1.5px solid #D1D5DB', borderRadius: 10, padding: '12px', fontSize: 14, fontWeight: 600, cursor: 'pointer', minHeight: 44 }}>Cancelar</button>
+          <button onClick={onConfirm} style={{ flex: 1, background: '#3DD6B5', color: '#fff', border: 'none', borderRadius: 10, padding: '12px', fontSize: 14, fontWeight: 600, cursor: 'pointer', minHeight: 44 }}>Confirmar</button>
+          <button onClick={onCancel}  style={{ flex: 1, background: 'transparent', color: '#8E8E93', border: '1.5px solid #E5E5EA', borderRadius: 10, padding: '12px', fontSize: 14, fontWeight: 600, cursor: 'pointer', minHeight: 44 }}>Cancelar</button>
         </div>
       </div>
     </div>
@@ -66,15 +66,15 @@ function ModalAnular({ onConfirm, onCancel }: { onConfirm: (motivo: string) => v
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div style={{ background: '#fff', borderRadius: 20, padding: 24, maxWidth: 380, width: '100%' }}>
         <p style={{ fontWeight: 700, fontSize: 16, margin: '0 0 8px' }}>Anular pedido</p>
-        <p style={{ fontSize: 13, color: '#4A5568', margin: '0 0 16px' }}>Esta acción no se puede deshacer. Ingresá el motivo.</p>
+        <p style={{ fontSize: 13, color: '#8E8E93', margin: '0 0 16px' }}>Esta acción no se puede deshacer. Ingresá el motivo.</p>
         <textarea value={motivo} onChange={e => setMotivo(e.target.value)} placeholder="Motivo de anulación…" rows={3}
-          style={{ width: '100%', padding: '10px 12px', border: '1px solid #D1D5DB', borderRadius: 10, fontSize: 14, resize: 'vertical', fontFamily: 'Inter, sans-serif' }} />
+          style={{ width: '100%', padding: '10px 12px', border: '1px solid #E5E5EA', borderRadius: 10, fontSize: 14, resize: 'vertical', fontFamily: 'Inter, sans-serif' }} />
         <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
           <button onClick={() => motivo.trim() && onConfirm(motivo.trim())} disabled={!motivo.trim()}
             style={{ flex: 1, background: !motivo.trim() ? 'rgba(211,47,47,0.4)' : '#D32F2F', color: '#fff', border: 'none', borderRadius: 10, padding: '12px', fontSize: 14, fontWeight: 600, cursor: motivo.trim() ? 'pointer' : 'not-allowed', minHeight: 44 }}>
             Anular pedido
           </button>
-          <button onClick={onCancel} style={{ flex: 1, background: 'transparent', color: '#4A5568', border: '1.5px solid #D1D5DB', borderRadius: 10, padding: '12px', fontSize: 14, fontWeight: 600, cursor: 'pointer', minHeight: 44 }}>Cancelar</button>
+          <button onClick={onCancel} style={{ flex: 1, background: 'transparent', color: '#8E8E93', border: '1.5px solid #E5E5EA', borderRadius: 10, padding: '12px', fontSize: 14, fontWeight: 600, cursor: 'pointer', minHeight: 44 }}>Cancelar</button>
         </div>
       </div>
     </div>
@@ -99,7 +99,7 @@ const inputFechaStyle: React.CSSProperties = {
 }
 
 const labelUpperStyle: React.CSSProperties = {
-  fontSize: 11, color: '#4A5568', fontWeight: 600,
+  fontSize: 11, color: '#8E8E93', fontWeight: 600,
   display: 'block', marginBottom: 6,
   textTransform: 'uppercase', letterSpacing: '0.06em',
 }
@@ -240,7 +240,7 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
               {[1,2,3,4].map(i => <Skeleton key={i} style={{ height: 60, borderRadius: 12 }} />)}
             </div>
           ) : !p ? (
-            <p style={{ color: '#4A5568', marginTop: 20 }}>No se encontró el pedido.</p>
+            <p style={{ color: '#8E8E93', marginTop: 20 }}>No se encontró el pedido.</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 20 }}>
 
@@ -248,14 +248,14 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
               <div style={{ background: '#fff', borderRadius: 16, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                   <BadgeEstado estado={p.estado} />
-                  <span style={{ fontSize: 12, color: '#4A5568' }}>
+                  <span style={{ fontSize: 12, color: '#8E8E93' }}>
                     {new Date(p.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' })}
                   </span>
                 </div>
                 <p style={{ margin: '0 0 4px', fontWeight: 600, fontSize: 15 }}>{p.clientes?.nombre ?? '—'}</p>
-                {p.direccion_entrega && <p style={{ margin: 0, fontSize: 13, color: '#4A5568' }}>{p.direccion_entrega}</p>}
+                {p.direccion_entrega && <p style={{ margin: 0, fontSize: 13, color: '#8E8E93' }}>{p.direccion_entrega}</p>}
                 {p.fecha_produccion && (
-                  <p style={{ margin: '4px 0 0', fontSize: 12, color: '#4A5568' }}>
+                  <p style={{ margin: '4px 0 0', fontSize: 12, color: '#8E8E93' }}>
                     Producción: {new Date(p.fecha_produccion + 'T00:00:00').toLocaleDateString('es-AR', { weekday: 'short', day: '2-digit', month: 'short' })}
                   </p>
                 )}
@@ -263,9 +263,9 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
 
               {/* Ítems */}
               <div style={{ background: '#fff', borderRadius: 16, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-                <p style={{ margin: '0 0 12px', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#4A5568' }}>Productos</p>
+                <p style={{ margin: '0 0 12px', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#8E8E93' }}>Productos</p>
                 {p.pedido_items?.map(item => (
-                  <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: 10, marginBottom: 10, borderBottom: '1px solid #F4F6F8' }}>
+                  <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: 10, marginBottom: 10, borderBottom: '1px solid #F5F7F9' }}>
                     <div>
                       <p style={{ margin: 0, fontSize: 14, fontWeight: 500 }}>
                         {item.productos?.nombre}
@@ -273,18 +273,18 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
                           <span style={{ marginLeft: 6, fontSize: 9, fontWeight: 700, background: '#FFF3E0', color: '#F57C00', padding: '2px 6px', borderRadius: 99 }}>BIDÓN NUEVO</span>
                         )}
                       </p>
-                      <p style={{ margin: 0, fontSize: 12, color: '#4A5568' }}>
+                      <p style={{ margin: 0, fontSize: 12, color: '#8E8E93' }}>
                         {item.cantidad} × ${item.precio_unitario.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                       </p>
                     </div>
-                    <span style={{ fontWeight: 600, fontSize: 14, color: '#0D5C8A' }}>
+                    <span style={{ fontWeight: 600, fontSize: 14, color: '#3DD6B5' }}>
                       ${(item.cantidad * item.precio_unitario).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
                 ))}
                 <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 4 }}>
                   <span style={{ fontSize: 15, fontWeight: 700 }}>Total</span>
-                  <span style={{ fontSize: 18, fontWeight: 900, color: '#0D5C8A', letterSpacing: -0.5 }}>
+                  <span style={{ fontSize: 18, fontWeight: 900, color: '#3DD6B5', letterSpacing: -0.5 }}>
                     ${totalPedido(p).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                   </span>
                 </div>
@@ -313,7 +313,7 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
               {showCobro && (
                 <div style={{ background: '#fff', borderRadius: 16, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                    <p style={{ margin: 0, fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#4A5568' }}>Cobro</p>
+                    <p style={{ margin: 0, fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#8E8E93' }}>Cobro</p>
                     {!editandoCobro && (
                       <button type="button"
                         onClick={() => {
@@ -322,7 +322,7 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
                           setCobroFechaCobro(p.fecha_cobro ?? new Date().toISOString().split('T')[0])
                           setEditandoCobro(true)
                         }}
-                        style={{ fontSize: 12, color: '#0D5C8A', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+                        style={{ fontSize: 12, color: '#3DD6B5', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
                         Editar
                       </button>
                     )}
@@ -331,11 +331,11 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
                   {!editandoCobro ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: 13, color: '#4A5568' }}>Forma de cobro</span>
+                        <span style={{ fontSize: 13, color: '#8E8E93' }}>Forma de cobro</span>
                         <span style={{ fontSize: 13, fontWeight: 600, textTransform: 'capitalize' }}>{p.forma_cobro ?? '—'}</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: 13, color: '#4A5568' }}>Monto cobrado</span>
+                        <span style={{ fontSize: 13, color: '#8E8E93' }}>Monto cobrado</span>
                         <span style={{ fontSize: 13, fontWeight: 600 }}>
                           {p.monto_cobrado != null
                             ? `$${p.monto_cobrado.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`
@@ -343,7 +343,7 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
                         </span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: 13, color: '#4A5568' }}>Fecha de cobro</span>
+                        <span style={{ fontSize: 13, color: '#8E8E93' }}>Fecha de cobro</span>
                         <span style={{ fontSize: 13, fontWeight: 600 }}>
                           {p.fecha_cobro
                             ? new Date(p.fecha_cobro + 'T00:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' })
@@ -356,7 +356,7 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
                       <div>
                         <label style={labelUpperStyle}>Forma de cobro</label>
                         <select value={cobroForma} onChange={e => setCobroForma(e.target.value)}
-                          style={{ width: '100%', padding: '10px 12px', border: '1px solid #D1D5DB', borderRadius: 10, fontSize: 14, fontFamily: 'Inter, sans-serif', outline: 'none' }}>
+                          style={{ width: '100%', padding: '10px 12px', border: '1px solid #E5E5EA', borderRadius: 10, fontSize: 14, fontFamily: 'Inter, sans-serif', outline: 'none' }}>
                           <option value="efectivo">Efectivo</option>
                           <option value="transferencia">Transferencia</option>
                           <option value="pendiente">Pendiente</option>
@@ -365,7 +365,7 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
                       <div>
                         <label style={labelUpperStyle}>Monto cobrado</label>
                         <input type="number" value={cobroMonto} onChange={e => setCobroMonto(e.target.value)} placeholder="0.00"
-                          style={{ width: '100%', padding: '10px 12px', border: '1px solid #D1D5DB', borderRadius: 10, fontSize: 14, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
+                          style={{ width: '100%', padding: '10px 12px', border: '1px solid #E5E5EA', borderRadius: 10, fontSize: 14, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
                       </div>
                       {cobroForma !== 'pendiente' && (
                         <div>
@@ -375,18 +375,18 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
                             value={cobroFechaCobro}
                             onChange={e => setCobroFechaCobro(e.target.value)}
                             style={inputFechaStyle}
-                            onFocus={e => (e.target.style.borderColor = '#1B9ED6')}
+                            onFocus={e => (e.target.style.borderColor = '#7EB8E8')}
                             onBlur={e  => (e.target.style.borderColor = 'rgba(105,105,105,0.4)')}
                           />
                         </div>
                       )}
                       <div style={{ display: 'flex', gap: 8 }}>
                         <button type="button" onClick={handleGuardarCobro} disabled={editarCobro.isPending}
-                          style={{ flex: 1, background: '#0D5C8A', color: '#fff', border: 'none', borderRadius: 10, padding: '10px', fontSize: 14, fontWeight: 600, cursor: 'pointer', minHeight: 40, opacity: editarCobro.isPending ? 0.6 : 1 }}>
+                          style={{ flex: 1, background: '#3DD6B5', color: '#fff', border: 'none', borderRadius: 10, padding: '10px', fontSize: 14, fontWeight: 600, cursor: 'pointer', minHeight: 40, opacity: editarCobro.isPending ? 0.6 : 1 }}>
                           {editarCobro.isPending ? 'Guardando…' : 'Guardar'}
                         </button>
                         <button type="button" onClick={() => setEditandoCobro(false)}
-                          style={{ flex: 1, background: 'transparent', color: '#4A5568', border: '1.5px solid #D1D5DB', borderRadius: 10, padding: '10px', fontSize: 14, fontWeight: 600, cursor: 'pointer', minHeight: 40 }}>
+                          style={{ flex: 1, background: 'transparent', color: '#8E8E93', border: '1.5px solid #E5E5EA', borderRadius: 10, padding: '10px', fontSize: 14, fontWeight: 600, cursor: 'pointer', minHeight: 40 }}>
                           Cancelar
                         </button>
                       </div>
@@ -398,7 +398,7 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
               {/* Historial */}
               {!!p.pedido_historial?.length && (
                 <div style={{ background: '#fff', borderRadius: 16, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-                  <p style={{ margin: '0 0 12px', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#4A5568', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <p style={{ margin: '0 0 12px', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#8E8E93', display: 'flex', alignItems: 'center', gap: 6 }}>
                     <Clock size={12} /> Historial
                   </p>
                   {p.pedido_historial.map(h => (
@@ -409,7 +409,7 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
                       {h.notas && h.estado_anterior === h.estado_nuevo && (
                         <span style={{ fontSize: 11, color: '#F57C00' }}>{h.notas}</span>
                       )}
-                      <span style={{ fontSize: 11, color: '#4A5568', marginLeft: 'auto' }}>
+                      <span style={{ fontSize: 11, color: '#8E8E93', marginLeft: 'auto' }}>
                         {h.perfiles?.nombre ?? '—'} · {new Date(h.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
@@ -422,21 +422,23 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button type="button" onClick={() => window.open(`/print/${p.id}`, '_blank')}
                     aria-label={`Generar documento del pedido P-${String(p.numero).padStart(5, '0')}`}
-                    style={{ flex: 1, background: '#F4F6F8', color: '#4A5568', border: '1.5px solid #D1D5DB', borderRadius: 10, padding: '12px', minHeight: 44, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, outlineOffset: 2 }}>
+                    style={{ flex: 1, background: '#F5F7F9', color: '#8E8E93', border: '1.5px solid #E5E5EA', borderRadius: 10, padding: '12px', minHeight: 44, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, outlineOffset: 2 }}>
                     <Printer size={14} /> Generar documento
                   </button>
-                  <BtnWhatsapp
-                    variante="pill"
-                    loading={loadingWA}
-                    numeroLabel={formatNumero(p.numero)}
-                    onClick={() => compartir(p, msg => onSaved(msg + '|error'))}
-                  />
+                  {p.estado === 'cerrado' && (
+                    <BtnWhatsapp
+                      variante="pill"
+                      loading={loadingWA}
+                      numeroLabel={formatNumero(p.numero)}
+                      onClick={() => compartir(p, msg => onSaved(msg + '|error'))}
+                    />
+                  )}
                 </div>
 
                 {/* ── Form cerrar venta ── */}
                 {cerrando ? (
                   <div style={{
-                    background: '#F4F6F8', borderRadius: 14, padding: 16,
+                    background: '#F5F7F9', borderRadius: 14, padding: 16,
                     display: 'flex', flexDirection: 'column', gap: 12,
                     border: '1.5px solid #145A32',
                   }}>
@@ -466,9 +468,9 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
                             onClick={() => setCerrarForma(f)}
                             style={{
                               flex: 1, padding: '9px 6px', borderRadius: 8, fontSize: 13, fontWeight: 600,
-                              border: `1.5px solid ${cerrarForma === f ? '#145A32' : '#D1D5DB'}`,
+                              border: `1.5px solid ${cerrarForma === f ? '#145A32' : '#E5E5EA'}`,
                               background: cerrarForma === f ? '#D4EDDA' : '#fff',
-                              color: cerrarForma === f ? '#145A32' : '#4A5568',
+                              color: cerrarForma === f ? '#145A32' : '#8E8E93',
                               cursor: 'pointer',
                             }}
                           >
@@ -487,7 +489,7 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
                           value={cerrarFechaCobro}
                           onChange={e => setCerrarFechaCobro(e.target.value)}
                           style={inputFechaStyle}
-                          onFocus={e => (e.target.style.borderColor = '#1B9ED6')}
+                          onFocus={e => (e.target.style.borderColor = '#7EB8E8')}
                           onBlur={e  => (e.target.style.borderColor = 'rgba(105,105,105,0.4)')}
                         />
                       </div>
@@ -506,12 +508,12 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
                         inputMode="decimal"
                         style={{
                           width: '100%', padding: '10px 12px',
-                          border: `1.5px solid ${cerrarError ? '#D32F2F' : '#D1D5DB'}`,
+                          border: `1.5px solid ${cerrarError ? '#D32F2F' : '#E5E5EA'}`,
                           borderRadius: 10, fontSize: 14, fontFamily: 'Inter, sans-serif',
                           outline: 0, boxSizing: 'border-box',
                         }}
                         onFocus={e => (e.target.style.borderColor = '#145A32')}
-                        onBlur={e  => (e.target.style.borderColor = cerrarError ? '#D32F2F' : '#D1D5DB')}
+                        onBlur={e  => (e.target.style.borderColor = cerrarError ? '#D32F2F' : '#E5E5EA')}
                       />
                     </div>
 
@@ -536,17 +538,18 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
                           padding: '13px', minHeight: 48, fontSize: 15, fontWeight: 700,
                           cursor: cerrarPedido.isPending ? 'not-allowed' : 'pointer',
                           outlineOffset: 2,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                         }}
                       >
-                        {cerrarPedido.isPending ? 'Cerrando…' : '✓ Confirmar cierre'}
+                        {cerrarPedido.isPending ? 'Cerrando…' : <><Check size={15} /> Confirmar cierre</>}
                       </button>
                       <button
                         type="button"
                         onClick={() => { setCerrando(false); setCerrarError(null) }}
                         disabled={cerrarPedido.isPending}
                         style={{
-                          flex: 1, background: 'transparent', color: '#4A5568',
-                          border: '1.5px solid #D1D5DB', borderRadius: 10,
+                          flex: 1, background: 'transparent', color: '#8E8E93',
+                          border: '1.5px solid #E5E5EA', borderRadius: 10,
                           padding: '12px', fontSize: 14, cursor: 'pointer', minHeight: 48,
                         }}
                       >
@@ -607,7 +610,7 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
                 {['borrador', 'confirmado', 'en_produccion'].includes(p.estado) && (
                   <button type="button" onClick={() => pedido && onEditar(pedido)}
                     aria-label={`Editar pedido P-${String(p.numero).padStart(5, '0')}`}
-                    style={{ background: 'transparent', color: '#0D5C8A', border: '1.5px solid #0D5C8A', borderRadius: 10, padding: '12px', minHeight: 44, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, outlineOffset: 2 }}>
+                    style={{ background: 'transparent', color: '#3DD6B5', border: '1.5px solid #3DD6B5', borderRadius: 10, padding: '12px', minHeight: 44, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, outlineOffset: 2 }}>
                     <Edit2 size={14} /> Editar pedido
                   </button>
                 )}

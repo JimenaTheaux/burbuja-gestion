@@ -69,7 +69,7 @@ export function useCompartirFactura() {
     }
 
     const numStr  = String(pedido.numero).padStart(5, '0')
-    const fileName = `factura-P${numStr}.jpg`
+    const fileName = `pedido-burbuja-P${numStr}.jpg`
     const file     = new File([blob], fileName, { type: 'image/jpeg' })
     const numero   = formatNumero(pedido.numero)
 
@@ -80,7 +80,7 @@ export function useCompartirFactura() {
       ?.replace(/^54/, '') ?? ''
 
     const mensaje = encodeURIComponent(
-      `Hola! Confirmamos el pedido! ${numero}. Adjuntamos la imagen con la factura.`
+      `Hola! Te comparto el detalle de tu pedido Burbuja 🫧 (${numero})`
     )
 
     const esMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)

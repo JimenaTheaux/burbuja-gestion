@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
-  IconCash, IconBuildingBank, IconClock, IconX, IconChevronRight,
-} from '@tabler/icons-react'
+  Banknote, Landmark, Clock, X, ChevronRight,
+} from 'lucide-react'
 import { BadgeEstado }   from '@/components/common/BadgeEstado'
 import { SelectorFecha } from '@/components/common/SelectorFecha'
 import { Skeleton }      from '@/components/ui/skeleton'
@@ -44,7 +44,7 @@ function ExpandedItemsHistorial({ pedidoId }: { pedidoId: string }) {
         const prod = item.productos as typeof item.productos | null
         return (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 12, color: '#4A5568' }}>
+            <span style={{ fontSize: 12, color: '#8E8E93' }}>
               {prod?.nombre ?? '—'}
               {prod?.presentacion ? ` · ${prod.presentacion}L` : ''}
               {' · '}{item.cantidad}
@@ -76,17 +76,17 @@ function CardHistorial({ pedido }: { pedido: any }) {
   const numStr = `P-${String(pedido.numero).padStart(5, '0')}`
 
   const formaIcon = pedido.forma_cobro === 'efectivo'
-    ? <IconCash size={13} color="#2E9E5C" style={{ flexShrink: 0 }} />
+    ? <Banknote size={13} color="#2E9E5C" style={{ flexShrink: 0 }} />
     : pedido.forma_cobro === 'transferencia'
-    ? <IconBuildingBank size={13} color="#1565C0" style={{ flexShrink: 0 }} />
-    : <IconClock size={13} color="#F57C00" style={{ flexShrink: 0 }} />
+    ? <Landmark size={13} color="#1565C0" style={{ flexShrink: 0 }} />
+    : <Clock size={13} color="#F57C00" style={{ flexShrink: 0 }} />
 
   return (
     <div
       style={{
         background:   '#fff',
         borderRadius: 10,
-        border:       '0.5px solid #D1D5DB',
+        border:       '0.5px solid #E5E5EA',
         borderLeft:   `3px solid ${cfg.color}`,
         marginBottom: 6,
         overflow:     'hidden',
@@ -101,22 +101,22 @@ function CardHistorial({ pedido }: { pedido: any }) {
         onKeyDown={e => {
           if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIsExpanded(v => !v) }
         }}
-        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B9ED6] focus-visible:ring-offset-2"
+        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7EB8E8] focus-visible:ring-offset-2"
         style={{ padding: '12px 14px', cursor: 'pointer' }}
       >
         {/* Line 1: número · badge · spacer · total · chevron */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-          <span style={{ fontSize: 11, fontWeight: 500, color: '#0D5C8A', whiteSpace: 'nowrap' }}>
+          <span style={{ fontSize: 11, fontWeight: 500, color: '#3DD6B5', whiteSpace: 'nowrap' }}>
             {numStr}
           </span>
           <BadgeEstado estado={pedido.estado} />
           <div style={{ flex: 1 }} />
-          <span style={{ fontSize: 13, fontWeight: 500, color: '#1A2B3C', whiteSpace: 'nowrap' }}>
+          <span style={{ fontSize: 13, fontWeight: 500, color: '#1C1C1E', whiteSpace: 'nowrap' }}>
             ${total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
           </span>
-          <IconChevronRight
+          <ChevronRight
             size={14}
-            color="#D1D5DB"
+            color="#E5E5EA"
             style={{
               transform:  isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
               transition: 'transform 0.2s ease',
@@ -127,7 +127,7 @@ function CardHistorial({ pedido }: { pedido: any }) {
 
         {/* Line 2: nombre cliente */}
         <div style={{ marginBottom: 2 }}>
-          <span style={{ fontSize: 13, fontWeight: 500, color: '#1A2B3C' }}>
+          <span style={{ fontSize: 13, fontWeight: 500, color: '#1C1C1E' }}>
             {pedido.clientes?.nombre}
           </span>
         </div>
@@ -135,19 +135,19 @@ function CardHistorial({ pedido }: { pedido: any }) {
         {/* Line 3: dirección (izq) · spacer · forma de cobro o falla (der) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {pedido.clientes?.direccion
-            ? <span style={{ fontSize: 12, fontWeight: 500, color: '#1A2B3C' }}>{pedido.clientes.direccion}</span>
-            : <span style={{ fontSize: 11, fontStyle: 'italic', color: '#D1D5DB' }}>Sin dirección</span>
+            ? <span style={{ fontSize: 12, fontWeight: 500, color: '#1C1C1E' }}>{pedido.clientes.direccion}</span>
+            : <span style={{ fontSize: 11, fontStyle: 'italic', color: '#E5E5EA' }}>Sin dirección</span>
           }
           <div style={{ flex: 1 }} />
           {pedido.estado === 'entrega_fallida' ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-              <IconX size={13} color="#D32F2F" />
+              <X size={13} color="#D32F2F" />
               <span style={{ fontSize: 11, color: '#D32F2F' }}>fallida</span>
             </div>
           ) : pedido.forma_cobro ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
               {formaIcon}
-              <span style={{ fontSize: 11, color: '#4A5568' }}>{pedido.forma_cobro}</span>
+              <span style={{ fontSize: 11, color: '#8E8E93' }}>{pedido.forma_cobro}</span>
             </div>
           ) : null}
         </div>
@@ -156,7 +156,7 @@ function CardHistorial({ pedido }: { pedido: any }) {
       {/* Ítems expandidos */}
       {isExpanded && (
         <div>
-          <div style={{ borderTop: '0.5px solid #F4F6F8' }} />
+          <div style={{ borderTop: '0.5px solid #F5F7F9' }} />
           <ExpandedItemsHistorial pedidoId={pedido.id} />
         </div>
       )}
@@ -191,9 +191,9 @@ export default function HistorialPage() {
 
       ) : !pedidosOrdenados.length ? (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', gap: 12, textAlign: 'center' }}>
-          <IconClock size={40} strokeWidth={1.2} color="#D1D5DB" />
-          <p style={{ fontSize: 14, fontWeight: 500, color: '#1A2B3C', margin: 0 }}>Sin registros</p>
-          <p style={{ fontSize: 12, color: '#4A5568', margin: 0 }}>
+          <Clock size={40} strokeWidth={1.2} color="#E5E5EA" />
+          <p style={{ fontSize: 14, fontWeight: 500, color: '#1C1C1E', margin: 0 }}>Sin registros</p>
+          <p style={{ fontSize: 12, color: '#8E8E93', margin: 0 }}>
             No hay entregas registradas para el {labelFechaLarga(fechaHistorial)}
           </p>
           {!esHoy && (
@@ -201,7 +201,7 @@ export default function HistorialPage() {
               onClick={() => setFechaHistorial(HOY)}
               className="btn-press"
               style={{
-                background: 'none', border: '1px solid #D1D5DB', color: '#0D5C8A',
+                background: 'none', border: '1px solid #E5E5EA', color: '#3DD6B5',
                 fontSize: 13, cursor: 'pointer', borderRadius: 8,
                 padding: '8px 16px', fontFamily: 'Inter, sans-serif', minHeight: 36,
               }}

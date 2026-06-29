@@ -93,7 +93,7 @@ function ClienteDrawer({ open, onClose, cliente, onSaved }: DrawerProps) {
         disabled={saving}
         className="btn-press"
         style={{
-          background: saving ? 'rgba(13,92,138,0.5)' : '#0D5C8A',
+          background: saving ? 'rgba(61,214,181,0.5)' : '#3DD6B5',
           color: '#fff', border: 'none', borderRadius: 10,
           height: 44, fontSize: 14, fontWeight: 600,
           cursor: saving ? 'not-allowed' : 'pointer', width: '100%',
@@ -106,7 +106,7 @@ function ClienteDrawer({ open, onClose, cliente, onSaved }: DrawerProps) {
         onClick={onClose}
         className="btn-press"
         style={{
-          background: 'transparent', color: '#4A5568',
+          background: 'transparent', color: '#8E8E93',
           border: 'none', height: 36, fontSize: 13,
           cursor: 'pointer', width: '100%',
         }}
@@ -157,13 +157,13 @@ function ClienteDrawer({ open, onClose, cliente, onSaved }: DrawerProps) {
             error={errors.tipo_cliente?.message}
             options={[
               { value: 'minorista', label: 'Min.' },
-              { value: 'mayorista', label: 'May.', color: '#1B9ED6' },
+              { value: 'mayorista', label: 'May.', color: '#7EB8E8' },
             ]}
           />
         </div>
 
         {/* Notas colapsado */}
-        <div style={{ border: '0.5px solid #D1D5DB', borderRadius: 8, overflow: 'hidden' }}>
+        <div style={{ border: '0.5px solid #E5E5EA', borderRadius: 8, overflow: 'hidden' }}>
           <button
             type="button"
             onClick={() => setNotasOpen(v => !v)}
@@ -172,10 +172,10 @@ function ClienteDrawer({ open, onClose, cliente, onSaved }: DrawerProps) {
               cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             }}
           >
-            <span style={{ fontSize: 13, color: '#1A2B3C' }}>
+            <span style={{ fontSize: 13, color: '#1C1C1E' }}>
               Notas <span style={{ color: '#9CA3AF' }}>(opcional)</span>
             </span>
-            <ChevronDown size={14} color="#4A5568" style={{ transform: notasOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+            <ChevronDown size={14} color="#8E8E93" style={{ transform: notasOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
           </button>
           <div style={{ display: 'grid', gridTemplateRows: notasOpen ? '1fr' : '0fr', transition: 'grid-template-rows 0.2s ease' }}>
             <div style={{ overflow: 'hidden' }}>
@@ -191,7 +191,7 @@ function ClienteDrawer({ open, onClose, cliente, onSaved }: DrawerProps) {
         </div>
 
         {cliente && (
-          <div style={{ paddingTop: 16, borderTop: '0.5px solid #F4F6F8' }}>
+          <div style={{ paddingTop: 16, borderTop: '0.5px solid #F5F7F9' }}>
             <button
               type="button"
               onClick={async () => {
@@ -223,8 +223,8 @@ function BadgeTipo({ tipo }: { tipo: 'minorista' | 'mayorista' }) {
   const mayorista = tipo === 'mayorista'
   return (
     <span style={{
-      backgroundColor: mayorista ? '#E8F4FF' : '#F4F6F8',
-      color:           mayorista ? '#0D5C8A' : '#4A5568',
+      backgroundColor: mayorista ? '#EBF5FF' : '#F5F7F9',
+      color:           mayorista ? '#3DD6B5' : '#8E8E93',
       fontSize: 9, fontWeight: 500, padding: '2px 8px', borderRadius: 99,
       display: 'inline-block', whiteSpace: 'nowrap',
     }}>
@@ -252,7 +252,7 @@ function ShimmerRow() {
   return (
     <tr>
       {[160, 110, 180, 70, 60, 28].map((w, i) => (
-        <td key={i} style={{ padding: '10px 14px', borderBottom: '0.5px solid #F4F6F8' }}>
+        <td key={i} style={{ padding: '10px 14px', borderBottom: '0.5px solid #F5F7F9' }}>
           <Skeleton style={{ height: 13, width: w, borderRadius: 6 }} />
         </td>
       ))}
@@ -262,7 +262,7 @@ function ShimmerRow() {
 
 function ShimmerCard() {
   return (
-    <div style={{ background: '#fff', borderRadius: 12, border: '0.5px solid #D1D5DB', padding: '12px 16px', marginBottom: 6 }}>
+    <div style={{ background: '#fff', borderRadius: 12, border: '0.5px solid #E5E5EA', padding: '12px 16px', marginBottom: 6 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
         <Skeleton style={{ height: 13, width: 150, borderRadius: 6 }} />
         <Skeleton style={{ height: 18, width: 64, borderRadius: 99 }} />
@@ -311,8 +311,8 @@ export default function ClientesPage() {
         .cli-table { width: 100%; border-collapse: collapse; }
         .cli-table tbody tr { transition: background 0.1s; cursor: default; }
         .cli-table tbody tr:hover { background: #F9FAFB !important; }
-        .cli-edit-btn:focus-visible { outline: 2px solid #1B9ED6; outline-offset: 2px; }
-        .cli-card:focus-visible { outline: 2px solid #1B9ED6; outline-offset: 2px; }
+        .cli-edit-btn:focus-visible { outline: 2px solid #7EB8E8; outline-offset: 2px; }
+        .cli-card:focus-visible { outline: 2px solid #7EB8E8; outline-offset: 2px; }
         @media (max-width: 1023px) { .cli-desktop { display: none !important; } }
         @media (min-width: 1024px) { .cli-mobile  { display: none !important; } }
       `}</style>
@@ -324,7 +324,7 @@ export default function ClientesPage() {
           onClick={handleNew}
           className="btn-press"
           style={{
-            background: '#0D5C8A', color: '#fff', border: 'none',
+            background: '#3DD6B5', color: '#fff', border: 'none',
             borderRadius: 10, height: 40, padding: '0 16px',
             fontSize: 13, fontWeight: 600, cursor: 'pointer',
             display: 'flex', alignItems: 'center', gap: 6,
@@ -340,7 +340,7 @@ export default function ClientesPage() {
           <label htmlFor="cli-search" className="sr-only">Buscar clientes</label>
           <Search
             size={14}
-            style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#4A5568', pointerEvents: 'none' }}
+            style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#8E8E93', pointerEvents: 'none' }}
           />
           <input
             id="cli-search"
@@ -349,12 +349,12 @@ export default function ClientesPage() {
             placeholder="Buscar por nombre..."
             style={{
               width: '100%', height: 36, padding: '0 12px 0 32px',
-              border: '0.5px solid #D1D5DB', borderRadius: 8,
+              border: '0.5px solid #E5E5EA', borderRadius: 8,
               fontSize: 13, outline: 0, background: '#fff',
               boxSizing: 'border-box', fontFamily: 'Inter, sans-serif',
             }}
-            onFocus={e => (e.target.style.borderColor = '#1B9ED6')}
-            onBlur={e  => (e.target.style.borderColor = '#D1D5DB')}
+            onFocus={e => (e.target.style.borderColor = '#7EB8E8')}
+            onBlur={e  => (e.target.style.borderColor = '#E5E5EA')}
           />
         </div>
 
@@ -367,9 +367,9 @@ export default function ClientesPage() {
                 onClick={() => setActivo(v)}
                 style={{
                   height: 32, padding: '0 12px', borderRadius: 99,
-                  border: `1px solid ${isActive ? '#0D5C8A' : '#D1D5DB'}`,
-                  background: isActive ? '#0D5C8A' : '#fff',
-                  color: isActive ? '#fff' : '#4A5568',
+                  border: `1px solid ${isActive ? '#3DD6B5' : '#E5E5EA'}`,
+                  background: isActive ? '#3DD6B5' : '#fff',
+                  color: isActive ? '#fff' : '#8E8E93',
                   fontSize: 12, fontWeight: isActive ? 500 : 400,
                   cursor: 'pointer', whiteSpace: 'nowrap',
                   transition: 'all 0.1s',
@@ -384,10 +384,10 @@ export default function ClientesPage() {
 
       {/* ── DESKTOP ─────────────────────────────────────────────────────────── */}
       <div className="cli-desktop">
-        <div style={{ background: '#fff', borderRadius: 12, border: '0.5px solid #D1D5DB', overflow: 'hidden' }}>
+        <div style={{ background: '#fff', borderRadius: 12, border: '0.5px solid #E5E5EA', overflow: 'hidden' }}>
           <table className="cli-table" aria-label="Listado de clientes">
             <thead>
-              <tr style={{ background: '#F4F6F8', borderBottom: '0.5px solid #D1D5DB' }}>
+              <tr style={{ background: '#F5F7F9', borderBottom: '0.5px solid #E5E5EA' }}>
                 {['Cliente', 'Contacto', 'Dirección', 'Tipo', 'Estado', 'Acciones'].map((h, i) => (
                   <th
                     key={h}
@@ -395,7 +395,7 @@ export default function ClientesPage() {
                     style={{
                       padding: '8px 14px',
                       fontSize: 10, fontWeight: 500, textTransform: 'uppercase',
-                      letterSpacing: '0.06em', color: '#4A5568',
+                      letterSpacing: '0.06em', color: '#8E8E93',
                       textAlign: i === 5 ? 'right' : 'left',
                       whiteSpace: 'nowrap',
                     }}
@@ -412,14 +412,14 @@ export default function ClientesPage() {
                 <tr>
                   <td colSpan={6}>
                     <div style={{ padding: '48px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-                      <Users size={40} strokeWidth={1.2} color="#D1D5DB" />
-                      <p style={{ fontSize: 14, fontWeight: 500, color: '#1A2B3C', margin: 0 }}>Sin clientes</p>
-                      <p style={{ fontSize: 12, color: '#4A5568', margin: 0 }}>
+                      <Users size={40} strokeWidth={1.2} color="#E5E5EA" />
+                      <p style={{ fontSize: 14, fontWeight: 500, color: '#1C1C1E', margin: 0 }}>Sin clientes</p>
+                      <p style={{ fontSize: 12, color: '#8E8E93', margin: 0 }}>
                         {q ? 'No hay clientes que coincidan con la búsqueda' : 'Agregá tu primer cliente'}
                       </p>
                       {!q && (
                         <button onClick={handleNew} className="btn-press" style={{
-                          marginTop: 4, background: '#0D5C8A', color: '#fff', border: 'none',
+                          marginTop: 4, background: '#3DD6B5', color: '#fff', border: 'none',
                           borderRadius: 10, padding: '10px 20px', fontSize: 13, fontWeight: 600,
                           cursor: 'pointer', minHeight: 40,
                         }}>
@@ -436,28 +436,28 @@ export default function ClientesPage() {
                       scope="row"
                       style={{
                         padding: '0 14px', height: 48,
-                        fontSize: 13, fontWeight: 500, color: '#1A2B3C',
-                        textAlign: 'left', borderBottom: '0.5px solid #F4F6F8',
+                        fontSize: 13, fontWeight: 500, color: '#1C1C1E',
+                        textAlign: 'left', borderBottom: '0.5px solid #F5F7F9',
                         whiteSpace: 'nowrap',
                       }}
                     >
                       {c.nombre}
                     </th>
-                    <td style={{ padding: '0 14px', height: 48, fontSize: 12, color: c.telefono ? '#4A5568' : '#D1D5DB', borderBottom: '0.5px solid #F4F6F8', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '0 14px', height: 48, fontSize: 12, color: c.telefono ? '#8E8E93' : '#E5E5EA', borderBottom: '0.5px solid #F5F7F9', whiteSpace: 'nowrap' }}>
                       {c.telefono ?? '—'}
                     </td>
-                    <td style={{ padding: '0 14px', height: 48, borderBottom: '0.5px solid #F4F6F8', maxWidth: 240 }}>
-                      <span style={{ display: 'block', fontSize: 12, color: c.direccion ? '#4A5568' : '#D1D5DB', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '0 14px', height: 48, borderBottom: '0.5px solid #F5F7F9', maxWidth: 240 }}>
+                      <span style={{ display: 'block', fontSize: 12, color: c.direccion ? '#8E8E93' : '#E5E5EA', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {c.direccion ?? '—'}
                       </span>
                     </td>
-                    <td style={{ padding: '0 14px', height: 48, borderBottom: '0.5px solid #F4F6F8', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '0 14px', height: 48, borderBottom: '0.5px solid #F5F7F9', whiteSpace: 'nowrap' }}>
                       <BadgeTipo tipo={c.tipo_cliente} />
                     </td>
-                    <td style={{ padding: '0 14px', height: 48, borderBottom: '0.5px solid #F4F6F8', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '0 14px', height: 48, borderBottom: '0.5px solid #F5F7F9', whiteSpace: 'nowrap' }}>
                       <BadgeActivo activo={c.activo ?? true} />
                     </td>
-                    <td style={{ padding: '0 14px', height: 48, borderBottom: '0.5px solid #F4F6F8', textAlign: 'right' }}>
+                    <td style={{ padding: '0 14px', height: 48, borderBottom: '0.5px solid #F5F7F9', textAlign: 'right' }}>
                       <button
                         onClick={() => handleEdit(c)}
                         className="cli-edit-btn"
@@ -465,13 +465,13 @@ export default function ClientesPage() {
                         style={{
                           width: 28, height: 28,
                           background: 'transparent',
-                          border: '0.5px solid #D1D5DB',
+                          border: '0.5px solid #E5E5EA',
                           borderRadius: 6,
                           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                          cursor: 'pointer', color: '#4A5568',
+                          cursor: 'pointer', color: '#8E8E93',
                           transition: 'background 0.1s',
                         }}
-                        onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = '#F4F6F8')}
+                        onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = '#F5F7F9')}
                         onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = 'transparent')}
                       >
                         <Edit2 size={13} />
@@ -484,8 +484,8 @@ export default function ClientesPage() {
           </table>
 
           {!isLoading && !!clientes?.length && (
-            <div style={{ padding: '10px 14px', borderTop: '0.5px solid #F4F6F8' }}>
-              <span style={{ fontSize: 12, color: '#4A5568' }}>
+            <div style={{ padding: '10px 14px', borderTop: '0.5px solid #F5F7F9' }}>
+              <span style={{ fontSize: 12, color: '#8E8E93' }}>
                 {clientes.length} {clientes.length === 1 ? 'cliente' : 'clientes'}
               </span>
             </div>
@@ -499,14 +499,14 @@ export default function ClientesPage() {
           Array.from({ length: 4 }).map((_, i) => <ShimmerCard key={i} />)
         ) : !clientes?.length ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', gap: 12, textAlign: 'center' }}>
-            <Users size={40} strokeWidth={1.2} color="#D1D5DB" />
-            <p style={{ fontSize: 14, fontWeight: 500, color: '#1A2B3C', margin: 0 }}>Sin clientes</p>
-            <p style={{ fontSize: 12, color: '#4A5568', margin: 0 }}>
+            <Users size={40} strokeWidth={1.2} color="#E5E5EA" />
+            <p style={{ fontSize: 14, fontWeight: 500, color: '#1C1C1E', margin: 0 }}>Sin clientes</p>
+            <p style={{ fontSize: 12, color: '#8E8E93', margin: 0 }}>
               {q ? 'No hay clientes que coincidan' : 'Agregá tu primer cliente'}
             </p>
             {!q && (
               <button onClick={handleNew} className="btn-press" style={{
-                background: '#0D5C8A', color: '#fff', border: 'none',
+                background: '#3DD6B5', color: '#fff', border: 'none',
                 borderRadius: 10, padding: '12px 24px', fontSize: 14, fontWeight: 600,
                 cursor: 'pointer', minHeight: 44,
               }}>
@@ -526,7 +526,7 @@ export default function ClientesPage() {
                 onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleEdit(c) } }}
                 aria-label={`Editar cliente ${c.nombre}`}
                 style={{
-                  background: '#fff', borderRadius: 12, border: '0.5px solid #D1D5DB',
+                  background: '#fff', borderRadius: 12, border: '0.5px solid #E5E5EA',
                   padding: '12px 16px', marginBottom: 6,
                   display: 'flex', alignItems: 'center', gap: 10,
                   cursor: 'pointer',
@@ -535,13 +535,13 @@ export default function ClientesPage() {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   {/* Línea 1 */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                    <span style={{ fontWeight: 500, fontSize: 13, color: '#1A2B3C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, marginRight: 8 }}>
+                    <span style={{ fontWeight: 500, fontSize: 13, color: '#1C1C1E', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, marginRight: 8 }}>
                       {c.nombre}
                     </span>
                     <BadgeTipo tipo={c.tipo_cliente} />
                   </div>
                   {/* Línea 2 */}
-                  <p style={{ fontSize: 12, color: '#4A5568', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <p style={{ fontSize: 12, color: '#8E8E93', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {[c.telefono, c.direccion].filter(Boolean).join(' · ') || '—'}
                   </p>
                 </div>
@@ -552,16 +552,16 @@ export default function ClientesPage() {
                   tabIndex={-1}
                   style={{
                     width: 36, height: 36, flexShrink: 0,
-                    background: 'transparent', border: '0.5px solid #D1D5DB', borderRadius: 6,
+                    background: 'transparent', border: '0.5px solid #E5E5EA', borderRadius: 6,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    cursor: 'pointer', color: '#4A5568',
+                    cursor: 'pointer', color: '#8E8E93',
                   }}
                 >
                   <Edit2 size={14} />
                 </button>
               </div>
             ))}
-            <p style={{ fontSize: 12, color: '#4A5568', textAlign: 'center', padding: '12px 0', margin: 0 }}>
+            <p style={{ fontSize: 12, color: '#8E8E93', textAlign: 'center', padding: '12px 0', margin: 0 }}>
               {clientes.length} {clientes.length === 1 ? 'cliente' : 'clientes'}
             </p>
           </>

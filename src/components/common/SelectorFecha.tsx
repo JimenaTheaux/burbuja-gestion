@@ -38,8 +38,8 @@ export function SelectorFecha({ fecha, onChange }: SelectorFechaProps) {
 
   const btnNavStyle: React.CSSProperties = {
     width: 32, height: 32, borderRadius: 6,
-    border: '0.5px solid #D1D5DB', background: '#fff',
-    color: '#4A5568', cursor: 'pointer',
+    border: '0.5px solid #E5E5EA', background: '#fff',
+    color: '#8E8E93', cursor: 'pointer',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     outline: 'none',
   }
@@ -53,7 +53,7 @@ export function SelectorFecha({ fecha, onChange }: SelectorFechaProps) {
           aria-label="Día anterior"
           onClick={() => onChange(navegar(fecha, -1))}
           style={btnNavStyle}
-          onMouseEnter={e => (e.currentTarget.style.background = '#F4F6F8')}
+          onMouseEnter={e => (e.currentTarget.style.background = '#F5F7F9')}
           onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
         >
           <ChevronLeft size={14} />
@@ -68,7 +68,7 @@ export function SelectorFecha({ fecha, onChange }: SelectorFechaProps) {
             padding: '4px 6px', borderRadius: 6,
             fontSize: 13,
             fontWeight: esHoy ? 500 : 400,
-            color: esHoy ? '#0D5C8A' : '#1A2B3C',
+            color: esHoy ? '#3DD6B5' : '#1C1C1E',
           }}
         >
           {etiquetaCorta(fecha)}
@@ -79,7 +79,7 @@ export function SelectorFecha({ fecha, onChange }: SelectorFechaProps) {
           aria-label="Día siguiente"
           onClick={() => onChange(navegar(fecha, 1))}
           style={btnNavStyle}
-          onMouseEnter={e => (e.currentTarget.style.background = '#F4F6F8')}
+          onMouseEnter={e => (e.currentTarget.style.background = '#F5F7F9')}
           onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
         >
           <ChevronRight size={14} />
@@ -90,12 +90,12 @@ export function SelectorFecha({ fecha, onChange }: SelectorFechaProps) {
           <button
             onClick={() => { onChange(hoyISO()); setPickerOpen(false) }}
             style={{
-              fontSize: 11, color: '#0D5C8A',
-              border: '0.5px solid #0D5C8A',
+              fontSize: 11, color: '#3DD6B5',
+              border: '0.5px solid #3DD6B5',
               borderRadius: 99, padding: '2px 10px',
               background: '#fff', cursor: 'pointer', outline: 'none',
             }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#E8F4FF')}
+            onMouseEnter={e => (e.currentTarget.style.background = '#EBF5FF')}
             onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
           >
             Hoy
@@ -121,11 +121,11 @@ export function SelectorFecha({ fecha, onChange }: SelectorFechaProps) {
             }}
             onBlur={() => setTimeout(() => setPickerOpen(false), 150)}
             style={{
-              padding: '6px 10px', border: '1px solid #D1D5DB',
+              padding: '6px 10px', border: '1px solid #E5E5EA',
               borderRadius: 8, fontSize: 13, fontFamily: 'Inter, sans-serif',
               outline: 'none', cursor: 'pointer',
             }}
-            onFocus={e => (e.target.style.borderColor = '#1B9ED6')}
+            onFocus={e => (e.target.style.borderColor = '#7EB8E8')}
           />
         </div>
       )}

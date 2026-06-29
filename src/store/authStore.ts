@@ -23,7 +23,7 @@ export const useAuthStore = create<AuthState>()(
       logout:  () => set({ usuario: null }),
     }),
     {
-      name:        'limpimax-auth',
+      name:        'burbuja-auth',
       partialize:  (state) => ({ usuario: state.usuario }),
     }
   )

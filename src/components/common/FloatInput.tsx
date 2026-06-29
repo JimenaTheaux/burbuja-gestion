@@ -16,7 +16,7 @@ interface FloatInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 const LABEL_STYLE: React.CSSProperties = {
   fontSize:      10,
   fontWeight:    500,
-  color:         '#4A5568',
+  color:         '#8E8E93',
   textTransform: 'uppercase',
   letterSpacing: '0.06em',
   display:       'block',
@@ -24,10 +24,10 @@ const LABEL_STYLE: React.CSSProperties = {
 }
 
 const BASE_INPUT: React.CSSProperties = {
-  border:       '0.5px solid #D1D5DB',
+  border:       '0.5px solid #E5E5EA',
   borderRadius: 8,
   fontFamily:   'Inter, sans-serif',
-  color:        '#1A2B3C',
+  color:        '#1C1C1E',
   outline:      'none',
   width:        '100%',
   boxSizing:    'border-box',
@@ -58,8 +58,8 @@ export const FloatInput = forwardRef<HTMLInputElement, FloatInputProps>(
   ) => {
     const inputId    = id ?? name
     const hasError   = !!error
-    const borderBase = hasError ? '#D32F2F' : '#D1D5DB'
-    const borderFocus = hasError ? '#D32F2F' : '#1B9ED6'
+    const borderBase = hasError ? '#D32F2F' : '#E5E5EA'
+    const borderFocus = hasError ? '#D32F2F' : '#3DD6B5'
 
     // Composición de focus/blur para no sobreescribir los de RHF
     const handleFocus = (e: React.FocusEvent<HTMLElement>) => {
@@ -82,8 +82,8 @@ export const FloatInput = forwardRef<HTMLInputElement, FloatInputProps>(
       ...BASE_INPUT,
       padding:    `0 ${rightSlot ? 44 : 12}px 0 12px`,
       borderColor: borderBase,
-      background:  disabled ? '#F4F6F8' : '#fff',
-      color:       disabled ? '#9CA3AF' : '#1A2B3C',
+      background:  disabled ? '#F5F7F9' : '#fff',
+      color:       disabled ? '#9CA3AF' : '#1C1C1E',
       cursor:      disabled ? 'not-allowed' : undefined,
       ...(style as React.CSSProperties),
     }
@@ -93,8 +93,8 @@ export const FloatInput = forwardRef<HTMLInputElement, FloatInputProps>(
       padding:     '8px 12px',
       resize:      'vertical',
       borderColor: borderBase,
-      background:  disabled ? '#F4F6F8' : '#fff',
-      color:       disabled ? '#9CA3AF' : '#1A2B3C',
+      background:  disabled ? '#F5F7F9' : '#fff',
+      color:       disabled ? '#9CA3AF' : '#1C1C1E',
       ...(style as React.CSSProperties),
     }
 
@@ -154,7 +154,7 @@ export const FloatInput = forwardRef<HTMLInputElement, FloatInputProps>(
           </span>
         )}
         {hint && !error && (
-          <span style={{ color: '#4A5568', fontSize: 11, marginTop: 4, display: 'block' }}>
+          <span style={{ color: '#8E8E93', fontSize: 11, marginTop: 4, display: 'block' }}>
             {hint}
           </span>
         )}

@@ -53,7 +53,7 @@ function PasswordField({
           onClick={() => setShow(v => !v)}
           tabIndex={-1}
           aria-label={show ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#4A5568', padding: 0, display: 'flex' }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8E8E93', padding: 0, display: 'flex' }}
         >
           {show ? <EyeOff size={15} /> : <Eye size={15} />}
         </button>
@@ -105,17 +105,17 @@ export default function PerfilPage() {
       }}>
         <div style={{
           width: 52, height: 52, borderRadius: '50%',
-          background: '#0D5C8A',
+          background: '#3DD6B5',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           color: '#fff', fontSize: 18, fontWeight: 700, flexShrink: 0,
         }}>
           {usuario ? getIniciales(usuario.nombre) : '—'}
         </div>
         <div style={{ minWidth: 0 }}>
-          <p style={{ margin: 0, fontWeight: 600, fontSize: 15, color: '#1A2B3C' }}>
+          <p style={{ margin: 0, fontWeight: 600, fontSize: 15, color: '#1C1C1E' }}>
             {usuario?.nombre ?? '—'}
           </p>
-          <p style={{ margin: '3px 0 0', fontSize: 12, color: '#4A5568' }}>
+          <p style={{ margin: '3px 0 0', fontSize: 12, color: '#8E8E93' }}>
             {usuario?.rol ? ROL_LABEL[usuario.rol] ?? usuario.rol : '—'}
           </p>
         </div>
@@ -129,7 +129,7 @@ export default function PerfilPage() {
       }}>
         <p style={{
           margin: '0 0 16px', fontSize: 10, fontWeight: 600,
-          color: '#4A5568', textTransform: 'uppercase', letterSpacing: '0.08em',
+          color: '#8E8E93', textTransform: 'uppercase', letterSpacing: '0.08em',
         }}>
           Cambiar contraseña
         </p>
@@ -158,8 +158,8 @@ export default function PerfilPage() {
           />
 
           <p style={{
-            margin: 0, fontSize: 12, color: '#4A5568',
-            background: '#F4F6F8', borderRadius: 8, padding: '8px 10px',
+            margin: 0, fontSize: 12, color: '#8E8E93',
+            background: '#F5F7F9', borderRadius: 8, padding: '8px 10px',
           }}>
             Mínimo 8 caracteres. La sesión se mantiene activa al cambiar.
           </p>
@@ -169,7 +169,7 @@ export default function PerfilPage() {
             disabled={cambiarPw.isPending}
             className="btn-press"
             style={{
-              background:   cambiarPw.isPending ? 'rgba(13,92,138,0.5)' : '#0D5C8A',
+              background:   cambiarPw.isPending ? 'rgba(61,214,181,0.5)' : '#3DD6B5',
               color:        '#fff',
               border:       'none',
               borderRadius: 10,

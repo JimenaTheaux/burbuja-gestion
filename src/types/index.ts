@@ -21,14 +21,14 @@ export type FormaCobro  = 'efectivo' | 'transferencia' | 'pendiente'
 
 export const ESTADO_CONFIG: Record<EstadoPedido, { bg: string; color: string; label: string }> = {
   borrador:        { bg: '#F0F0F0', color: '#9A9A9A', label: 'Borrador' },
-  confirmado:      { bg: '#E8F4FF', color: '#1B9ED6', label: 'Confirmado' },
-  en_produccion:   { bg: '#FFF3E0', color: '#F57C00', label: 'En producción' },
-  listo_reparto:   { bg: '#FFFDE7', color: '#F9A825', label: 'Listo para reparto' },
-  en_reparto:      { bg: '#E3F2FD', color: '#1565C0', label: 'En reparto' },
-  entregado:       { bg: '#E8F8F0', color: '#2E9E5C', label: 'Entregado' },
-  cerrado:         { bg: '#D4EDDA', color: '#145A32', label: 'Cerrado' },
-  entrega_fallida: { bg: '#FDECEA', color: '#D32F2F', label: 'Entrega fallida' },
-  anulado:         { bg: '#ECEFF1', color: '#455A64', label: 'Anulado' },
+  confirmado:      { bg: '#EBF5FF', color: '#2B6CB0', label: 'Confirmado' },
+  en_produccion:   { bg: '#FFF3E0', color: '#E65100', label: 'En producción' },
+  listo_reparto:   { bg: '#FFFDE7', color: '#C47B00', label: 'Listo para reparto' },
+  en_reparto:      { bg: '#EBF5FF', color: '#2B6CB0', label: 'En reparto' },
+  entregado:       { bg: '#E8FAF6', color: '#28B99A', label: 'Entregado' },
+  cerrado:         { bg: '#E8FAF6', color: '#28B99A', label: 'Cerrado' },
+  entrega_fallida: { bg: '#FEF2F2', color: '#C0392B', label: 'Entrega fallida' },
+  anulado:         { bg: '#F0F0F0', color: '#9A9A9A', label: 'Anulado' },
 }
 
 // ─── Entidades — snake_case exacto de Supabase ───────────────────────────────
@@ -68,6 +68,7 @@ export interface Producto {
   presentacion:     number
   precio_minorista: number
   precio_mayorista: number
+  costo_produccion: number
   activo:           boolean
   created_at:       string
   updated_at:       string
@@ -82,6 +83,7 @@ export interface PedidoItem {
   cantidad:          number
   precio_unitario:   number
   precio_referencia: number
+  costo_snapshot:    number
   bidon_nuevo:       boolean
   // Join opcional
   productos?: Pick<Producto, 'nombre' | 'fragancia' | 'presentacion' | 'precio_minorista' | 'precio_mayorista'> | null
@@ -120,7 +122,6 @@ export interface Pedido {
   motivo_falla:     string | null
   motivo_anulacion: string | null
   creado_por:       string | null
-  repartidor_id:    string | null
   created_at:       string
   updated_at:       string
   // Joins opcionales

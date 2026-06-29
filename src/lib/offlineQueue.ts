@@ -2,23 +2,23 @@ import { openDB } from 'idb'
 import type { EstadoPedido } from '@/types'
 
 export interface OfflineAction {
-  id:           string
-  type:         'cambiarEstado' | 'editarCobro' | 'cerrarPedido'
-  pedidoId:     string
+  id:            string
+  type:          'cambiarEstado' | 'cerrarPedido'
+  pedidoId:      string
+  estadoActual:  EstadoPedido
   // cambiarEstado
-  estadoNuevo?: EstadoPedido
-  notas?:       string
-  // editarCobro
-  formaCobro?:  string
-  montoCobrado?: string
+  estadoNuevo?:  EstadoPedido
+  notas?:        string
   // cerrarPedido
+  formaCobro?:   string
+  montoCobrado?: string
   estadoPago?:   'cobrado' | 'pendiente'
   notasEntrega?: string
   fechaCobro?:   string
-  timestamp:    number
+  timestamp:     number
 }
 
-const DB_NAME    = 'limpimax-offline'
+const DB_NAME    = 'burbuja-offline'
 const DB_VERSION = 1
 const STORE      = 'queue'
 

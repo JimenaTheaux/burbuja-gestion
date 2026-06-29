@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Chart, registerables, type TooltipItem } from 'chart.js'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
-import { Clock } from 'lucide-react'
+import { Clock, Check, CheckCircle2, BarChart2 } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Skeleton } from '@/components/ui/skeleton'
 import { BadgeEstado } from '@/components/common/BadgeEstado'
@@ -136,6 +136,32 @@ function useEvolucionRango(desde: string, hasta: string) {
   })
 }
 
+type MargenRow = {
+  monto_cobrado: string | null
+  pedido_items?: { cantidad: string | number; costo_snapshot: string | number }[]
+}
+
+// Margen bruto del período — pedidos cerrados y cobrados, filtrado por fecha_cobro
+function useMargenPeriodo(inicio: string, hasta: string) {
+  return useQuery({
+    queryKey:        ['pedidos', 'dash-margen', inicio, hasta],
+    placeholderData: keepPreviousData,
+    queryFn:  async () => {
+      const { data, error } = await supabase
+        .from('pedidos')
+        .select('monto_cobrado, pedido_items(cantidad, costo_snapshot)')
+        .eq('estado', 'cerrado')
+        .eq('estado_pago', 'cobrado')
+        .gte('fecha_cobro', inicio)
+        .lte('fecha_cobro', hasta)
+      if (error) throw new Error(error.message)
+      return (data ?? []) as MargenRow[]
+    },
+    refetchInterval: 30_000,
+    staleTime:       0,
+  })
+}
+
 function useEgresosDashboard(desde: string, hasta: string) {
   return useQuery({
     queryKey:        ['dashboard-egresos', desde, hasta],
@@ -260,6 +286,16 @@ function deltaCalc(cur: number, prev: number): number | null {
   return Math.round(((cur - prev) / prev) * 100)
 }
 
+function calcMargenKPI(rows: MargenRow[]) {
+  const totalCobrado = rows.reduce((s, p) => s + (Number(p.monto_cobrado) || 0), 0)
+  const totalCosto   = rows.reduce((s, p) =>
+    s + (p.pedido_items ?? []).reduce((acc, i) => acc + Number(i.cantidad) * Number(i.costo_snapshot), 0), 0
+  )
+  const margenBruto = totalCobrado - totalCosto
+  const margenPct   = totalCobrado > 0 ? Math.round((margenBruto / totalCobrado) * 100) : 0
+  return { margenBruto, margenPct }
+}
+
 function calcEgresos(egresos: EgresoItem[]) {
   const total = egresos.reduce((s, e) => s + Number(e.monto), 0)
   const byCateg: Record<string, number> = {}
@@ -297,17 +333,17 @@ function GraficoLinea({ labels, actual, anterior }: {
           {
             label:                'Período actual',
             data:                 actual,
-            borderColor:          '#0D5C8A',
+            borderColor:          '#3DD6B5',
             borderWidth:          1.5,
             pointRadius:          2,
-            pointBackgroundColor: '#0D5C8A',
+            pointBackgroundColor: '#3DD6B5',
             tension:              0.4,
             fill:                 false,
           },
           {
             label:       'Mes anterior',
             data:        anterior,
-            borderColor: '#D1D5DB',
+            borderColor: '#E5E5EA',
             borderWidth: 1,
             pointRadius: 0,
             tension:     0.4,
@@ -409,7 +445,7 @@ function FilaPendiente({ p, onCobrado }: {
       <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3, flexWrap: 'wrap' }}>
-            <span style={{ fontWeight: 500, fontSize: 13, color: '#1A2B3C' }}>
+            <span style={{ fontWeight: 500, fontSize: 13, color: '#1C1C1E' }}>
               P-{String(p.numero).padStart(5, '0')}
             </span>
             {dias > 0 && (
@@ -425,15 +461,15 @@ function FilaPendiente({ p, onCobrado }: {
               </span>
             )}
           </div>
-          <p style={{ margin: 0, fontWeight: 500, fontSize: 14, color: '#1A2B3C', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <p style={{ margin: 0, fontWeight: 500, fontSize: 14, color: '#1C1C1E', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {p.clienteNombre}
           </p>
           {p.fechaProduccion && (
-            <p style={{ margin: '2px 0 0', fontSize: 12, color: '#4A5568' }}>
+            <p style={{ margin: '2px 0 0', fontSize: 12, color: '#8E8E93' }}>
               Prod: {new Date(p.fechaProduccion + 'T00:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })}
             </p>
           )}
-          <p style={{ margin: '2px 0 0', fontSize: 12, color: '#4A5568' }}>
+          <p style={{ margin: '2px 0 0', fontSize: 12, color: '#8E8E93' }}>
             Cobro: {p.fechaCobro
               ? new Date(p.fechaCobro + 'T00:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })
               : 'Sin fecha'}
@@ -441,7 +477,7 @@ function FilaPendiente({ p, onCobrado }: {
         </div>
 
         <div style={{ flexShrink: 0, textAlign: 'right' }}>
-          <p style={{ margin: '0 0 8px', fontWeight: 500, fontSize: 17, color: '#0D5C8A', letterSpacing: -0.5 }}>
+          <p style={{ margin: '0 0 8px', fontWeight: 500, fontSize: 17, color: '#3DD6B5', letterSpacing: -0.5 }}>
             {pesos(p.totalPedido)}
           </p>
           {!abierto && (
@@ -464,7 +500,7 @@ function FilaPendiente({ p, onCobrado }: {
                 onClick={handleAbrir}
                 aria-label={`Marcar cobrado el pedido P-${String(p.numero).padStart(5, '0')}`}
                 style={{
-                  background: '#0D5C8A', color: '#fff', border: 'none',
+                  background: '#3DD6B5', color: '#fff', border: 'none',
                   borderRadius: 8, padding: '7px 14px',
                   fontSize: 12, fontWeight: 500, cursor: 'pointer', minHeight: 34,
                 }}
@@ -486,7 +522,7 @@ function FilaPendiente({ p, onCobrado }: {
           <div style={{ height: 1, background: '#E8F0E8', margin: '0 0 4px' }} />
 
           <div>
-            <p style={{ margin: '0 0 8px', fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#4A5568' }}>
+            <p style={{ margin: '0 0 8px', fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#8E8E93' }}>
               Forma de cobro
             </p>
             <div role="radiogroup" aria-label="Forma de cobro" style={{ display: 'flex', gap: 8 }}>
@@ -500,9 +536,9 @@ function FilaPendiente({ p, onCobrado }: {
                   style={{
                     flex: 1, padding: '10px 8px', borderRadius: 10,
                     fontSize: 13, fontWeight: 500,
-                    border:      `2px solid ${forma === f ? '#145A32' : '#D1D5DB'}`,
+                    border:      `2px solid ${forma === f ? '#145A32' : '#E5E5EA'}`,
                     background:  forma === f ? '#D4EDDA' : '#F8F9FA',
-                    color:       forma === f ? '#145A32' : '#4A5568',
+                    color:       forma === f ? '#145A32' : '#8E8E93',
                     cursor: 'pointer', transition: 'all 0.12s', minHeight: 44,
                   }}
                 >
@@ -513,7 +549,7 @@ function FilaPendiente({ p, onCobrado }: {
           </div>
 
           <div>
-            <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#4A5568' }}>
+            <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#8E8E93' }}>
               Fecha de cobro
             </p>
             <input
@@ -526,7 +562,7 @@ function FilaPendiente({ p, onCobrado }: {
                 borderRadius: 10, fontSize: 14, fontFamily: 'Inter, sans-serif',
                 outline: 'none', boxSizing: 'border-box',
               }}
-              onFocus={e => (e.target.style.borderColor = '#1B9ED6')}
+              onFocus={e => (e.target.style.borderColor = '#7EB8E8')}
               onBlur={e  => (e.target.style.borderColor = 'rgba(105,105,105,0.4)')}
             />
           </div>
@@ -534,7 +570,7 @@ function FilaPendiente({ p, onCobrado }: {
           <div>
             <label
               htmlFor={`monto-${p.id}`}
-              style={{ display: 'block', marginBottom: 6, fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#4A5568' }}
+              style={{ display: 'block', marginBottom: 6, fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#8E8E93' }}
             >
               Monto cobrado *
             </label>
@@ -549,12 +585,12 @@ function FilaPendiente({ p, onCobrado }: {
               aria-invalid={!!error}
               style={{
                 width: '100%', padding: '11px 14px',
-                border: `1.5px solid ${error ? '#D32F2F' : '#D1D5DB'}`,
+                border: `1.5px solid ${error ? '#D32F2F' : '#E5E5EA'}`,
                 borderRadius: 10, fontSize: 15, fontFamily: 'Inter, sans-serif',
                 outline: 0, boxSizing: 'border-box', transition: 'border-color 0.12s',
               }}
               onFocus={e  => (e.target.style.borderColor = '#145A32')}
-              onBlur={e   => (e.target.style.borderColor = error ? '#D32F2F' : '#D1D5DB')}
+              onBlur={e   => (e.target.style.borderColor = error ? '#D32F2F' : '#E5E5EA')}
               onKeyDown={e => { if (e.key === 'Enter') handleConfirmar() }}
             />
             {error && (
@@ -575,16 +611,17 @@ function FilaPendiente({ p, onCobrado }: {
                 color: '#fff', border: 'none', borderRadius: 10,
                 padding: '12px', fontSize: 14, fontWeight: 500,
                 cursor: loading ? 'not-allowed' : 'pointer', minHeight: 48,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               }}
             >
-              {loading ? 'Guardando…' : '✓ Confirmar cobro'}
+              {loading ? 'Guardando…' : <><Check size={15} /> Confirmar cobro</>}
             </button>
             <button
               onClick={() => setAbierto(false)}
               disabled={loading}
               style={{
-                flex: 1, background: 'transparent', color: '#4A5568',
-                border: '1.5px solid #D1D5DB', borderRadius: 10,
+                flex: 1, background: 'transparent', color: '#8E8E93',
+                border: '1.5px solid #E5E5EA', borderRadius: 10,
                 padding: '12px', fontSize: 14, cursor: 'pointer', minHeight: 48,
               }}
             >
@@ -626,7 +663,7 @@ function SheetPendientes({ open, onClose, pendientes, onRefetch }: {
         <SheetHeader style={{ padding: '20px 24px 16px', borderBottom: '1px solid #F0F0F0', flexShrink: 0 }}>
           <SheetTitle style={{ fontSize: 16 }}>Pendientes de cobro</SheetTitle>
           {lista.length > 0 && (
-            <p style={{ margin: '4px 0 0', fontSize: 13, color: '#4A5568' }}>
+            <p style={{ margin: '4px 0 0', fontSize: 13, color: '#8E8E93' }}>
               {lista.length} pedido{lista.length !== 1 ? 's' : ''} sin cobrar
             </p>
           )}
@@ -635,9 +672,9 @@ function SheetPendientes({ open, onClose, pendientes, onRefetch }: {
         <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
           {lista.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-              <p style={{ fontSize: 32, margin: '0 0 8px' }}>✓</p>
-              <p style={{ fontWeight: 500, fontSize: 15, color: '#1A2B3C', margin: 0 }}>Todo al día</p>
-              <p style={{ fontSize: 13, color: '#4A5568', margin: '4px 0 0' }}>No hay cobros pendientes</p>
+              <CheckCircle2 size={32} color="#28B99A" style={{ margin: '0 0 8px' }} />
+              <p style={{ fontWeight: 500, fontSize: 15, color: '#1C1C1E', margin: 0 }}>Todo al día</p>
+              <p style={{ fontSize: 13, color: '#8E8E93', margin: '4px 0 0' }}>No hay cobros pendientes</p>
             </div>
           ) : lista.map(p => (
             <FilaPendiente key={p.id} p={p} onCobrado={handleCobrado} />
@@ -685,6 +722,7 @@ export default function DashboardPage() {
   const { data: evolData }              = useEvolucionRango(desde, hasta)
   const { data: egresosData, isLoading: isLoadingEgresos } = useEgresosDashboard(desde, hasta)
   const { data: egresosDataPrev }       = useEgresosDashboard(restarUnMes(desde), restarUnMes(hasta))
+  const { data: margenData }            = useMargenPeriodo(desde, hasta)
 
   const kpi        = pedidos    ? calcKPIs(pedidos)       : null
   const kpiCobros  = cobros     ? calcCobrosKPI(cobros)   : null
@@ -701,6 +739,7 @@ export default function DashboardPage() {
     ? (kpiCobrosPrev.totalCob - kpiEgresosPrev.total)
     : null
   const deltaGanancia  = gananciaPrev !== null ? deltaCalc(gananciaNeta, gananciaPrev) : null
+  const margen         = margenData ? calcMargenKPI(margenData) : null
 
   const todayStr = fmtDate(new Date())
 
@@ -747,18 +786,18 @@ export default function DashboardPage() {
   }
 
   const card = {
-    background: '#fff', border: '0.5px solid #D1D5DB', borderRadius: 10, padding: '14px 16px',
+    background: '#fff', border: '0.5px solid #E5E5EA', borderRadius: 10, padding: '14px 16px',
   }
   const labelSt = {
-    fontSize: 10, fontWeight: 500, color: '#4A5568',
+    fontSize: 10, fontWeight: 500, color: '#8E8E93',
     textTransform: 'uppercase' as const, letterSpacing: '0.06em',
     marginBottom: 10, display: 'block',
   }
   const valorSt = {
-    fontSize: 22, fontWeight: 500, color: '#1A2B3C', letterSpacing: '-0.5px', lineHeight: 1,
+    fontSize: 22, fontWeight: 500, color: '#1C1C1E', letterSpacing: '-0.5px', lineHeight: 1,
   }
   const subSt = {
-    fontSize: 11, fontWeight: 400, color: '#4A5568', marginTop: 4,
+    fontSize: 11, fontWeight: 400, color: '#8E8E93', marginTop: 4,
   }
 
   return (
@@ -776,33 +815,33 @@ export default function DashboardPage() {
             value={desde}
             onChange={e => handleDesde(e.target.value)}
             style={{
-              height: 32, border: '0.5px solid #D1D5DB', borderRadius: 6,
+              height: 32, border: '0.5px solid #E5E5EA', borderRadius: 6,
               padding: '0 10px', fontSize: 11, fontFamily: 'Inter, sans-serif',
-              color: '#1A2B3C', background: '#fff', outline: 'none',
+              color: '#1C1C1E', background: '#fff', outline: 'none',
               boxSizing: 'border-box',
             }}
-            onFocus={e => (e.target.style.borderColor = '#1B9ED6')}
-            onBlur={e  => (e.target.style.borderColor = '#D1D5DB')}
+            onFocus={e => (e.target.style.borderColor = '#7EB8E8')}
+            onBlur={e  => (e.target.style.borderColor = '#E5E5EA')}
           />
           <input
             type="date"
             value={hasta}
             onChange={e => handleHasta(e.target.value)}
             style={{
-              height: 32, border: '0.5px solid #D1D5DB', borderRadius: 6,
+              height: 32, border: '0.5px solid #E5E5EA', borderRadius: 6,
               padding: '0 10px', fontSize: 11, fontFamily: 'Inter, sans-serif',
-              color: '#1A2B3C', background: '#fff', outline: 'none',
+              color: '#1C1C1E', background: '#fff', outline: 'none',
               boxSizing: 'border-box',
             }}
-            onFocus={e => (e.target.style.borderColor = '#1B9ED6')}
-            onBlur={e  => (e.target.style.borderColor = '#D1D5DB')}
+            onFocus={e => (e.target.style.borderColor = '#7EB8E8')}
+            onBlur={e  => (e.target.style.borderColor = '#E5E5EA')}
           />
           <button
             onClick={() => window.open(`/print/listado?fecha=${todayStr}`, '_blank')}
             style={{
               height: 32, padding: '0 12px', fontSize: 11, fontWeight: 500,
-              color: '#4A5568', background: '#fff',
-              border: '0.5px solid #D1D5DB', borderRadius: 6,
+              color: '#8E8E93', background: '#fff',
+              border: '0.5px solid #E5E5EA', borderRadius: 6,
               cursor: 'pointer', fontFamily: 'Inter, sans-serif',
             }}
           >
@@ -812,12 +851,12 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Fecha del día ── */}
-      <p style={{ margin: 0, fontSize: 12, fontWeight: 400, color: '#4A5568' }}>
+      <p style={{ margin: 0, fontSize: 12, fontWeight: 400, color: '#8E8E93' }}>
         {fechaDisplay}
       </p>
 
-      {/* ── KPIs — 5 columnas desktop / 2 columnas mobile ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+      {/* ── KPIs — 6 columnas desktop / 2 columnas mobile ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
 
         {/* KPI 1 — Total cobrado (filtrado por fecha_cobro) */}
         <div style={card}>
@@ -857,13 +896,13 @@ export default function DashboardPage() {
         }}>
           <span style={{
             ...labelSt,
-            color: pendientes && pendientes.total > 0 ? '#D32F2F' : '#4A5568',
+            color: pendientes && pendientes.total > 0 ? '#D32F2F' : '#8E8E93',
           }}>
             Pendiente de cobro
           </span>
           <span style={{
             ...valorSt,
-            color: pendientes && pendientes.total > 0 ? '#D32F2F' : '#1A2B3C',
+            color: pendientes && pendientes.total > 0 ? '#D32F2F' : '#1C1C1E',
           }}>
             {pesos(pendientes?.total ?? 0)}
           </span>
@@ -920,7 +959,7 @@ export default function DashboardPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, lineHeight: 1 }}>
                 <span style={{
                   ...valorSt,
-                  color: gananciaNeta > 0 ? '#145A32' : gananciaNeta < 0 ? '#D32F2F' : '#1A2B3C',
+                  color: gananciaNeta > 0 ? '#145A32' : gananciaNeta < 0 ? '#D32F2F' : '#1C1C1E',
                 }}>
                   {pesos(gananciaNeta)}
                 </span>
@@ -945,34 +984,44 @@ export default function DashboardPage() {
             </>
           )}
         </div>
+
+        {/* KPI 6 — Margen bruto (filtrado por fecha_cobro) */}
+        <div style={card} aria-label={`KPI: Margen bruto del período, ${margen?.margenPct ?? 0}%, ${pesos(margen?.margenBruto ?? 0)} de ganancia`}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 10 }}>
+            <BarChart2 size={16} color="#28B99A" />
+            <span style={{ ...labelSt, marginBottom: 0 }}>Margen bruto</span>
+          </div>
+          <span style={{ ...valorSt, color: '#28B99A' }}>{margen ? `${margen.margenPct}%` : '—'}</span>
+          <p style={subSt}>{margen ? `${pesos(margen.margenBruto)} ganancia` : 'Sin datos'}</p>
+        </div>
       </div>
 
       {/* ── Panel inferior — 2 columnas ── */}
       <div className="grid md:grid-cols-2 grid-cols-1 gap-3">
 
         {/* Panel izquierdo — Evolución de cobros (por fecha_cobro) */}
-        <div style={{ background: '#fff', border: '0.5px solid #D1D5DB', borderRadius: 10, overflow: 'hidden' }}>
-          <div style={{ padding: '12px 16px', borderBottom: '0.5px solid #F4F6F8' }}>
-            <span style={{ fontSize: 12, fontWeight: 500, color: '#1A2B3C', letterSpacing: '-0.3px' }}>
+        <div style={{ background: '#fff', border: '0.5px solid #E5E5EA', borderRadius: 10, overflow: 'hidden' }}>
+          <div style={{ padding: '12px 16px', borderBottom: '0.5px solid #F5F7F9' }}>
+            <span style={{ fontSize: 12, fontWeight: 500, color: '#1C1C1E', letterSpacing: '-0.3px' }}>
               Evolución de ventas
             </span>
           </div>
           <div style={{ padding: '14px 16px' }}>
-            <span style={{ fontSize: 20, fontWeight: 500, color: '#1A2B3C', letterSpacing: '-0.5px' }}>
+            <span style={{ fontSize: 20, fontWeight: 500, color: '#1C1C1E', letterSpacing: '-0.5px' }}>
               {pesos(kpiCobros?.totalCob ?? 0)}
             </span>
             {/* Leyenda custom */}
             <div style={{ display: 'flex', gap: 14, marginTop: 10, marginBottom: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <div style={{ width: 8, height: 8, borderRadius: 2, background: '#0D5C8A' }} />
-                <span style={{ fontSize: 10, color: '#4A5568' }}>Período actual</span>
+                <div style={{ width: 8, height: 8, borderRadius: 2, background: '#3DD6B5' }} />
+                <span style={{ fontSize: 10, color: '#8E8E93' }}>Período actual</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                 <div style={{
                   width: 14, height: 2, borderRadius: 1,
-                  background: 'repeating-linear-gradient(90deg, #D1D5DB 0, #D1D5DB 3px, transparent 3px, transparent 6px)',
+                  background: 'repeating-linear-gradient(90deg, #E5E5EA 0, #E5E5EA 3px, transparent 3px, transparent 6px)',
                 }} />
-                <span style={{ fontSize: 10, color: '#4A5568' }}>Mes anterior</span>
+                <span style={{ fontSize: 10, color: '#8E8E93' }}>Mes anterior</span>
               </div>
             </div>
             {evolucion ? (
@@ -982,15 +1031,15 @@ export default function DashboardPage() {
                 anterior={evolucion.anterior}
               />
             ) : (
-              <div style={{ height: 100, background: '#F4F6F8', borderRadius: 6 }} />
+              <div style={{ height: 100, background: '#F5F7F9', borderRadius: 6 }} />
             )}
           </div>
         </div>
 
         {/* Panel derecho — Estado de pedidos (por fecha_produccion) */}
-        <div style={{ background: '#fff', border: '0.5px solid #D1D5DB', borderRadius: 10, overflow: 'hidden' }}>
-          <div style={{ padding: '12px 16px', borderBottom: '0.5px solid #F4F6F8' }}>
-            <span style={{ fontSize: 12, fontWeight: 500, color: '#1A2B3C', letterSpacing: '-0.3px' }}>
+        <div style={{ background: '#fff', border: '0.5px solid #E5E5EA', borderRadius: 10, overflow: 'hidden' }}>
+          <div style={{ padding: '12px 16px', borderBottom: '0.5px solid #F5F7F9' }}>
+            <span style={{ fontSize: 12, fontWeight: 500, color: '#1C1C1E', letterSpacing: '-0.3px' }}>
               Estado de pedidos
             </span>
           </div>
@@ -1004,7 +1053,7 @@ export default function DashboardPage() {
 
               if (visible.every(e => !(porEst[e] ?? 0))) {
                 return (
-                  <p style={{ fontSize: 13, color: '#4A5568', textAlign: 'center', padding: '28px 16px' }}>
+                  <p style={{ fontSize: 13, color: '#8E8E93', textAlign: 'center', padding: '28px 16px' }}>
                     Sin pedidos en el período
                   </p>
                 )
@@ -1024,14 +1073,14 @@ export default function DashboardPage() {
                       width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer',
                       display: 'flex', alignItems: 'center', gap: 12,
                       padding: '9px 16px',
-                      borderBottom: isLast ? 'none' : '0.5px solid #F4F6F8',
+                      borderBottom: isLast ? 'none' : '0.5px solid #F5F7F9',
                       transition: 'background 0.1s',
                     }}
                     onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')}
                     onMouseLeave={e => (e.currentTarget.style.background = 'none')}
                   >
                     <BadgeEstado estado={estado} />
-                    <div style={{ flex: 1, height: 3, borderRadius: 99, background: '#F4F6F8' }}>
+                    <div style={{ flex: 1, height: 3, borderRadius: 99, background: '#F5F7F9' }}>
                       <div style={{
                         width: `${pct}%`, height: '100%',
                         borderRadius: 99, background: cfg.color,
@@ -1039,7 +1088,7 @@ export default function DashboardPage() {
                         minWidth: count > 0 ? 4 : 0,
                       }} />
                     </div>
-                    <span style={{ fontSize: 12, fontWeight: 500, color: '#1A2B3C', minWidth: 20, textAlign: 'right' }}>
+                    <span style={{ fontSize: 12, fontWeight: 500, color: '#1C1C1E', minWidth: 20, textAlign: 'right' }}>
                       {count}
                     </span>
                   </button>
@@ -1056,13 +1105,13 @@ export default function DashboardPage() {
         const maxU  = top5[0]?.total ?? 1
 
         return (
-          <div style={{ background: '#fff', border: '0.5px solid #D1D5DB', borderRadius: 10, overflow: 'hidden' }}>
-            <div style={{ padding: '10px 16px', borderBottom: '0.5px solid #F4F6F8', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 12, fontWeight: 500, color: '#1A2B3C' }}>Productos más vendidos</span>
-              <span style={{ fontSize: 10, color: '#4A5568' }}>{fmtRango(desde, hasta)}</span>
+          <div style={{ background: '#fff', border: '0.5px solid #E5E5EA', borderRadius: 10, overflow: 'hidden' }}>
+            <div style={{ padding: '10px 16px', borderBottom: '0.5px solid #F5F7F9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 12, fontWeight: 500, color: '#1C1C1E' }}>Productos más vendidos</span>
+              <span style={{ fontSize: 10, color: '#8E8E93' }}>{fmtRango(desde, hasta)}</span>
             </div>
             {top5.length === 0 ? (
-              <p style={{ fontSize: 12, color: '#4A5568', textAlign: 'center', padding: 16, margin: 0 }}>
+              <p style={{ fontSize: 12, color: '#8E8E93', textAlign: 'center', padding: 16, margin: 0 }}>
                 Sin ventas en el período seleccionado
               </p>
             ) : top5.map((prod, i) => (
@@ -1071,33 +1120,33 @@ export default function DashboardPage() {
                 style={{
                   display: 'flex', alignItems: 'center', gap: 12,
                   padding: '8px 16px',
-                  borderBottom: i < top5.length - 1 ? '0.5px solid #F4F6F8' : 'none',
+                  borderBottom: i < top5.length - 1 ? '0.5px solid #F5F7F9' : 'none',
                 }}
               >
-                <span style={{ fontSize: 11, fontWeight: 500, color: '#4A5568', minWidth: 16 }}>
+                <span style={{ fontSize: 11, fontWeight: 500, color: '#8E8E93', minWidth: 16 }}>
                   {i + 1}
                 </span>
                 <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center' }}>
-                  <span style={{ fontSize: 12, fontWeight: 500, color: '#1A2B3C', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <span style={{ fontSize: 12, fontWeight: 500, color: '#1C1C1E', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {prod.nombre}
                   </span>
                   {prod.presentacion > 0 && (
                     <span style={{
-                      marginLeft: 6, fontSize: 9, color: '#4A5568',
-                      background: '#F4F6F8', padding: '1px 5px', borderRadius: 4,
+                      marginLeft: 6, fontSize: 9, color: '#8E8E93',
+                      background: '#F5F7F9', padding: '1px 5px', borderRadius: 4,
                       flexShrink: 0,
                     }}>
                       {prod.presentacion} L
                     </span>
                   )}
                 </div>
-                <span style={{ fontSize: 12, fontWeight: 500, color: '#0D5C8A', minWidth: 60, textAlign: 'right' }}>
+                <span style={{ fontSize: 12, fontWeight: 500, color: '#3DD6B5', minWidth: 60, textAlign: 'right' }}>
                   {prod.total} u.
                 </span>
-                <div style={{ width: 80, height: 3, borderRadius: 99, background: '#F4F6F8', flexShrink: 0 }}>
+                <div style={{ width: 80, height: 3, borderRadius: 99, background: '#F5F7F9', flexShrink: 0 }}>
                   <div style={{
                     width: `${(prod.total / maxU) * 100}%`,
-                    height: '100%', borderRadius: 99, background: '#0D5C8A',
+                    height: '100%', borderRadius: 99, background: '#3DD6B5',
                   }} />
                 </div>
               </div>

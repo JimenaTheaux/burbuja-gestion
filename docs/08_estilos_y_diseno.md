@@ -7,11 +7,12 @@ Este archivo se adjunta en CADA prompt a Claude. No inventar estilos fuera de es
 
 # PRINCIPIOS DE DISEÑO
 
-- UI **operativa, no decorativa** — foco en datos y acciones
+- UI **limpia, fresca y que respire** — espaciado generoso, no saturar la pantalla
 - **Mobile-first siempre** — diseñar para celular, escalar a desktop
 - Jerarquía clara: estado → datos clave → acciones
-- Estética moderna y limpia — sin gradientes decorativos, sin sombras pesadas
-- **Foco total en el formulario/drawer activo** — el resto queda oscurecido
+- Estética redondeada y moderna — `border-radius` generoso en todos los elementos
+- Sin gradientes decorativos, sin sombras pesadas
+- **Iconos Lucide React exclusivamente** — cero emojis en toda la UI
 
 ---
 
@@ -21,19 +22,22 @@ Este archivo se adjunta en CADA prompt a Claude. No inventar estilos fuera de es
 
 ```typescript
 colors: {
-  primary:     '#0D5C8A',   // azul profundo — marca, botones principales
-  accent:      '#1B9ED6',   // azul agua — focus, links, acciones secundarias
-  surface:     '#F4F6F8',   // fondo general de la app
-  card:        '#FFFFFF',   // fondo de cards (blanco puro)
-  sidebar:     '#1A2B3C',   // sidebar y texto oscuro
-  muted:       '#4A5568',   // texto secundario
-  border:      '#D1D5DB',   // bordes suaves
-  error:       '#D32F2F',
-  'error-bg':  '#FDECEA',
-  success:     '#2E9E5C',
-  'success-bg':'#E8F8F0',
-  warning:     '#F9A825',
-  'warning-bg':'#FFFDE7',
+  primary:        '#3DD6B5',   // verde agua — marca, botones principales
+  'primary-deep': '#28B99A',   // verde agua oscuro — hover, textos
+  'primary-soft': '#E8FAF6',   // verde agua suave — fondos activos, badges
+  sky:            '#7EB8E8',   // celeste — acento secundario
+  'sky-soft':     '#EBF5FF',   // celeste suave — fondos alternativos
+  ink:            '#1C1C1E',   // texto principal
+  'ink-mid':      '#3A3A3C',   // texto secundario oscuro
+  muted:          '#8E8E93',   // texto terciario, placeholders
+  surface:        '#F5F7F9',   // fondo general de la app
+  card:           '#FFFFFF',   // fondo de cards
+  border:         '#E5E5EA',   // bordes suaves
+  error:          '#F05252',
+  'error-bg':     '#FEF2F2',
+  warning:        '#C47B00',
+  'warning-bg':   '#FFFDE7',
+  'warning-border': '#FDE68A',
 }
 ```
 
@@ -41,15 +45,14 @@ colors: {
 
 | Estado | bg (pill/badge) | color (texto) |
 |---|---|---|
-| BORRADOR | `#F0F0F0` | `#9A9A9A` |
-| CONFIRMADO | `#E8F4FF` | `#1B9ED6` |
-| EN_PRODUCCION | `#FFF3E0` | `#F57C00` |
-| LISTO_REPARTO | `#FFFDE7` | `#F9A825` |
-| EN_REPARTO | `#E3F2FD` | `#1565C0` |
-| ENTREGADO | `#E8F8F0` | `#2E9E5C` |
-| CERRADO | `#D4EDDA` | `#145A32` |
-| ENTREGA_FALLIDA | `#FDECEA` | `#D32F2F` |
-| ANULADO | `#ECEFF1` | `#455A64` |
+| borrador | `#F0F0F0` | `#9A9A9A` |
+| confirmado | `#EBF5FF` | `#2B6CB0` |
+| en_produccion | `#FFF3E0` | `#E65100` |
+| listo_reparto | `#FFFDE7` | `#C47B00` |
+| en_reparto | `#EBF5FF` | `#2B6CB0` |
+| cerrado | `#E8FAF6` | `#28B99A` |
+| entrega_fallida | `#FEF2F2` | `#C0392B` |
+| anulado | `#F0F0F0` | `#9A9A9A` |
 
 **Regla:** usar inline styles para estos colores. No crear clases Tailwind para estados.
 **Regla:** nunca depender solo del color — siempre acompañar con texto del estado.
@@ -61,17 +64,18 @@ colors: {
 Fuente: **Inter** (Google Fonts). Una sola fuente en todo el proyecto.
 
 ```html
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 ```
 
 | Uso | CSS |
 |---|---|
-| Título principal | `font-size: 28px; font-weight: 900; letter-spacing: -1px` |
-| Subtítulo | `font-size: 18px; font-weight: 700` |
-| Texto base | `font-size: 14px; font-weight: 400` |
-| Texto secundario | `font-size: 14px; color: rgba(88,87,87,0.82)` |
-| Label | `font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em` |
-| Micro / badge | `font-size: 9px; font-weight: 700` |
+| Título de página | `font-size: 22px; font-weight: 800; letter-spacing: -0.5px` |
+| Subtítulo / card title | `font-size: 13px; font-weight: 700` |
+| Texto base | `font-size: 13-14px; font-weight: 400-500` |
+| Texto secundario | `font-size: 12px; color: #8E8E93` |
+| Label uppercase | `font-size: 9-10px; font-weight: 600-700; text-transform: uppercase; letter-spacing: 0.07-0.1em` |
+| KPI grande | `font-size: 26px; font-weight: 800; letter-spacing: -1px` |
+| Badge / micro | `font-size: 10px; font-weight: 700` |
 
 ---
 
@@ -84,13 +88,12 @@ Fuente: **Inter** (Google Fonts). Una sola fuente en todo el proyecto.
   background: #ffffff;
   border-radius: 20px;
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  /* Sin border en reposo — la sombra sutil define el borde */
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
 .card:hover {
-  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
-  transition: box-shadow 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: box-shadow 0.15s ease;
 }
 ```
 
@@ -102,7 +105,6 @@ bg-white rounded-[20px] p-5 shadow-sm hover:shadow-md transition-shadow
 ## Cards con borde de estado (pedidos)
 
 ```tsx
-// Borde lateral izquierdo con color del estado
 <div
   className="bg-white rounded-[20px] p-4 shadow-sm hover:shadow-md transition-shadow"
   style={{ borderLeft: `4px solid ${colorDelEstado}` }}
@@ -114,16 +116,17 @@ bg-white rounded-[20px] p-5 shadow-sm hover:shadow-md transition-shadow
 ```tsx
 <span
   style={{
-    backgroundColor: estadoConfig[estado].bg,
-    color: estadoConfig[estado].color,
-    fontSize: '9px',
+    backgroundColor: ESTADO_CONFIG[estado].bg,
+    color: ESTADO_CONFIG[estado].color,
+    fontSize: '10px',
     fontWeight: 700,
-    padding: '2px 7px',
+    padding: '3px 9px',
     borderRadius: '99px',
     display: 'inline-block',
+    whiteSpace: 'nowrap',
   }}
 >
-  {estadoConfig[estado].label}
+  {ESTADO_CONFIG[estado].label}
 </span>
 ```
 
@@ -138,29 +141,30 @@ bg-white rounded-[20px] p-5 shadow-sm hover:shadow-md transition-shadow
   width: 100%;
   padding: 10px 10px 20px 10px;
   outline: 0;
-  border: 1px solid rgba(105, 105, 105, 0.4);
+  border: 1px solid rgba(142, 142, 147, 0.4);
   border-radius: 10px;
   font-family: 'Inter', sans-serif;
   font-size: 14px;
-  transition: border-color 0.2s ease;
+  transition: border-color 0.15s ease;
+  background: #ffffff;
 }
 
 .form-label .input:focus {
-  border-color: #1B9ED6;
+  border-color: #3DD6B5;
 }
 
 .form-label .input:valid {
-  border-color: #2E9E5C;
+  border-color: #28B99A;
 }
 
 .form-label span {
   position: absolute;
   left: 10px;
   top: 15px;
-  color: rgba(88,87,87,0.82);
+  color: #8E8E93;
   font-size: 14px;
   cursor: text;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
   pointer-events: none;
 }
 
@@ -169,11 +173,11 @@ bg-white rounded-[20px] p-5 shadow-sm hover:shadow-md transition-shadow
   top: 4px;
   font-size: 10px;
   font-weight: 600;
-  color: #1B9ED6;
+  color: #3DD6B5;
 }
 
 .form-label .input:valid + span {
-  color: #2E9E5C;
+  color: #28B99A;
 }
 ```
 
@@ -182,102 +186,108 @@ bg-white rounded-[20px] p-5 shadow-sm hover:shadow-md transition-shadow
 ```css
 /* Primary */
 .btn-primary {
-  background: #0D5C8A;
+  background: #3DD6B5;
   color: #ffffff;
   border: none;
   border-radius: 10px;
-  padding: 12px 20px;
+  padding: 8px 16px;
   min-height: 44px;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
-  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.15s ease;
+  font-family: 'Inter', sans-serif;
 }
-.btn-primary:hover { background: #0a4f7a; }
+.btn-primary:hover { background: #28B99A; }
 .btn-primary:active { transform: scale(0.98); }
 .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* Secondary */
-.btn-secondary {
+/* Ghost / Secondary */
+.btn-ghost {
   background: transparent;
-  color: #0D5C8A;
-  border: 1.5px solid #0D5C8A;
+  border: 1px solid #E5E5EA;
   border-radius: 10px;
-  padding: 12px 20px;
-  min-height: 44px;
-  font-size: 15px;
-  font-weight: 600;
+  padding: 7px 13px;
+  min-height: 36px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #8E8E93;
   cursor: pointer;
-  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+  font-family: 'Inter', sans-serif;
 }
-.btn-secondary:hover { background: rgba(13,92,138,0.06); }
+.btn-ghost:hover { border-color: #3DD6B5; color: #28B99A; }
 
 /* Destructivo */
 .btn-danger {
-  background: #FDECEA;
-  color: #D32F2F;
-  border: 1.5px solid #D32F2F;
+  background: #FEF2F2;
+  color: #C0392B;
+  border: 1px solid #F05252;
   border-radius: 10px;
-  padding: 12px 20px;
+  padding: 8px 16px;
   min-height: 44px;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 600;
+  font-family: 'Inter', sans-serif;
 }
-.btn-danger:hover { background: #fcd9d6; }
+.btn-danger:hover { background: #fee2e2; }
 ```
 
-## Formularios
+## Alert / Banner
 
-```css
-.form-card {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  background: #ffffff;
-  padding: 24px;
-  border-radius: 20px;
-  position: relative;
-}
+```tsx
+// Alerta de atención (warning)
+<div style={{
+  background: '#FFFBEB',
+  border: '1px solid #FDE68A',
+  borderRadius: '20px',
+  padding: '16px 20px',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '14px',
+}}>
+  <div style={{
+    width: 38, height: 38,
+    background: '#FEF3C7',
+    borderRadius: 10,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    color: '#D97706',
+    flexShrink: 0,
+  }}>
+    <AlertCircle size={18} />
+  </div>
+  <div>...</div>
+</div>
 ```
 
-## Dot decorativo animado (títulos activos)
+## Pulse dot (elemento activo)
 
 ```css
-.section-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #0D5C8A;
-  display: flex;
-  align-items: center;
-  padding-left: 26px;
+.pulse-dot {
+  width: 7px;
+  height: 7px;
+  background: #3DD6B5;
+  border-radius: 50%;
+  display: inline-block;
   position: relative;
 }
-
-.section-title::before {
+.pulse-dot::after {
+  content: '';
   position: absolute;
-  content: "";
-  width: 14px;
-  height: 14px;
+  inset: 0;
   border-radius: 50%;
-  left: 0;
-  background: #0D5C8A;
+  background: #3DD6B5;
+  animation: pulseRing 1.5s ease-out infinite;
 }
-
-.section-title::after {
-  position: absolute;
-  content: "";
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  left: 0;
-  background: #0D5C8A;
-  animation: pulse 1.2s ease-out infinite;
-}
-
-@keyframes pulse {
-  0%   { transform: scale(0.9); opacity: 1; }
-  100% { transform: scale(2.2); opacity: 0; }
+@keyframes pulseRing {
+  0%   { transform: scale(1);   opacity: 1; }
+  100% { transform: scale(2.8); opacity: 0; }
 }
 ```
 
@@ -290,27 +300,42 @@ bg-white rounded-[20px] p-5 shadow-sm hover:shadow-md transition-shadow
 ```
 Estado abierto:  width 240px
 Estado cerrado:  width 64px (solo íconos, sin texto)
-Transición:      width 0.25s ease
-Fondo:           #1A2B3C
+Transición:      width 0.2s ease
+Fondo:           #FFFFFF
+Borde derecho:   1px solid #E5E5EA
 ```
 
 ```tsx
-// Hook useSidebar
 const { isOpen, toggle } = useSidebar()
 
-// El contenido principal responde:
-<main style={{ marginLeft: isOpen ? '240px' : '64px', transition: 'margin 0.25s ease' }}>
+<main style={{ marginLeft: isOpen ? '240px' : '64px', transition: 'margin 0.2s ease' }}>
 ```
 
-- Logo arriba: cuadrado 32px `border-radius: 8px` background `#1B9ED6`, iniciales "LM"
-- Nav items abierto: ícono + texto, `font-size: 13px, color: rgba(255,255,255,0.6)`
-- Nav items cerrado: solo ícono, centrado, tooltip al hacer hover
-- Item activo: `background: #0D5C8A, color: #ffffff, font-weight: 600`
-- Botón toggle: flecha en el borde del sidebar, `position: absolute, right: -12px`
-- Footer: avatar iniciales + nombre + rol + botón logout
-- En mobile: sidebar oculto, reemplazado por bottom nav
+**Estructura del sidebar:**
+- Logo arriba: marca "Bu" 36×36px, `border-radius: 12px`, degradado `#3DD6B5 → #7EB8E8`
+- Al lado del logo (solo abierto): texto "burbuja" `font-weight: 800` + subtexto "Limpieza Superpoderosa" `9px uppercase`
+- Secciones con label uppercase `9px`: Principal · Gestión · Vistas operativas
+- Nav items abierto: ícono Lucide (15px) + texto `13px font-weight: 500`
+- Nav items cerrado: solo ícono, centrado
+- Item activo: `background: #E8FAF6, color: #28B99A, font-weight: 600`; ícono en `#28B99A`
+- Hover: `background: #F5F7F9, color: #3A3A3C`
+- Badge en ítem: `background: #3DD6B5, color: white, 9px, border-radius: 99px`
+- Footer: avatar iniciales (degradado teal→sky, 32px, border-radius 10px) + nombre + rol + ícono chevron
+- Botón toggle colapsado: en el borde del sidebar, ícono `ChevronLeft` / `ChevronRight`
+- **En mobile: sidebar OCULTO** — reemplazado por hamburguesa + bottom nav
 
-## Bottom nav (mobile — todos los roles)
+## Hamburguesa (mobile — Admin)
+
+```
+Posición: topbar, lado izquierdo
+Ícono: Menu (lucide, 22px) → X al abrir
+Al abrir: overlay oscuro + menú deslizable desde la izquierda (100% alto, 80% ancho máx 320px)
+El menú contiene: todas las páginas igual que el sidebar desktop
+Fondo menú: #FFFFFF
+Cierre: tap en overlay o en X
+```
+
+## Bottom nav (mobile — Admin)
 
 ```css
 .bottom-nav {
@@ -320,28 +345,31 @@ const { isOpen, toggle } = useSidebar()
   right: 0;
   height: 56px;
   background: #ffffff;
-  border-top: 1px solid #D1D5DB;
+  border-top: 1px solid #E5E5EA;
   display: flex;
   align-items: center;
   justify-content: space-around;
   z-index: 100;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 ```
 
-4 ítems máximo. Ícono + label en `font-size: 10px`. Ítem activo en `color: #0D5C8A`.
+3 ítems fijos: **Dashboard · Pedidos · Egresos**
+Ícono Lucide (20px) + label `10px font-weight: 500`.
+Ítem activo: `color: #3DD6B5`. Inactivo: `color: #8E8E93`.
 
 ## Topbar
 
 ```css
 .topbar {
-  height: 56px;
-  background: rgba(255,255,255,0.85);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid #D1D5DB;
-  padding: 0 16px;
+  height: 58px;
+  background: rgba(255,255,255,0.9);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid #E5E5EA;
+  padding: 0 20px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: space-between;
   position: sticky;
   top: 0;
   z-index: 50;
@@ -354,23 +382,20 @@ const { isOpen, toggle } = useSidebar()
 .drawer-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.45);
+  background: rgba(0,0,0,0.4);
   z-index: 200;
-  animation: fadeIn 0.2s ease;
+  animation: fadeIn 0.15s ease;
 }
 
 .drawer {
   position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 50%;          /* Desktop */
-  width: 100%;         /* Mobile — usar media query */
-  background: #F4F6F8;
+  top: 0; right: 0; bottom: 0;
+  width: 50%;       /* Desktop */
+  background: #F5F7F9;
   z-index: 201;
   overflow-y: auto;
   padding: 24px;
-  animation: slideIn 0.25s ease;
+  animation: slideIn 0.2s ease;
 }
 
 @media (max-width: 768px) {
@@ -381,71 +406,82 @@ const { isOpen, toggle } = useSidebar()
   from { transform: translateX(100%); }
   to   { transform: translateX(0); }
 }
-
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
 ```
 
-**Regla:** todos los formularios de crear/editar (pedidos, clientes, productos, usuarios) se abren en este drawer. Nunca páginas nuevas para formularios.
+**Regla:** todos los formularios (pedidos, clientes, productos, usuarios, egresos) se abren en este drawer. Nunca páginas nuevas para formularios.
 
 ## Área de contenido principal
 
 ```css
 .main-content {
   min-height: 100vh;
-  background: #F4F6F8;
-  padding: 24px 16px;
-  padding-bottom: 72px; /* espacio para bottom nav en mobile */
+  background: #F5F7F9;
+  padding: 28px;
+  padding-bottom: 72px; /* espacio bottom nav mobile */
 }
 
-@media (min-width: 768px) {
+@media (max-width: 768px) {
   .main-content {
-    padding: 32px;
-    padding-bottom: 32px;
+    padding: 16px;
+    padding-bottom: 72px;
   }
 }
 ```
 
+## Sección header
+
+```tsx
+// Barra lateral verde + label uppercase
+<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+  <div style={{ width: 3, height: 13, background: '#3DD6B5', borderRadius: 99 }} />
+  <span style={{ fontSize: 11, fontWeight: 700, color: '#3A3A3C', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+    {titulo}
+  </span>
+</div>
+```
+
 ---
 
-# PATRONES POR ROL
+# PATRONES POR VISTA
 
-## Admin — decisión y control
-- Sidebar colapsable en desktop, bottom nav en mobile
-- KPIs grandes arriba (mínimo 4)
-- Tablero de pedidos agrupados por estado
-- Todos los formularios en drawers laterales
-- Puede usar densidad alta de información
+## Dashboard (Admin)
+- Page label `10px uppercase` + Heading `22px 800`
+- Banner de alerta si hay cobros pendientes
+- KPI grid (4 columnas desktop, 2 mobile)
+- Gráfico de barras semanal (Chart.js)
+- Tablero de estados en card lateral
+- Tabla de pedidos recientes con tabs y filtros
 
-## Producción — ejecución
-- Sin sidebar — topbar simple con toggle de fecha
-- **Desktop:** kanban horizontal, una columna por día de producción
-- **Mobile:** lista agrupada por fecha con encabezado separador
-- Panel resumen (totales por producto) colapsable arriba
+## Pedidos (Admin)
+- Tabla con columnas: Número · Cliente · Estado · Fecha prod. · Total · →
+- Tabs: Todos / En producción / En reparto / Cerrados
+- Filtros: search + chips (Hoy / Fecha / Cliente)
+- Paginación
+
+## Vista Producción (Admin — página /produccion)
 - Sin precios ni totales en ningún lado
-- Botón "Marcar listo" prominente (mínimo 48px, full-width en mobile)
+- Lista agrupada por fecha de producción
+- Botón "Listo para reparto" por pedido (mínimo 44px)
+- Panel resumen colapsable (totales por producto)
 
-## Repartidor — acción rápida
-- Sin sidebar — topbar con indicador de conexión
-- Cards grandes, una por pedido, scroll vertical
-- Info esencial: cliente, dirección, total a cobrar (número grande)
-- Botones de acción muy grandes (mínimo 48px)
-- Máximo 2 acciones visibles por pedido
-- Indicador de conexión y banner de sync siempre visibles
+## Vista Reparto (Admin — página /reparto)
+- Cards con: cliente, dirección, total a cobrar (número grande)
+- Badge de estado prominente
+- Botones de acción por card
 
 ---
 
 # UX RULES
 
-- Tap targets mínimo **44px** de altura en mobile (48px en botones de acción principales)
-- Máximo **2 acciones principales** por vista operativa
-- **Feedback inmediato** en toda interacción: hover, active, loading
-- **Estados vacíos obligatorios:** mensaje + ícono cuando una lista está vacía
-- **Confirmación** antes de acciones destructivas o irreversibles (modal simple, no alert del browser)
-- **Indicador de conexión** siempre visible para el rol Repartidor
-- Errores en **lenguaje simple:** "No se pudo guardar el pedido, intentá de nuevo."
+- Tap targets mínimo **44px** de altura en mobile
+- **Feedback inmediato:** hover, active, loading en toda interacción
+- **Estados vacíos obligatorios:** mensaje + ícono Lucide cuando lista vacía
+- **Confirmación** antes de acciones destructivas (modal, no `window.confirm()`)
+- Errores en lenguaje simple: "No se pudo guardar el pedido, intentá de nuevo."
 - **Float labels** en todos los inputs de formulario
 - **Drawers** para todos los formularios — no páginas nuevas
 
@@ -455,14 +491,14 @@ const { isOpen, toggle } = useSidebar()
 
 - No usar `window.alert()` o `window.confirm()` — siempre componentes de UI
 - No abrir formularios en páginas nuevas — siempre drawers
+- No usar emojis en ningún lado — siempre íconos Lucide
+- No inventar colores de estado — usar la tabla exacta de este documento
 - No saturar con colores fuera de la paleta definida
 - No mezclar estilos de cards en la misma vista
-- No usar más de una fuente
-- No inventar colores de estado — usar la tabla exacta
+- No usar más de una fuente (solo Inter)
 - No poner más de 4 acciones en una misma card
-- No usar sidebar en mobile — siempre bottom nav
-- No mostrar precios a Producción
-- No mostrar precios de costo al Repartidor (solo total a cobrar)
+- No usar sidebar en mobile — hamburguesa + bottom nav
+- No mostrar precios en la vista Producción
 
 ---
 
@@ -471,18 +507,18 @@ const { isOpen, toggle } = useSidebar()
 | Componente | Nombre |
 |---|---|
 | Badge de estado | `BadgeEstado` |
-| Card de pedido | `CardPedido` |
+| Card de pedido (tabla row) | `FilaPedido` |
 | Card KPI | `CardKPI` |
 | Drawer/Sheet lateral | `Drawer` |
 | Sidebar colapsable | `Sidebar` |
+| Menú hamburguesa mobile | `HamburgerMenu` |
 | Input con float label | `FloatInput` |
 | Dot animado | `PulseDot` |
+| Barra lateral de sección | `SectionTitle` |
 | Botón primary | `BtnPrimary` |
+| Botón ghost | `BtnGhost` |
 | Layout admin | `AdminLayout` |
-| Layout producción | `ProduccionLayout` |
-| Layout repartidor | `RepartidorLayout` |
 | Bottom nav mobile | `BottomNav` |
-| Panel kanban producción | `KanbanProduccion` |
-| Lista agrupada producción | `ListaProduccion` |
+| Banner de alerta | `AlertBanner` |
 
 **Regla:** si un elemento se repite 2 veces → crear componente reutilizable.

@@ -21,7 +21,7 @@ export function ButtonGroup<T extends string>({
     <div role="group" aria-label={label} style={{ display: 'flex', flexDirection: 'column', gap: compact ? 5 : 6 }}>
       <span style={{
         fontSize: 10, fontWeight: compact ? 500 : 600, textTransform: 'uppercase',
-        letterSpacing: '0.06em', color: '#4A5568',
+        letterSpacing: '0.06em', color: '#8E8E93',
       }}>
         {label}
       </span>
@@ -29,7 +29,7 @@ export function ButtonGroup<T extends string>({
       <div style={{ display: 'flex', gap: compact ? 6 : 8, flexWrap: compact ? undefined : 'wrap' }}>
         {options.map(opt => {
           const isSelected = opt.value === value
-          const activeColor = opt.color ?? '#0D5C8A'
+          const activeColor = opt.color ?? '#3DD6B5'
 
           return (
             <button
@@ -46,9 +46,9 @@ export function ButtonGroup<T extends string>({
                 minHeight:    compact ? undefined : 44,
                 padding:      compact ? '0 12px' : '10px 14px',
                 borderRadius: compact ? 8 : 10,
-                border:       `${compact ? '0.5px' : '1.5px'} solid ${isSelected ? activeColor : '#D1D5DB'}`,
+                border:       `${compact ? '0.5px' : '1.5px'} solid ${isSelected ? activeColor : '#E5E5EA'}`,
                 background:   isSelected ? activeColor : '#fff',
-                color:        isSelected ? '#fff' : '#4A5568',
+                color:        isSelected ? '#fff' : '#8E8E93',
                 fontSize:     compact ? 12 : 14,
                 fontWeight:   isSelected ? (compact ? 500 : 600) : 400,
                 cursor:       disabled ? 'not-allowed' : 'pointer',

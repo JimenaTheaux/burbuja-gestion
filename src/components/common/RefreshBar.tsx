@@ -19,7 +19,7 @@ export function RefreshBar() {
         left:       0,
         height:     '100%',
         width:      '40%',
-        background: '#1B9ED6',
+        background: '#7EB8E8',
         animation:  'progress 1s ease infinite',
       }} />
     </div>
