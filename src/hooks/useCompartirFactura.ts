@@ -69,13 +69,10 @@ export function useCompartirFactura() {
     }
 
     const numeroFormateado = `P-${String(pedido.numero).padStart(5, '0')}`
-    const clienteSlug = (pedido.clientes?.nombre ?? 'cliente')
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, '')
-      .slice(0, 30)
-    const fileName = `burbuja-${numeroFormateado}-${clienteSlug}.jpg`
+    const clienteNombre = (pedido.clientes?.nombre ?? 'cliente')
+      .trim()
+      .replace(/[\\/:*?"<>|]/g, '')
+    const fileName = `${numeroFormateado}_${clienteNombre}.jpg`
     const file     = new File([blob], fileName, { type: 'image/jpeg' })
     const numero   = formatNumero(pedido.numero)
 
