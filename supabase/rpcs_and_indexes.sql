@@ -36,14 +36,17 @@ CREATE INDEX IF NOT EXISTS idx_clientes_nombre
   ON clientes(nombre text_pattern_ops);   -- acelera ilike '%texto%'
 
 
--- ─── Limpieza de privilegios previos ────────────────────────────────────────
--- Las versiones anteriores de estas RPCs estaban otorgadas también a `anon`
--- (cualquiera sin login podía invocarlas) y `registrar_entrega` quedó sin uso
--- desde el frontend (reemplazada por cerrar_pedido, ver RPC 2 más abajo).
+-- ─── Limpieza de versiones previas ──────────────────────────────────────────
+-- Las firmas en producción no coinciden con las nuevas (distintos parámetros),
+-- así que CREATE OR REPLACE crearía un overload en vez de reemplazarlas. Las
+-- borramos por su firma real antes de crear las nuevas más abajo.
+-- (anular_pedido, get_dashboard_stats y registrar_entrega no existen todavía
+-- en esta base — los DROP IF EXISTS de abajo son no-op para esos casos.)
 
-REVOKE EXECUTE ON FUNCTION public.cambiar_estado_pedido(uuid, text, text, uuid, text) FROM anon;
-REVOKE EXECUTE ON FUNCTION public.anular_pedido(uuid, text, text, uuid) FROM anon;
-REVOKE EXECUTE ON FUNCTION public.get_dashboard_stats(date) FROM anon;
+DROP FUNCTION IF EXISTS public.cambiar_estado_pedido(uuid, estado_pedido, uuid, text);
+DROP FUNCTION IF EXISTS public.cerrar_pedido(uuid, uuid, text, numeric, date, text);
+DROP FUNCTION IF EXISTS public.anular_pedido(uuid, text, text, uuid);
+DROP FUNCTION IF EXISTS public.get_dashboard_stats(date);
 DROP FUNCTION IF EXISTS public.registrar_entrega(uuid, text, text, numeric, text, uuid);
 
 
