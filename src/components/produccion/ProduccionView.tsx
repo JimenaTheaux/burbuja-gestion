@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
-import { ChevronDown, ChevronUp, Package, RefreshCw } from 'lucide-react'
+import { ChevronDown, ChevronUp, Package, RefreshCw, Check } from 'lucide-react'
 import { Skeleton }        from '@/components/ui/skeleton'
 import { ToastContainer }  from '@/components/common/ToastContainer'
 import { SelectorFecha }   from '@/components/common/SelectorFecha'
@@ -180,7 +180,7 @@ function CardProduccion({ pedido, onMarcarListo }: {
                 <span style={{ color: '#8E8E93', fontWeight: 400 }}> · {item.presentacion}L</span>
               </span>
               {item.bidon_nuevo && (
-                <span style={{ fontSize: 9, fontWeight: 700, background: '#FFF3E0', color: '#F57C00', padding: '2px 6px', borderRadius: 99 }}>
+                <span style={{ fontSize: 9, fontWeight: 700, background: '#EBF5FF', color: '#2B6CB0', padding: '2px 6px', borderRadius: 99 }}>
                   BIDÓN NUEVO
                 </span>
               )}
@@ -204,52 +204,52 @@ function CardProduccion({ pedido, onMarcarListo }: {
             aria-disabled={loading}
             className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 btn-press"
             style={{
-              width: '100%', background: loading ? 'rgba(249,168,37,0.5)' : '#F9A825',
+              width: '100%', background: loading ? 'rgba(61,214,181,0.5)' : '#3DD6B5',
               color: '#fff', border: 'none', borderRadius: 10,
-              padding: '13px', minHeight: 48, fontSize: 15, fontWeight: 700,
+              height: 44, fontSize: 13, fontWeight: 600,
               cursor: loading ? 'not-allowed' : 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-              outlineOffset: 2,
+              outlineOffset: 2, whiteSpace: 'nowrap',
             }}
           >
-            {loading ? 'Procesando…' : 'Marcar listo para reparto'}
+            <Check size={13} /> {loading ? 'Procesando…' : 'Marcar listo'}
           </button>
         ) : (
-          <div>
-            <p style={{ margin: '0 0 10px', fontSize: 13, color: '#1C1C1E', fontWeight: 600 }}>
-              ¿Confirmás que está listo?
-            </p>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button
-                ref={confirmBtnRef}
-                onClick={handleConfirmar}
-                disabled={loading}
-                aria-disabled={loading}
-                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                style={{
-                  flex: 1, background: loading ? 'rgba(249,168,37,0.5)' : '#F9A825',
-                  color: '#fff', border: 'none',
-                  borderRadius: 10, padding: '13px', minHeight: 48, fontSize: 15,
-                  fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer',
-                  outlineOffset: 2,
-                }}
-              >
-                {loading ? 'Guardando…' : 'Sí, marcar listo'}
-              </button>
-              <button
-                onClick={() => setConfirmando(false)}
-                disabled={loading}
-                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                style={{
-                  flex: 1, background: 'transparent', color: '#8E8E93',
-                  border: '1.5px solid #E5E5EA', borderRadius: 10,
-                  padding: '13px', minHeight: 48, fontSize: 15, cursor: 'pointer',
-                  outlineOffset: 2,
-                }}
-              >
-                Cancelar
-              </button>
-            </div>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            paddingTop: 12, borderTop: '1px solid #E5E5EA',
+          }}>
+            <span style={{ fontSize: 12, color: '#8E8E93', flex: 1 }}>
+              ¿Confirmar como listo?
+            </span>
+            <button
+              onClick={() => setConfirmando(false)}
+              disabled={loading}
+              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+              style={{
+                height: 44, padding: '0 12px',
+                border: '1px solid #E5E5EA', borderRadius: 8,
+                background: 'transparent', color: '#8E8E93',
+                fontSize: 12, fontWeight: 500, cursor: loading ? 'not-allowed' : 'pointer',
+              }}
+            >
+              Cancelar
+            </button>
+            <button
+              ref={confirmBtnRef}
+              onClick={handleConfirmar}
+              disabled={loading}
+              aria-disabled={loading}
+              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+              style={{
+                height: 44, padding: '0 14px',
+                border: 'none', borderRadius: 8,
+                background: loading ? 'rgba(61,214,181,0.5)' : '#3DD6B5', color: '#fff',
+                fontSize: 12, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {loading ? 'Guardando…' : 'Confirmar'}
+            </button>
           </div>
         )}
 
@@ -277,12 +277,11 @@ function KanbanDesktop({ grupos, onMarcarListo }: {
         return (
           <div key={fecha} style={{
             minWidth: 300, maxWidth: 340, flexShrink: 0,
-            background: esHoy ? '#EBF5FF' : '#F5F7F9',
+            background: '#F5F7F9',
             borderRadius: 16, padding: 16,
-            border: esHoy ? '2px solid #7EB8E8' : '2px solid transparent',
           }}>
             <div style={{ marginBottom: 14 }}>
-              <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: esHoy ? '#7EB8E8' : '#1C1C1E' }}>
+              <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: esHoy ? '#28B99A' : '#1C1C1E' }}>
                 {labelFecha(fecha)}
               </p>
               <p style={{ margin: '2px 0 0', fontSize: 12, color: '#8E8E93' }}>

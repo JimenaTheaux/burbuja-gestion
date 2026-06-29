@@ -47,8 +47,8 @@ function ExpandedItems({ pedidoId }: { pedidoId: string }) {
             </span>
             {item.bidon_nuevo && (
               <span style={{
-                fontSize: 9, fontWeight: 500,
-                background: '#FFF3E0', color: '#E65100',
+                fontSize: 9, fontWeight: 700,
+                background: '#EBF5FF', color: '#2B6CB0',
                 padding: '2px 6px', borderRadius: 99, whiteSpace: 'nowrap',
               }}>
                 BIDÓN NUEVO
@@ -325,9 +325,9 @@ function CardRepartidor({ pedido, isExpanded, onToggle, isOnline, addAction, onS
                 aria-disabled={loading}
                 className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                 style={{
-                  width: '100%', background: loading ? 'rgba(21,101,192,0.5)' : '#1565C0',
+                  width: '100%', background: loading ? 'rgba(61,214,181,0.5)' : '#3DD6B5',
                   color: '#fff', border: 'none', borderRadius: 10,
-                  height: 44, fontSize: 13, fontWeight: 500,
+                  height: 44, fontSize: 13, fontWeight: 600,
                   cursor: loading ? 'not-allowed' : 'pointer',
                 }}
               >
@@ -430,8 +430,8 @@ function CardRepartidor({ pedido, isExpanded, onToggle, isOnline, addAction, onS
                     aria-label={`Marcar entrega fallida del pedido ${numStr}`}
                     className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                     style={{
-                      flex: 1, background: '#fff', color: '#D32F2F',
-                      border: '0.5px solid #D32F2F', borderRadius: 10,
+                      flex: 1, background: 'transparent', color: '#8E8E93',
+                      border: '1px solid #E5E5EA', borderRadius: 10,
                       height: 44, fontSize: 13, fontWeight: 500, cursor: 'pointer',
                     }}
                   >
@@ -643,7 +643,7 @@ export function RepartidorView() {
                 className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 btn-press"
                 style={{
                   width: '100%',
-                  background: cambiar.isPending ? 'rgba(21,101,192,0.5)' : '#1565C0',
+                  background: cambiar.isPending ? 'rgba(61,214,181,0.5)' : '#3DD6B5',
                   color: '#fff', border: 'none', borderRadius: 10,
                   height: 48, fontSize: 14, fontWeight: 600,
                   cursor: cambiar.isPending ? 'not-allowed' : 'pointer',
