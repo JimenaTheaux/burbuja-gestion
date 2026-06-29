@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Clock, Edit2, XCircle, ChevronRight, Printer, Check } from 'lucide-react'
+import { Clock, Edit2, XCircle, ChevronRight, Check } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { BadgeEstado }   from '@/components/common/BadgeEstado'
 import { BtnWhatsapp }  from '@/components/common/BtnWhatsapp'
@@ -8,7 +8,7 @@ import {
   usePedidoDetalle, useCambiarEstado, useAnularPedido, useEditarCobro, useCerrarPedido,
   totalPedido, type PedidoDetalle,
 } from '@/services/pedidos'
-import { ESTADO_CONFIG, formatNumero, type EstadoPedido } from '@/types'
+import { ESTADO_CONFIG, ESTADOS_FACTURABLES, formatNumero, type EstadoPedido } from '@/types'
 import { useAuthStore }      from '@/store/authStore'
 import { useCompartirFactura } from '@/hooks/useCompartirFactura'
 
@@ -32,14 +32,14 @@ const TRANSICIONES_ADMIN: Partial<Record<EstadoPedido, EstadoPedido[]>> = {
   entrega_fallida: ['listo_reparto', 'en_reparto', 'cerrado'],
 }
 
+// Etiqueta de la acción primaria, indexada por el estado ACTUAL del pedido
 const ACCION_LABEL: Partial<Record<EstadoPedido, string>> = {
   borrador:        'Confirmar pedido',
   confirmado:      'Enviar a producción',
   en_produccion:   'Marcar listo para reparto',
   listo_reparto:   'Iniciar reparto',
-  en_reparto:      'Cerrar pedido',
+  en_reparto:      'Registrar entrega',
   entrega_fallida: 'Reagendar entrega',
-  cerrado:         'Cerrado',
 }
 
 // ─── Modales ─────────────────────────────────────────────────────────────────
@@ -73,6 +73,28 @@ function ModalAnular({ onConfirm, onCancel }: { onConfirm: (motivo: string) => v
           <button onClick={() => motivo.trim() && onConfirm(motivo.trim())} disabled={!motivo.trim()}
             style={{ flex: 1, background: !motivo.trim() ? 'rgba(211,47,47,0.4)' : '#D32F2F', color: '#fff', border: 'none', borderRadius: 10, padding: '12px', fontSize: 14, fontWeight: 600, cursor: motivo.trim() ? 'pointer' : 'not-allowed', minHeight: 44 }}>
             Anular pedido
+          </button>
+          <button onClick={onCancel} style={{ flex: 1, background: 'transparent', color: '#8E8E93', border: '1.5px solid #E5E5EA', borderRadius: 10, padding: '12px', fontSize: 14, fontWeight: 600, cursor: 'pointer', minHeight: 44 }}>Cancelar</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ModalMotivo({ titulo, onConfirm, onCancel }: {
+  titulo: string; onConfirm: (motivo: string) => void; onCancel: () => void
+}) {
+  const [motivo, setMotivo] = useState('')
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div style={{ background: '#fff', borderRadius: 20, padding: 24, maxWidth: 380, width: '100%' }}>
+        <p style={{ fontWeight: 700, fontSize: 16, margin: '0 0 8px' }}>{titulo}</p>
+        <textarea value={motivo} onChange={e => setMotivo(e.target.value)} placeholder="Motivo…" rows={3}
+          style={{ width: '100%', padding: '10px 12px', border: '1px solid #E5E5EA', borderRadius: 10, fontSize: 14, resize: 'vertical', fontFamily: 'Inter, sans-serif' }} />
+        <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+          <button onClick={() => motivo.trim() && onConfirm(motivo.trim())} disabled={!motivo.trim()}
+            style={{ flex: 1, background: !motivo.trim() ? 'rgba(61,214,181,0.4)' : '#3DD6B5', color: '#fff', border: 'none', borderRadius: 10, padding: '12px', fontSize: 14, fontWeight: 600, cursor: motivo.trim() ? 'pointer' : 'not-allowed', minHeight: 44 }}>
+            Confirmar
           </button>
           <button onClick={onCancel} style={{ flex: 1, background: 'transparent', color: '#8E8E93', border: '1.5px solid #E5E5EA', borderRadius: 10, padding: '12px', fontSize: 14, fontWeight: 600, cursor: 'pointer', minHeight: 44 }}>Cancelar</button>
         </div>
@@ -118,6 +140,7 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
 
   const [confirmando,      setConfirmando]      = useState<EstadoPedido | null>(null)
   const [anulando,         setAnulando]         = useState(false)
+  const [fallaMotivo,      setFallaMotivo]      = useState(false)
   const [editandoCobro,    setEditandoCobro]    = useState(false)
   const [cobroForma,       setCobroForma]       = useState('')
   const [cobroMonto,       setCobroMonto]       = useState('')
@@ -150,12 +173,13 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
     if (cerrando) cerrarBtnRef.current?.focus()
   }, [cerrando])
 
-  const handleEstado = async (nuevoEstado: EstadoPedido) => {
+  const handleEstado = async (nuevoEstado: EstadoPedido, notas?: string) => {
     if (!pedido) return
     try {
-      await cambiarEstado.mutateAsync({ id: pedido.id, estadoActual: pedido.estado, estado: nuevoEstado })
+      await cambiarEstado.mutateAsync({ id: pedido.id, estadoActual: pedido.estado, estado: nuevoEstado, notas })
       onSaved(`Estado actualizado a: ${ESTADO_CONFIG[nuevoEstado].label}`)
       setConfirmando(null)
+      setFallaMotivo(false)
     } catch (e) {
       onSaved((e instanceof Error ? e.message : 'Error') + '|error')
     }
@@ -419,21 +443,14 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
 
               {/* Acciones */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button type="button" onClick={() => window.open(`/print/${p.id}`, '_blank')}
-                    aria-label={`Generar documento del pedido P-${String(p.numero).padStart(5, '0')}`}
-                    style={{ flex: 1, background: '#F5F7F9', color: '#8E8E93', border: '1.5px solid #E5E5EA', borderRadius: 10, padding: '12px', minHeight: 44, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, outlineOffset: 2 }}>
-                    <Printer size={14} /> Generar documento
-                  </button>
-                  {p.estado === 'cerrado' && (
-                    <BtnWhatsapp
-                      variante="pill"
-                      loading={loadingWA}
-                      numeroLabel={formatNumero(p.numero)}
-                      onClick={() => compartir(p, msg => onSaved(msg + '|error'))}
-                    />
-                  )}
-                </div>
+                {ESTADOS_FACTURABLES.includes(p.estado) && (
+                  <BtnWhatsapp
+                    variante="pill"
+                    loading={loadingWA}
+                    numeroLabel={formatNumero(p.numero)}
+                    onClick={() => compartir(p, msg => onSaved(msg + '|error'))}
+                  />
+                )}
 
                 {/* ── Form cerrar venta ── */}
                 {cerrando ? (
@@ -563,7 +580,7 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
                     {transiciones.length > 0 && (() => {
                       const primary   = transiciones[0]
                       const cfg       = ESTADO_CONFIG[primary]
-                      const label     = ACCION_LABEL[primary] ?? `Pasar a ${cfg.label}`
+                      const label     = ACCION_LABEL[p.estado] ?? `Pasar a ${cfg.label}`
                       const isPending = cambiarEstado.isPending
 
                       return (
@@ -587,23 +604,31 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
                     })()}
 
                     {/* Transiciones secundarias (override admin) */}
-                    {transiciones.slice(1).map((next: EstadoPedido) => (
-                      <button
-                        key={next}
-                        type="button"
-                        onClick={() => next === 'cerrado' ? setCerrando(true) : setConfirmando(next)}
-                        disabled={cambiarEstado.isPending}
-                        aria-label={`Pasar a ${ESTADO_CONFIG[next].label} — pedido P-${String(p.numero).padStart(5, '0')}`}
-                        style={{
-                          background: ESTADO_CONFIG[next].bg, color: ESTADO_CONFIG[next].color,
-                          border: `1.5px solid ${ESTADO_CONFIG[next].color}`,
-                          borderRadius: 10, padding: '11px', minHeight: 44, fontSize: 13,
-                          fontWeight: 600, cursor: 'pointer', outlineOffset: 2,
-                        }}
-                      >
-                        Pasar a: {ESTADO_CONFIG[next].label}
-                      </button>
-                    ))}
+                    {transiciones.slice(1).map((next: EstadoPedido) => {
+                      const isFalla = next === 'entrega_fallida'
+                      return (
+                        <button
+                          key={next}
+                          type="button"
+                          onClick={() => {
+                            if (next === 'cerrado') setCerrando(true)
+                            else if (isFalla) setFallaMotivo(true)
+                            else setConfirmando(next)
+                          }}
+                          disabled={cambiarEstado.isPending}
+                          aria-label={`${isFalla ? 'Marcar entrega fallida' : `Pasar a ${ESTADO_CONFIG[next].label}`} — pedido P-${String(p.numero).padStart(5, '0')}`}
+                          style={{
+                            background: isFalla ? '#FDECEA' : ESTADO_CONFIG[next].bg,
+                            color:      isFalla ? '#D32F2F' : ESTADO_CONFIG[next].color,
+                            border: `1.5px solid ${isFalla ? '#D32F2F' : ESTADO_CONFIG[next].color}`,
+                            borderRadius: 10, padding: '11px', minHeight: 44, fontSize: 13,
+                            fontWeight: 600, cursor: 'pointer', outlineOffset: 2,
+                          }}
+                        >
+                          {isFalla ? 'Entrega fallida' : `Pasar a: ${ESTADO_CONFIG[next].label}`}
+                        </button>
+                      )
+                    })}
                   </>
                 )}
 
@@ -617,9 +642,9 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
 
                 {p.estado !== 'cerrado' && p.estado !== 'anulado' && (
                   <button type="button" onClick={() => setAnulando(true)}
-                    aria-label={`Anular pedido P-${String(p.numero).padStart(5, '0')}`}
+                    aria-label={`${p.estado === 'borrador' ? 'Eliminar borrador' : 'Anular pedido'} P-${String(p.numero).padStart(5, '0')}`}
                     style={{ background: '#FDECEA', color: '#D32F2F', border: '1.5px solid #D32F2F', borderRadius: 10, padding: '12px', minHeight: 44, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, outlineOffset: 2 }}>
-                    <XCircle size={14} /> Anular pedido
+                    <XCircle size={14} /> {p.estado === 'borrador' ? 'Eliminar borrador' : 'Anular pedido'}
                   </button>
                 )}
               </div>
@@ -637,6 +662,13 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
       )}
       {anulando && (
         <ModalAnular onConfirm={handleAnular} onCancel={() => setAnulando(false)} />
+      )}
+      {fallaMotivo && (
+        <ModalMotivo
+          titulo="Marcar entrega fallida — ingresá el motivo"
+          onConfirm={motivo => handleEstado('entrega_fallida', motivo)}
+          onCancel={() => setFallaMotivo(false)}
+        />
       )}
     </>
   )

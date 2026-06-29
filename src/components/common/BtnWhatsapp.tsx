@@ -28,17 +28,18 @@ export function BtnWhatsapp({
         style={{
           display:        'flex',
           alignItems:     'center',
+          justifyContent: 'center',
           gap:            6,
-          height:         36,
+          width:          '100%',
+          height:         44,
           padding:        '0 14px',
-          borderRadius:   8,
+          borderRadius:   10,
           background:     isDisabled ? 'rgba(37,211,102,0.5)' : '#25D366',
           color:          '#fff',
           border:         'none',
-          fontSize:       12,
-          fontWeight:     500,
+          fontSize:       14,
+          fontWeight:     600,
           cursor:         isDisabled ? 'not-allowed' : 'pointer',
-          flexShrink:     0,
           transition:     'background 0.15s',
           whiteSpace:     'nowrap',
           fontFamily:     'Inter, sans-serif',
@@ -46,8 +47,8 @@ export function BtnWhatsapp({
         onMouseEnter={e => { if (!isDisabled) (e.currentTarget as HTMLButtonElement).style.background = '#1ebe5a' }}
         onMouseLeave={e => { if (!isDisabled) (e.currentTarget as HTMLButtonElement).style.background = '#25D366' }}
       >
-        <Share2 size={14} />
-        {loading ? 'Generando…' : 'Compartir por WhatsApp'}
+        <Share2 size={15} />
+        {loading ? 'Generando…' : 'Compartir factura'}
       </button>
     )
   }

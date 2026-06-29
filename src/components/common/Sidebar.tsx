@@ -97,7 +97,7 @@ export function Sidebar() {
         {/* Texto (solo visible cuando sidebar abierto) */}
         {isOpen && (
           <div>
-            <div style={{ fontSize: 17, fontWeight: 800, color: '#1C1C1E', letterSpacing: '-0.5px' }}>
+            <div style={{ fontSize: 17, fontWeight: 800, color: '#3DD6B5', letterSpacing: '-0.5px' }}>
               burbuja
             </div>
             <div style={{ fontSize: 9, fontWeight: 500, color: '#8E8E93', textTransform: 'uppercase', letterSpacing: '0.08em' }}>

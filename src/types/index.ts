@@ -31,6 +31,11 @@ export const ESTADO_CONFIG: Record<EstadoPedido, { bg: string; color: string; la
   anulado:         { bg: '#F0F0F0', color: '#9A9A9A', label: 'Anulado' },
 }
 
+/** Estados desde los cuales se puede compartir la factura por WhatsApp */
+export const ESTADOS_FACTURABLES: EstadoPedido[] = [
+  'confirmado', 'en_produccion', 'listo_reparto', 'en_reparto', 'cerrado',
+]
+
 // ─── Entidades — snake_case exacto de Supabase ───────────────────────────────
 
 export interface Perfil {

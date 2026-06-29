@@ -68,8 +68,14 @@ export function useCompartirFactura() {
       return
     }
 
-    const numStr  = String(pedido.numero).padStart(5, '0')
-    const fileName = `pedido-burbuja-P${numStr}.jpg`
+    const numeroFormateado = `P-${String(pedido.numero).padStart(5, '0')}`
+    const clienteSlug = (pedido.clientes?.nombre ?? 'cliente')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '')
+      .slice(0, 30)
+    const fileName = `burbuja-${numeroFormateado}-${clienteSlug}.jpg`
     const file     = new File([blob], fileName, { type: 'image/jpeg' })
     const numero   = formatNumero(pedido.numero)
 

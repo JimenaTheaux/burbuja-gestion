@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { Plus, Search, ShoppingCart, Printer, X, MoreHorizontal, ChevronDown } from 'lucide-react'
 import { Skeleton }         from '@/components/ui/skeleton'
 import { ToastContainer }   from '@/components/common/ToastContainer'
@@ -11,7 +12,7 @@ import {
   usePedidos, useCambiarEstado, useAnularPedido, totalPedido,
   fetchPedidoDetalle, type PedidoListItem, type PedidoDetalle,
 } from '@/services/pedidos'
-import { ESTADO_CONFIG, type EstadoPedido, formatNumero } from '@/types'
+import { ESTADO_CONFIG, ESTADOS_FACTURABLES, type EstadoPedido, formatNumero } from '@/types'
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
@@ -35,7 +36,7 @@ const PRIMARY_ACTION: Partial<Record<EstadoPedido, { label: string; labelCorto: 
   confirmado:      { label: 'Enviar a producción', labelCorto: 'A producción', next: 'en_produccion' },
   en_produccion:   { label: 'Marcar listo',        labelCorto: 'Marcar listo', next: 'listo_reparto' },
   listo_reparto:   { label: 'Iniciar reparto',     labelCorto: 'A reparto',    next: 'en_reparto'    },
-  en_reparto:      { label: 'Cerrar pedido',       labelCorto: 'Cerrar',       next: 'cerrado'       },
+  en_reparto:      { label: 'Registrar entrega',    labelCorto: 'Entregar',    next: 'cerrado'       },
   entrega_fallida: { label: 'Reagendar',           labelCorto: 'Reagendar',    next: 'listo_reparto' },
 }
 
@@ -94,19 +95,35 @@ function AccionesDropdown({ pedido, onVerDetalle, onEditar, onAnular }: {
   onAnular:     () => void
 }) {
   const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
+  const [coords, setCoords] = useState<{ top: number; right: number } | null>(null)
+  const btnRef  = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  const openMenu = () => {
+    const rect = btnRef.current?.getBoundingClientRect()
+    if (rect) setCoords({ top: rect.bottom + 4, right: window.innerWidth - rect.right })
+    setOpen(true)
+  }
 
   useEffect(() => {
     if (!open) return
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+      if (
+        menuRef.current && !menuRef.current.contains(e.target as Node) &&
+        btnRef.current && !btnRef.current.contains(e.target as Node)
+      ) setOpen(false)
     }
     const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    const onScroll = () => setOpen(false)
     document.addEventListener('mousedown', handler)
     document.addEventListener('keydown', esc)
+    window.addEventListener('scroll', onScroll, true)
+    window.addEventListener('resize', onScroll)
     return () => {
       document.removeEventListener('mousedown', handler)
       document.removeEventListener('keydown', esc)
+      window.removeEventListener('scroll', onScroll, true)
+      window.removeEventListener('resize', onScroll)
     }
   }, [open])
 
@@ -114,9 +131,10 @@ function AccionesDropdown({ pedido, onVerDetalle, onEditar, onAnular }: {
   const canAnular = !['cerrado', 'anulado'].includes(pedido.estado)
 
   return (
-    <div ref={ref} style={{ position: 'relative', display: 'inline-block' }}>
+    <div style={{ position: 'relative', display: 'inline-block' }}>
       <button
-        onClick={() => setOpen(o => !o)}
+        ref={btnRef}
+        onClick={() => (open ? setOpen(false) : openMenu())}
         aria-label="Más acciones"
         aria-haspopup="true"
         aria-expanded={open}
@@ -133,11 +151,12 @@ function AccionesDropdown({ pedido, onVerDetalle, onEditar, onAnular }: {
         <MoreHorizontal size={14} />
       </button>
 
-      {open && (
+      {open && coords && createPortal(
         <div
+          ref={menuRef}
           role="menu"
           style={{
-            position: 'absolute', right: 0, top: 32,
+            position: 'fixed', top: coords.top, right: coords.right,
             background: '#fff', borderRadius: 10,
             boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
             border: '1px solid #E5E7EB',
@@ -173,7 +192,8 @@ function AccionesDropdown({ pedido, onVerDetalle, onEditar, onAnular }: {
               </button>
             </>
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
@@ -434,7 +454,7 @@ function FilaPedido({ pedido, onVerDetalle, onEditar, onAnularRequest, selected,
               {loading ? '…' : action.labelCorto}
             </button>
           )}
-          {pedido.estado === 'cerrado' && (
+          {ESTADOS_FACTURABLES.includes(pedido.estado) && (
             <BtnWhatsapp
               variante="icono"
               onClick={handleWhatsapp}
