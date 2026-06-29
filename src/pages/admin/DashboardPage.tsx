@@ -2,11 +2,10 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Chart, registerables, type TooltipItem } from 'chart.js'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
-import { Clock, Check, CheckCircle2, BarChart2 } from 'lucide-react'
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { Share2, CheckCircle2, BarChart2 } from 'lucide-react'
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { Skeleton } from '@/components/ui/skeleton'
 import { BadgeEstado } from '@/components/common/BadgeEstado'
-import { BtnWhatsapp } from '@/components/common/BtnWhatsapp'
 import { useEditarCobro, fetchPedidoDetalle } from '@/services/pedidos'
 import { useCompartirFactura } from '@/hooks/useCompartirFactura'
 import { useDashboard } from '@/services/produccion'
@@ -402,11 +401,8 @@ function FilaPendiente({ p, onCobrado }: {
   const [loading,    setLoading]    = useState(false)
   const [error,      setError]      = useState<string | null>(null)
   const montoRef = useRef<HTMLInputElement>(null)
-  const btnRef   = useRef<HTMLButtonElement>(null)
 
   useEffect(() => { if (abierto) montoRef.current?.focus() }, [abierto])
-
-  const dias = Math.floor((Date.now() - new Date(p.createdAt).getTime()) / 86_400_000)
 
   const handleAbrir = () => {
     setMonto(String(Math.round(p.totalPedido)))
@@ -435,97 +431,102 @@ function FilaPendiente({ p, onCobrado }: {
     }
   }
 
+  const fmtCorta = (iso: string) =>
+    new Date(iso + 'T00:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })
+
   return (
     <div style={{
-      background:  abierto ? '#fff' : '#FFFDE7',
-      border:      `1.5px solid ${abierto ? '#145A32' : '#F9A825'}`,
-      borderRadius: 16, overflow: 'hidden', transition: 'border-color 0.15s',
+      background:   '#FFFFFF',
+      borderRadius: 16,
+      padding:      '16px 20px',
+      boxShadow:    '0 1px 3px rgba(0,0,0,0.06)',
+      marginBottom: 10,
     }}>
-      {/* Resumen */}
-      <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3, flexWrap: 'wrap' }}>
-            <span style={{ fontWeight: 500, fontSize: 13, color: '#1C1C1E' }}>
-              P-{String(p.numero).padStart(5, '0')}
-            </span>
-            {dias > 0 && (
-              <span style={{
-                fontSize: 10, fontWeight: 500,
-                background: dias > 2 ? '#FDECEA' : '#FFFDE7',
-                color:      dias > 2 ? '#D32F2F' : '#F57C00',
-                padding: '2px 7px', borderRadius: 99,
-                display: 'flex', alignItems: 'center', gap: 3,
-              }}>
-                <Clock size={9} />
-                {dias === 1 ? 'ayer' : `${dias}d`}
-              </span>
-            )}
-          </div>
-          <p style={{ margin: 0, fontWeight: 500, fontSize: 14, color: '#1C1C1E', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {p.clienteNombre}
-          </p>
-          {p.fechaProduccion && (
-            <p style={{ margin: '2px 0 0', fontSize: 12, color: '#8E8E93' }}>
-              Prod: {new Date(p.fechaProduccion + 'T00:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })}
-            </p>
-          )}
-          <p style={{ margin: '2px 0 0', fontSize: 12, color: '#8E8E93' }}>
-            Cobro: {p.fechaCobro
-              ? new Date(p.fechaCobro + 'T00:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })
-              : 'Sin fecha'}
-          </p>
-        </div>
-
-        <div style={{ flexShrink: 0, textAlign: 'right' }}>
-          <p style={{ margin: '0 0 8px', fontWeight: 500, fontSize: 17, color: '#3DD6B5', letterSpacing: -0.5 }}>
-            {pesos(p.totalPedido)}
-          </p>
-          {!abierto && (
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-              <BtnWhatsapp
-                variante="icono"
-                loading={loadingWA}
-                numeroLabel={formatNumero(p.numero)}
-                onClick={async () => {
-                  try {
-                    const detalle = await fetchPedidoDetalle(p.id)
-                    await compartir(detalle)
-                  } catch {
-                    // silencioso — el toast de error no está disponible aquí
-                  }
-                }}
-              />
-              <button
-                ref={btnRef}
-                onClick={handleAbrir}
-                aria-label={`Marcar cobrado el pedido P-${String(p.numero).padStart(5, '0')}`}
-                style={{
-                  background: '#3DD6B5', color: '#fff', border: 'none',
-                  borderRadius: 8, padding: '7px 14px',
-                  fontSize: 12, fontWeight: 500, cursor: 'pointer', minHeight: 34,
-                }}
-              >
-                Registrar cobro
-              </button>
-            </div>
-          )}
-        </div>
+      {/* Fila superior: número + monto */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: '#3DD6B5' }}>
+          {formatNumero(p.numero)}
+        </span>
+        <span style={{ fontSize: 17, fontWeight: 800, color: '#1C1C1E', letterSpacing: '-0.5px' }}>
+          {pesos(p.totalPedido)}
+        </span>
       </div>
 
-      {/* Mini-form cobro */}
-      {abierto && (
+      {/* Fila cliente */}
+      <div style={{
+        fontSize: 13, fontWeight: 500, color: '#1C1C1E', marginBottom: 4,
+        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+      }}>
+        {p.clienteNombre}
+      </div>
+
+      {/* Fila meta: fecha prod + fecha cobro */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 14, flexWrap: 'wrap' }}>
+        {p.fechaProduccion && (
+          <span style={{ fontSize: 11, color: '#8E8E93' }}>
+            Prod: {fmtCorta(p.fechaProduccion)}
+          </span>
+        )}
+        <span style={{ fontSize: 11, color: '#8E8E93' }}>
+          {p.fechaProduccion ? ' · ' : ''}
+          {p.fechaCobro ? `Cobro: ${fmtCorta(p.fechaCobro)}` : 'Sin fecha de cobro'}
+        </span>
+      </div>
+
+      {!abierto ? (
+        /* Fila acciones */
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            disabled={loadingWA}
+            aria-label={`Compartir factura del pedido ${formatNumero(p.numero)} por WhatsApp`}
+            onClick={async () => {
+              try {
+                const detalle = await fetchPedidoDetalle(p.id)
+                await compartir(detalle)
+              } catch {
+                // silencioso — el toast de error no está disponible aquí
+              }
+            }}
+            style={{
+              flex: 1, height: 36, border: '1px solid #E5E5EA', borderRadius: 10,
+              background: 'transparent', color: '#8E8E93', fontSize: 12, fontWeight: 500,
+              cursor: loadingWA ? 'not-allowed' : 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              transition: 'all 0.15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = '#3DD6B5'; e.currentTarget.style.color = '#28B99A' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = '#E5E5EA'; e.currentTarget.style.color = '#8E8E93' }}
+          >
+            <Share2 size={13} /> {loadingWA ? 'Generando…' : 'Compartir factura'}
+          </button>
+
+          <button
+            onClick={handleAbrir}
+            aria-label={`Registrar cobro del pedido ${formatNumero(p.numero)}`}
+            style={{
+              flex: 1, height: 36, border: 'none', borderRadius: 10,
+              background: '#3DD6B5', color: '#fff', fontSize: 12, fontWeight: 600,
+              cursor: 'pointer', transition: 'background 0.15s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#28B99A')}
+            onMouseLeave={e => (e.currentTarget.style.background = '#3DD6B5')}
+          >
+            Registrar cobro
+          </button>
+        </div>
+      ) : (
+        /* Mini-form cobro */
         <div
           role="group"
-          aria-label={`Registrar cobro — P-${String(p.numero).padStart(5, '0')}`}
-          style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}
+          aria-label={`Registrar cobro — ${formatNumero(p.numero)}`}
         >
-          <div style={{ height: 1, background: '#E8F0E8', margin: '0 0 4px' }} />
+          <div style={{ height: 1, background: '#E5E5EA', margin: '0 0 14px' }} />
 
-          <div>
-            <p style={{ margin: '0 0 8px', fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#8E8E93' }}>
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ fontSize: 9, fontWeight: 700, color: '#8E8E93', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
               Forma de cobro
-            </p>
-            <div role="radiogroup" aria-label="Forma de cobro" style={{ display: 'flex', gap: 8 }}>
+            </div>
+            <div role="radiogroup" aria-label="Forma de cobro" style={{ display: 'flex', gap: 6 }}>
               {(['efectivo', 'transferencia'] as const).map(f => (
                 <button
                   key={f}
@@ -534,98 +535,90 @@ function FilaPendiente({ p, onCobrado }: {
                   aria-checked={forma === f}
                   onClick={() => setForma(f)}
                   style={{
-                    flex: 1, padding: '10px 8px', borderRadius: 10,
-                    fontSize: 13, fontWeight: 500,
-                    border:      `2px solid ${forma === f ? '#145A32' : '#E5E5EA'}`,
-                    background:  forma === f ? '#D4EDDA' : '#F8F9FA',
-                    color:       forma === f ? '#145A32' : '#8E8E93',
-                    cursor: 'pointer', transition: 'all 0.12s', minHeight: 44,
+                    flex: 1, height: 34, borderRadius: 8,
+                    border:     `1px solid ${forma === f ? '#3DD6B5' : '#E5E5EA'}`,
+                    background: forma === f ? '#E8FAF6' : 'transparent',
+                    color:      forma === f ? '#28B99A' : '#8E8E93',
+                    fontSize: 12, fontWeight: 600,
+                    cursor: 'pointer', transition: 'all 0.15s', textTransform: 'capitalize',
                   }}
                 >
-                  {f === 'efectivo' ? 'Efectivo' : 'Transferencia'}
+                  {f}
                 </button>
               ))}
             </div>
           </div>
 
-          <div>
-            <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#8E8E93' }}>
-              Fecha de cobro
-            </p>
-            <input
-              type="date"
-              value={fechaCobro}
-              onChange={e => setFechaCobro(e.target.value)}
-              style={{
-                width: '100%', height: 44, padding: '0 10px',
-                border: '1px solid rgba(105,105,105,0.4)',
-                borderRadius: 10, fontSize: 14, fontFamily: 'Inter, sans-serif',
-                outline: 'none', boxSizing: 'border-box',
-              }}
-              onFocus={e => (e.target.style.borderColor = '#7EB8E8')}
-              onBlur={e  => (e.target.style.borderColor = 'rgba(105,105,105,0.4)')}
-            />
+          <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: '#8E8E93', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
+                Monto
+              </div>
+              <input
+                ref={montoRef}
+                id={`monto-${p.id}`}
+                type="number"
+                inputMode="decimal"
+                value={monto}
+                onChange={e => setMonto(e.target.value)}
+                aria-describedby={error ? `error-${p.id}` : undefined}
+                aria-invalid={!!error}
+                onKeyDown={e => { if (e.key === 'Enter') handleConfirmar() }}
+                style={{
+                  width: '100%', height: 34,
+                  border: `1px solid ${error ? '#F05252' : '#E5E5EA'}`,
+                  borderRadius: 8, padding: '0 10px', fontSize: 13, fontFamily: 'Inter, sans-serif',
+                  outline: 'none', boxSizing: 'border-box',
+                }}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: '#8E8E93', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
+                Fecha cobro
+              </div>
+              <input
+                type="date"
+                value={fechaCobro}
+                onChange={e => setFechaCobro(e.target.value)}
+                style={{
+                  width: '100%', height: 34, border: '1px solid #E5E5EA', borderRadius: 8,
+                  padding: '0 10px', fontSize: 13, fontFamily: 'Inter, sans-serif',
+                  outline: 'none', boxSizing: 'border-box',
+                }}
+              />
+            </div>
           </div>
 
-          <div>
-            <label
-              htmlFor={`monto-${p.id}`}
-              style={{ display: 'block', marginBottom: 6, fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#8E8E93' }}
-            >
-              Monto cobrado *
-            </label>
-            <input
-              ref={montoRef}
-              id={`monto-${p.id}`}
-              type="number"
-              inputMode="decimal"
-              value={monto}
-              onChange={e => setMonto(e.target.value)}
-              aria-describedby={error ? `error-${p.id}` : undefined}
-              aria-invalid={!!error}
-              style={{
-                width: '100%', padding: '11px 14px',
-                border: `1.5px solid ${error ? '#D32F2F' : '#E5E5EA'}`,
-                borderRadius: 10, fontSize: 15, fontFamily: 'Inter, sans-serif',
-                outline: 0, boxSizing: 'border-box', transition: 'border-color 0.12s',
-              }}
-              onFocus={e  => (e.target.style.borderColor = '#145A32')}
-              onBlur={e   => (e.target.style.borderColor = error ? '#D32F2F' : '#E5E5EA')}
-              onKeyDown={e => { if (e.key === 'Enter') handleConfirmar() }}
-            />
-            {error && (
-              <p id={`error-${p.id}`} role="alert" style={{ margin: '6px 0 0', fontSize: 12, color: '#D32F2F' }}>
-                {error}
-              </p>
-            )}
-          </div>
+          {error && (
+            <p id={`error-${p.id}`} role="alert" style={{ margin: '0 0 10px', fontSize: 12, color: '#F05252' }}>
+              {error}
+            </p>
+          )}
 
           <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onClick={() => setAbierto(false)}
+              disabled={loading}
+              style={{
+                flex: 1, height: 34, border: '1px solid #E5E5EA', borderRadius: 8,
+                background: 'transparent', color: '#8E8E93', fontSize: 12, fontWeight: 500,
+                cursor: loading ? 'not-allowed' : 'pointer',
+              }}
+            >
+              Cancelar
+            </button>
             <button
               onClick={handleConfirmar}
               disabled={loading}
               aria-disabled={loading}
               style={{
-                flex: 1,
-                background: loading ? 'rgba(20,90,50,0.5)' : '#145A32',
-                color: '#fff', border: 'none', borderRadius: 10,
-                padding: '12px', fontSize: 14, fontWeight: 500,
-                cursor: loading ? 'not-allowed' : 'pointer', minHeight: 48,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                flex: 2, height: 34, border: 'none', borderRadius: 8,
+                background: loading ? 'rgba(61,214,181,0.5)' : '#3DD6B5',
+                color: '#fff', fontSize: 12, fontWeight: 600,
+                cursor: loading ? 'not-allowed' : 'pointer',
               }}
             >
-              {loading ? 'Guardando…' : <><Check size={15} /> Confirmar cobro</>}
-            </button>
-            <button
-              onClick={() => setAbierto(false)}
-              disabled={loading}
-              style={{
-                flex: 1, background: 'transparent', color: '#8E8E93',
-                border: '1.5px solid #E5E5EA', borderRadius: 10,
-                padding: '12px', fontSize: 14, cursor: 'pointer', minHeight: 48,
-              }}
-            >
-              Cancelar
+              {loading ? 'Guardando…' : 'Confirmar cobro'}
             </button>
           </div>
         </div>
@@ -660,16 +653,16 @@ function SheetPendientes({ open, onClose, pendientes, onRefetch }: {
         side="right"
         style={{ width: '100%', maxWidth: 480, display: 'flex', flexDirection: 'column', padding: 0 }}
       >
-        <SheetHeader style={{ padding: '20px 24px 16px', borderBottom: '1px solid #F0F0F0', flexShrink: 0 }}>
-          <SheetTitle style={{ fontSize: 16 }}>Pendientes de cobro</SheetTitle>
-          {lista.length > 0 && (
-            <p style={{ margin: '4px 0 0', fontSize: 13, color: '#8E8E93' }}>
-              {lista.length} pedido{lista.length !== 1 ? 's' : ''} sin cobrar
-            </p>
-          )}
-        </SheetHeader>
+        <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid #E5E5EA', flexShrink: 0 }}>
+          <SheetTitle style={{ fontSize: 16, fontWeight: 700, color: '#1C1C1E', marginBottom: 4 }}>
+            Pendientes de cobro
+          </SheetTitle>
+          <p style={{ margin: 0, fontSize: 12, color: '#8E8E93' }}>
+            {lista.length} pedido{lista.length !== 1 ? 's' : ''} sin cobrar
+          </p>
+        </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
           {lista.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px 20px' }}>
               <CheckCircle2 size={32} color="#28B99A" style={{ margin: '0 0 8px' }} />
@@ -683,12 +676,12 @@ function SheetPendientes({ open, onClose, pendientes, onRefetch }: {
 
         {lista.length > 0 && (
           <div style={{
-            flexShrink: 0, padding: '16px 24px',
-            borderTop: '2px solid #F0F0F0', background: '#FDECEA',
+            flexShrink: 0, padding: '16px 20px',
+            borderTop: '1px solid #E5E5EA', background: '#FFFFFF',
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           }}>
-            <span style={{ fontSize: 14, fontWeight: 500, color: '#D32F2F' }}>Total pendiente</span>
-            <span style={{ fontSize: 22, fontWeight: 500, color: '#D32F2F', letterSpacing: -0.5 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#8E8E93' }}>Total pendiente</span>
+            <span style={{ fontSize: 18, fontWeight: 800, color: '#1C1C1E', letterSpacing: '-0.5px' }}>
               {pesos(total)}
             </span>
           </div>
