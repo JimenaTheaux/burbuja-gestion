@@ -1,10 +1,39 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
+import { queryClient } from '@/lib/queryClient'
 import { useAuthStore } from '@/store/authStore'
 import type { Rol } from '@/types'
 
 // Perfil en localStorage para evitar parpadeo al recargar
 const CACHE_KEY = 'burbuja-perfil-v2'
+
+// ─── Recuperación tras idle ────────────────────────────────────────────────
+// Si la pestaña estuvo oculta más de este umbral, autoRefreshToken de Supabase
+// puede no haber corrido (el browser throttlea timers en background) y el JWT
+// queda vencido. Sin esto, la primera request al volver se cuelga en vez de
+// fallar, y la UI queda "congelada" hasta un refresh manual.
+const IDLE_REFRESH_THRESHOLD_MS = 60_000
+let hiddenAt: number | null = null
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      hiddenAt = Date.now()
+      return
+    }
+    const estuvoOcultoMucho = hiddenAt !== null && Date.now() - hiddenAt > IDLE_REFRESH_THRESHOLD_MS
+    hiddenAt = null
+    if (!estuvoOcultoMucho) return
+
+    supabase.auth.refreshSession().then(({ error }) => {
+      if (error) {
+        useAuthStore.getState().logout()
+      } else {
+        queryClient.invalidateQueries()
+      }
+    })
+  })
+}
 
 function getCachedPerfil() {
   try {
