@@ -344,7 +344,7 @@ AS $$
 $$;
 
 GRANT EXECUTE ON FUNCTION public.get_dashboard_stats(date)
-  TO authenticated, anon;
+  TO authenticated;
 
 
 -- ─── Verificar que las funciones existen ────────────────────────────────────
@@ -354,9 +354,10 @@ SELECT
 FROM pg_proc
 WHERE proname IN (
   'cambiar_estado_pedido',
-  'registrar_entrega',
+  'cerrar_pedido',
   'anular_pedido',
-  'get_dashboard_stats'
+  'get_dashboard_stats',
+  '_rol_actual'
 )
 AND pronamespace = 'public'::regnamespace
 ORDER BY proname;
