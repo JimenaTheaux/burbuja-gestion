@@ -3,7 +3,7 @@ import { Chart, registerables, type TooltipItem } from 'chart.js'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import {
   Share2, CheckCircle2,
-  Package, Banknote, Clock, TrendingDown, FlaskConical, BarChart2, Download,
+  Package, Banknote, Clock, FlaskConical, BarChart2, Download,
 } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
@@ -936,23 +936,7 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* 4 — Egresos */}
-        <div style={card}>
-          <div style={labelRow}>
-            <TrendingDown size={14} color="#8E8E93" />
-            <span style={labelSt}>Egresos</span>
-          </div>
-          {loadingEg ? (
-            <Skeleton style={{ height: 28, width: 100, borderRadius: 4, marginBottom: 6 }} />
-          ) : (
-            <>
-              <span style={valorSt}>{pesos(totalEgresos)}</span>
-              <p style={subSt}>del período</p>
-            </>
-          )}
-        </div>
-
-        {/* 5 — Costo de producción */}
+        {/* 4 — Costo de producción */}
         <div style={card}>
           <div style={labelRow}>
             <FlaskConical size={14} color="#7EB8E8" />
@@ -978,7 +962,7 @@ export default function DashboardPage() {
               <span style={{ ...valorSt, color: gananciaNeta >= 0 ? '#28B99A' : '#F05252' }}>
                 {pesos(gananciaNeta)}
               </span>
-              <p style={subSt}>− {pesos(totalEgresos)} egresos</p>
+              <p style={subSt}>Egresos {pesos(totalEgresos)}</p>
             </>
           )}
         </div>
