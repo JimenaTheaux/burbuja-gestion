@@ -581,39 +581,22 @@ function ItemFormInline({
           <label style={{ fontSize: 10, fontWeight: 500, color: '#8E8E93', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 5 }}>
             Categoría
           </label>
-          <div className="hide-scrollbar" style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
-            <button
-              type="button"
-              onClick={() => setCategoriaSeleccionada(null)}
-              style={{
-                height: 30, padding: '0 14px', borderRadius: 99, flexShrink: 0,
-                border: `0.5px solid ${categoriaSeleccionada === null ? '#3DD6B5' : '#E5E5EA'}`,
-                background: categoriaSeleccionada === null ? '#E8FAF6' : '#fff',
-                color: categoriaSeleccionada === null ? '#3DD6B5' : '#8E8E93',
-                fontSize: 12, fontWeight: categoriaSeleccionada === null ? 600 : 500,
-                cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s',
-              }}
-            >
-              Todos
-            </button>
+          <select
+            value={categoriaSeleccionada ?? ''}
+            onChange={e => setCategoriaSeleccionada(e.target.value || null)}
+            className="fi-input"
+            style={{
+              width: '100%', height: 40, padding: '0 12px',
+              border: '0.5px solid #E5E5EA', borderRadius: 8, outline: 0,
+              background: '#fff', fontFamily: 'Inter, sans-serif',
+              fontSize: 13, color: '#1C1C1E', boxSizing: 'border-box',
+            }}
+          >
+            <option value="">Todas las categorías</option>
             {categorias.map(cat => (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => setCategoriaSeleccionada(categoriaSeleccionada === cat.id ? null : cat.id)}
-                style={{
-                  height: 30, padding: '0 14px', borderRadius: 99, flexShrink: 0,
-                  border: `0.5px solid ${categoriaSeleccionada === cat.id ? '#3DD6B5' : '#E5E5EA'}`,
-                  background: categoriaSeleccionada === cat.id ? '#E8FAF6' : '#fff',
-                  color: categoriaSeleccionada === cat.id ? '#3DD6B5' : '#8E8E93',
-                  fontSize: 12, fontWeight: categoriaSeleccionada === cat.id ? 600 : 500,
-                  cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s',
-                }}
-              >
-                {cat.nombre}
-              </button>
+              <option key={cat.id} value={cat.id}>{cat.nombre}</option>
             ))}
-          </div>
+          </select>
         </div>
       )}
 
