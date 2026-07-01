@@ -80,8 +80,8 @@ export const useCrearUsuario = () => {
       if (authErr) throw new Error(authErr.message)
       const userId = authUser.user.id
 
-      // 2. Insertar perfil
-      const { error: perfilErr } = await supabase
+      // 2. Insertar perfil (con supabaseAdmin: no hay policy RLS de INSERT en perfiles)
+      const { error: perfilErr } = await supabaseAdmin
         .from('perfiles')
         .insert({ id: userId, nombre: data.nombre, rol: data.rol, activo: true })
 
@@ -100,12 +100,15 @@ export const useEditarUsuario = () => {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async ({ id, ...data }: { id: string; nombre?: string; rol?: string; activo?: boolean }) => {
+      if (!supabaseAdmin) throw new Error('Service role key no configurada — configurá VITE_SUPABASE_SERVICE_ROLE_KEY en .env.local')
+
       const patch: Record<string, unknown> = {}
       if (data.nombre !== undefined) patch.nombre = data.nombre
       if (data.rol    !== undefined) patch.rol    = data.rol
       if (data.activo !== undefined) patch.activo = data.activo
 
-      const { error } = await supabase
+      // supabaseAdmin: no hay policy RLS de UPDATE en perfiles (solo perfil_propio SELECT)
+      const { error } = await supabaseAdmin
         .from('perfiles')
         .update(patch)
         .eq('id', id)
