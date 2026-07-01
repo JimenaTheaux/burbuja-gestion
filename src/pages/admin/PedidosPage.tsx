@@ -444,7 +444,7 @@ function FilaPedido({ pedido, onVerDetalle, onEditar, onAnularRequest, selected,
               className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-blue-500"
               style={{
                 height: 28, padding: '0 10px',
-                background: loading ? `${nextCfg.color}80` : nextCfg.color,
+                background: loading ? 'rgba(61,214,181,0.5)' : '#3DD6B5',
                 color: '#fff', border: 'none', borderRadius: 6,
                 fontSize: 11, fontWeight: 600,
                 cursor: loading ? 'not-allowed' : 'pointer',
@@ -610,7 +610,7 @@ function CardMobile({ pedido, expandida, onToggle, onVerDetalle, onAnularRequest
                 onClick={handleAccion}
                 disabled={loading}
                 style={{
-                  background: nextCfg.color, color: '#fff', border: 'none',
+                  background: loading ? 'rgba(61,214,181,0.5)' : '#3DD6B5', color: '#fff', border: 'none',
                   borderRadius: 8, padding: '8px 16px', fontSize: 13,
                   fontWeight: 700, cursor: 'pointer', minHeight: 36,
                 }}
@@ -638,7 +638,7 @@ function CardMobile({ pedido, expandida, onToggle, onVerDetalle, onAnularRequest
                   }}
                   className="btn-press"
                   style={{
-                    width: '100%', background: nextCfg.color, color: '#fff',
+                    width: '100%', background: '#3DD6B5', color: '#fff',
                     border: 'none', borderRadius: 10, height: 48,
                     fontSize: 14, fontWeight: 700, cursor: 'pointer',
                   }}
