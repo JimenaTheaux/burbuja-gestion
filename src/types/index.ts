@@ -178,9 +178,22 @@ export const formatNumero = (n: number): string => `P-${String(n).padStart(5, '0
 export const esUnidadEntera = (unidadMedida?: string | null): boolean =>
   unidadMedida !== 'litros' && unidadMedida !== 'ml'
 
-/** Formatea presentación + unidad para mostrar, ej: "500ml", "20L", "1 un." */
+/** Presentaciones fijas disponibles para productos en litros (valor guardado en DB) */
+export const PRESENTACIONES_LITROS = ['0.5', '1', '3', '5', '10', '20'] as const
+
+/** Label a mostrar para cada valor de presentación en litros */
+export const PRESENTACION_LABELS: Record<string, string> = {
+  '0.5': '500 ml',
+  '1':   '1 L',
+  '3':   '3 L',
+  '5':   '5 L',
+  '10':  '10 L',
+  '20':  '20 L',
+}
+
+/** Formatea presentación + unidad para mostrar, ej: "500 ml", "20 L", "1 un." */
 export const formatUnidad = (presentacion: number, unidadMedida: string): string => {
-  if (unidadMedida === 'litros') return presentacion === 0.5 ? '500ml' : `${presentacion}L`
+  if (unidadMedida === 'litros') return PRESENTACION_LABELS[String(presentacion)] ?? `${presentacion} L`
   if (unidadMedida === 'ml')     return `${presentacion}ml`
   return `${presentacion} un.`
 }
