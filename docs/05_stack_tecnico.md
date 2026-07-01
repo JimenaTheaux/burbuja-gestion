@@ -111,7 +111,8 @@ burbuja-gestion/
 ├── supabase/
 │   └── rpcs_and_indexes.sql
 │
-├── .env.local              # VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
+├── .env.local              # VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY,
+│                           # VITE_SUPABASE_SERVICE_ROLE_KEY (gestión de usuarios)
 ├── vercel.json
 ├── vite.config.ts
 ├── tailwind.config.ts
@@ -170,7 +171,7 @@ VITE_SUPABASE_SERVICE_ROLE_KEY=[service role key — solo para gestión de usuar
 - **Auth:** Supabase Auth (JWT en sesión, persistido en `localStorage`).
 - **Autorización real:** RLS en Postgres — el frontend solo hace ocultamiento visual.
 - **Perfil y rol:** tabla `perfiles` con columna `activo` — usuario desactivado pierde acceso (`useAuth` cierra sesión si `activo = false`).
-- **Variables de entorno:** `VITE_SUPABASE_ANON_KEY` es pública por diseño de Supabase; la seguridad depende de RLS. `SERVICE_ROLE_KEY` nunca va al cliente — solo usada en funciones administrativas con el cliente admin de Supabase.
+- **Variables de entorno:** `VITE_SUPABASE_ANON_KEY` es pública por diseño de Supabase; la seguridad depende de RLS. `VITE_SUPABASE_SERVICE_ROLE_KEY` **sí queda expuesta en el bundle del navegador** (cualquier var con prefijo `VITE_` la incluye Vite en el build) — riesgo aceptado para no montar una Edge Function; detalle y alternativa en `06_estructura_de_datos.md` (sección RLS → "Gestión de usuarios").
 
 ---
 
