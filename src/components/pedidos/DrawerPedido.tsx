@@ -7,7 +7,7 @@ import { Drawer }      from '@/components/common/Drawer'
 import { FloatInput }  from '@/components/common/FloatInput'
 import { ButtonGroup } from '@/components/common/ButtonGroup'
 import { useClientes, useCrearCliente } from '@/services/clientes'
-import { useProductos } from '@/services/productos'
+import { useProductos, useCategorias } from '@/services/productos'
 import { useCrearPedido, useEditarPedido, type PedidoDetalle, type ItemForm, type CrearPedidoInput } from '@/services/pedidos'
 import { useDebounce } from '@/hooks/useDebounce'
 import type { Producto, Cliente } from '@/types'
@@ -484,6 +484,13 @@ function ItemFormInline({
 }: ItemFormInlineProps) {
   const isEdit = index !== undefined && index >= 0
 
+  const { data: categorias } = useCategorias()
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<string | null>(null)
+
+  const productosFiltrados = categoriaSeleccionada
+    ? productos.filter(p => p.categoria_id === categoriaSeleccionada)
+    : productos
+
   const [lProdId,  setLProdId]  = useState('')
   const [lCant,    setLCant]    = useState('1')
   const [lPrecio,  setLPrecio]  = useState('')
@@ -550,6 +557,48 @@ function ItemFormInline({
       border: '0.5px solid #E5E5EA', display: 'flex', flexDirection: 'column',
       gap: 10, animation: 'fadeSlideIn 0.18s ease', marginTop: 4,
     }}>
+      {/* Filtro por categoría */}
+      {categorias && categorias.length > 0 && (
+        <div>
+          <label style={{ fontSize: 10, fontWeight: 500, color: '#8E8E93', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 5 }}>
+            Categoría
+          </label>
+          <div className="hide-scrollbar" style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
+            <button
+              type="button"
+              onClick={() => setCategoriaSeleccionada(null)}
+              style={{
+                height: 30, padding: '0 14px', borderRadius: 99, flexShrink: 0,
+                border: `0.5px solid ${categoriaSeleccionada === null ? '#3DD6B5' : '#E5E5EA'}`,
+                background: categoriaSeleccionada === null ? '#E8FAF6' : '#fff',
+                color: categoriaSeleccionada === null ? '#3DD6B5' : '#8E8E93',
+                fontSize: 12, fontWeight: categoriaSeleccionada === null ? 600 : 500,
+                cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s',
+              }}
+            >
+              Todos
+            </button>
+            {categorias.map(cat => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setCategoriaSeleccionada(categoriaSeleccionada === cat.id ? null : cat.id)}
+                style={{
+                  height: 30, padding: '0 14px', borderRadius: 99, flexShrink: 0,
+                  border: `0.5px solid ${categoriaSeleccionada === cat.id ? '#3DD6B5' : '#E5E5EA'}`,
+                  background: categoriaSeleccionada === cat.id ? '#E8FAF6' : '#fff',
+                  color: categoriaSeleccionada === cat.id ? '#3DD6B5' : '#8E8E93',
+                  fontSize: 12, fontWeight: categoriaSeleccionada === cat.id ? 600 : 500,
+                  cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s',
+                }}
+              >
+                {cat.nombre}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Selector de producto con búsqueda */}
       <div>
         <label style={{ fontSize: 10, fontWeight: 500, color: '#8E8E93', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 5 }}>
@@ -563,7 +612,7 @@ function ItemFormInline({
               <SelectorProducto
                 value={field.value}
                 onChange={field.onChange}
-                productos={productos}
+                productos={productosFiltrados}
                 error={fieldState.error?.message}
               />
             )}
@@ -572,7 +621,7 @@ function ItemFormInline({
           <SelectorProducto
             value={lProdId}
             onChange={id => { setLProdId(id); setLErr('') }}
-            productos={productos}
+            productos={productosFiltrados}
             error={lErr && !lProdId ? lErr : undefined}
           />
         )}

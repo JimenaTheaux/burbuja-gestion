@@ -207,6 +207,14 @@
     font-weight: 600;
     color: #3DD6B5;
   }
+
+  /* ─── Scroll horizontal sin scrollbar visible (filtro de categorías) ─────── */
+  .hide-scrollbar {
+    scrollbar-width: none;
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* ─── Print ──────────────────────────────────────────────────────────────── */
