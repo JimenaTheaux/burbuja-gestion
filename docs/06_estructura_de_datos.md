@@ -166,6 +166,7 @@ CREATE TABLE pedidos (
   notas_internas    TEXT,
   notas_produccion  TEXT,
   costo_envio       NUMERIC(10,2) DEFAULT 0,
+  costo_bidones     NUMERIC(10,2) DEFAULT 0,
   total_calculado   NUMERIC(10,2) DEFAULT 0,
   total_manual      NUMERIC(10,2),
   forma_cobro       TEXT CHECK (forma_cobro IN ('efectivo', 'transferencia', 'pendiente')),
@@ -203,6 +204,7 @@ export type Pedido = {
   notas_internas: string | null
   notas_produccion: string | null
   costo_envio: number
+  costo_bidones: number
   total_calculado: number
   total_manual: number | null
   forma_cobro: 'efectivo' | 'transferencia' | 'pendiente' | null

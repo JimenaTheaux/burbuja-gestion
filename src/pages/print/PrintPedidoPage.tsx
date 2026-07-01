@@ -177,16 +177,22 @@ export default function PrintPedidoPage() {
 
         {/* Totales */}
         <div style={{ marginLeft: 'auto', maxWidth: 260 }}>
-          {Number(pedido.costo_envio) > 0 && (
+          {(Number(pedido.costo_envio) > 0 || Number(pedido.costo_bidones) > 0) && (
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: 13 }}>
               <span style={{ color: '#8E8E93' }}>Subtotal productos</span>
-              <span>${(total - Number(pedido.costo_envio)).toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
+              <span>${(total - Number(pedido.costo_envio) - Number(pedido.costo_bidones)).toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
             </div>
           )}
           {Number(pedido.costo_envio) > 0 && (
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: 13, borderBottom: '1px solid #E5E5EA' }}>
               <span style={{ color: '#8E8E93' }}>Envío</span>
               <span>${Number(pedido.costo_envio).toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
+            </div>
+          )}
+          {Number(pedido.costo_bidones) > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: 13, borderBottom: '1px solid #E5E5EA' }}>
+              <span style={{ color: '#8E8E93' }}>Bidones</span>
+              <span>${Number(pedido.costo_bidones).toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
             </div>
           )}
           <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0 0', fontSize: 18, fontWeight: 900, color: '#3DD6B5' }}>

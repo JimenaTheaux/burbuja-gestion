@@ -117,6 +117,7 @@ export interface Pedido {
   notas_internas:   string | null
   notas_produccion: string | null
   costo_envio:      number
+  costo_bidones:    number
   total_calculado:  number
   total_manual:     number | null
   forma_cobro:      FormaCobro | null

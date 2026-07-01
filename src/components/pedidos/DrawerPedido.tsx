@@ -33,6 +33,7 @@ const schema = z.object({
   notasProduccion:  z.string().optional(),
   notasInternas:    z.string().optional(),
   costoEnvio:       z.string().optional(),
+  costoBidones:     z.string().optional(),
   totalManual:      z.string().optional(),
   items:            z.array(itemSchema).min(1, 'Agregá al menos un producto'),
 })
@@ -672,15 +673,16 @@ export function DrawerPedido({ open, onClose, pedido, onSaved }: Props) {
     setNotasOpen(false)
   }, [open, pedido])
 
-  const tipoPrecio  = watch('tipoPrecio')
-  const costoEnvio  = watch('costoEnvio')
-  const totalManual = watch('totalManual')
-  const itemsWatch  = watch('items')
+  const tipoPrecio   = watch('tipoPrecio')
+  const costoEnvio   = watch('costoEnvio')
+  const costoBidones = watch('costoBidones')
+  const totalManual  = watch('totalManual')
+  const itemsWatch   = watch('items')
 
   const subtotalProductos = (itemsWatch ?? []).reduce(
     (acc, i) => acc + (Number(i.cantidad) || 0) * (Number(i.precioUnitario) || 0), 0
   )
-  const totalCalculado = subtotalProductos + (Number(costoEnvio) || 0)
+  const totalCalculado = subtotalProductos + (Number(costoEnvio) || 0) + (Number(costoBidones) || 0)
   const totalMostrado  = totalManual ? Number(totalManual) : totalCalculado
   const totalEditado   = !!totalManual && Number(totalManual) !== totalCalculado
 
@@ -695,6 +697,7 @@ export function DrawerPedido({ open, onClose, pedido, onSaved }: Props) {
       notas_produccion:  data.notasProduccion ?? '',
       notas_internas:    data.notasInternas ?? '',
       costo_envio:       data.costoEnvio ?? '0',
+      costo_bidones:     data.costoBidones ?? '0',
       total_manual:      data.totalManual ?? '',
       items: data.items.map((item): ItemForm => ({
         producto_id:       item.productoId,
@@ -988,6 +991,23 @@ export function DrawerPedido({ open, onClose, pedido, onSaved }: Props) {
               />
             </div>
 
+            {/* Bidones con input inline */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 12, color: '#8E8E93' }}>Bidones</span>
+              <input
+                {...register('costoBidones')}
+                inputMode="decimal"
+                placeholder="0"
+                style={{
+                  width: 80, height: 28, border: '0.5px solid #E5E5EA', borderRadius: 6,
+                  padding: '0 8px', fontSize: 12, textAlign: 'right',
+                  fontFamily: 'Inter, sans-serif', outline: 'none', background: '#fff', color: '#1C1C1E',
+                }}
+                onFocus={e => { e.currentTarget.style.borderColor = '#7EB8E8' }}
+                onBlur={e  => { e.currentTarget.style.borderColor = '#E5E5EA' }}
+              />
+            </div>
+
             <div style={{ height: '0.5px', background: '#E5E5EA' }} />
 
             {/* Total */}
@@ -1073,7 +1093,8 @@ function buildDefaults(pedido: PedidoDetalle | null): FormData {
     direccionEntrega: pedido?.direccion_entrega   ?? '',
     notasProduccion:  pedido?.notas_produccion    ?? '',
     notasInternas:    pedido?.notas_internas      ?? '',
-    costoEnvio:       String(pedido?.costo_envio  ?? 0),
+    costoEnvio:       String(pedido?.costo_envio    ?? 0),
+    costoBidones:     String(pedido?.costo_bidones  ?? 0),
     totalManual:      pedido?.total_manual != null ? String(pedido.total_manual) : '',
     items: pedido?.pedido_items?.map(i => ({
       productoId:       i.producto_id,

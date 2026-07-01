@@ -50,6 +50,7 @@ export interface CrearPedidoInput {
   notas_internas:    string
   notas_produccion:  string
   costo_envio:       string
+  costo_bidones:     string
   total_manual:      string
   items:             ItemForm[]
   accion:            'borrador' | 'confirmar'
@@ -63,6 +64,7 @@ function parsePedido(row: any): PedidoConCliente {
   return {
     ...row,
     costo_envio:     Number(row.costo_envio     ?? 0),
+    costo_bidones:   Number(row.costo_bidones   ?? 0),
     total_calculado: Number(row.total_calculado ?? 0),
     total_manual:    row.total_manual  != null ? Number(row.total_manual)  : null,
     monto_cobrado:   row.monto_cobrado != null ? Number(row.monto_cobrado) : null,
@@ -94,7 +96,7 @@ function parseItemDetalle(item: any): ItemDetalle {
 
 const LIST_SELECT = `
   id, numero, estado, tipo_precio, direccion_entrega, fecha_produccion,
-  total_calculado, total_manual, costo_envio, forma_cobro, monto_cobrado,
+  total_calculado, total_manual, costo_envio, costo_bidones, forma_cobro, monto_cobrado,
   fecha_cobro, estado_pago, motivo_falla,
   notas_produccion, notas_internas, created_at, updated_at, cliente_id,
   clientes!inner(nombre, direccion, tipo_cliente, telefono)
@@ -166,7 +168,7 @@ export const usePedidoDetalle = (id: string | null) =>
           .from('pedidos')
           .select(`
             id, numero, estado, tipo_precio, direccion_entrega, fecha_produccion,
-            total_calculado, total_manual, costo_envio, forma_cobro, monto_cobrado, fecha_cobro,
+            total_calculado, total_manual, costo_envio, costo_bidones, forma_cobro, monto_cobrado, fecha_cobro,
             estado_pago, notas_produccion, notas_internas, notas_entrega, motivo_falla,
             motivo_anulacion, created_at, updated_at, cliente_id,
             clientes!inner(nombre, direccion, tipo_cliente, telefono)
@@ -209,7 +211,7 @@ export async function fetchPedidoDetalle(id: string): Promise<PedidoDetalle> {
       .from('pedidos')
       .select(`
         id, numero, estado, tipo_precio, direccion_entrega, fecha_produccion,
-        total_calculado, total_manual, costo_envio, forma_cobro, monto_cobrado, fecha_cobro,
+        total_calculado, total_manual, costo_envio, costo_bidones, forma_cobro, monto_cobrado, fecha_cobro,
         notas_produccion, notas_internas, notas_entrega, motivo_falla,
         motivo_anulacion, created_at, updated_at, cliente_id, estado_pago,
         clientes!inner(nombre, direccion, tipo_cliente, telefono)
@@ -250,11 +252,12 @@ export const useCrearPedido = () => {
       const estadoInicial: EstadoPedido =
         data.accion === 'confirmar' ? 'en_produccion' : 'borrador'
       const costoEnvio    = parseFloat(data.costo_envio) || 0
+      const costoBidones  = parseFloat(data.costo_bidones) || 0
       const subtotal      = data.items.reduce(
         (acc, item) => acc + parseFloat(item.cantidad) * parseFloat(item.precio_unitario),
         0
       )
-      const totalCalculado = subtotal + costoEnvio
+      const totalCalculado = subtotal + costoEnvio + costoBidones
 
       const { data: pedido, error: e1 } = await supabase
         .from('pedidos')
@@ -266,6 +269,7 @@ export const useCrearPedido = () => {
           notas_internas:    data.notas_internas    || null,
           notas_produccion:  data.notas_produccion  || null,
           costo_envio:       costoEnvio,
+          costo_bidones:     costoBidones,
           total_calculado:   totalCalculado,
           total_manual:      data.total_manual ? parseFloat(data.total_manual) : null,
           estado:            estadoInicial,
@@ -313,15 +317,16 @@ export const useEditarPedido = () => {
 
   return useMutation({
     mutationFn: async ({ id, items, ...data }: Partial<CrearPedidoInput> & { id: string }) => {
-      const costoEnvio = data.costo_envio != null ? parseFloat(data.costo_envio) || 0 : undefined
+      const costoEnvio   = data.costo_envio   != null ? parseFloat(data.costo_envio)   || 0 : undefined
+      const costoBidones = data.costo_bidones != null ? parseFloat(data.costo_bidones) || 0 : undefined
 
       let totalCalculado: number | undefined
-      if (items && items.length > 0 && costoEnvio !== undefined) {
+      if (items && items.length > 0 && costoEnvio !== undefined && costoBidones !== undefined) {
         const subtotal = items.reduce(
           (acc, item) => acc + parseFloat(item.cantidad) * parseFloat(item.precio_unitario),
           0
         )
-        totalCalculado = subtotal + costoEnvio
+        totalCalculado = subtotal + costoEnvio + costoBidones
       }
 
       const patch: Record<string, unknown> = { updated_at: new Date().toISOString() }
@@ -330,6 +335,7 @@ export const useEditarPedido = () => {
       if (data.notas_internas    !== undefined) patch.notas_internas    = data.notas_internas    || null
       if (data.notas_produccion  !== undefined) patch.notas_produccion  = data.notas_produccion  || null
       if (costoEnvio             !== undefined) patch.costo_envio       = costoEnvio
+      if (costoBidones           !== undefined) patch.costo_bidones     = costoBidones
       if (data.total_manual      !== undefined) patch.total_manual      = data.total_manual ? parseFloat(data.total_manual) : null
       if (totalCalculado         !== undefined) patch.total_calculado   = totalCalculado
 

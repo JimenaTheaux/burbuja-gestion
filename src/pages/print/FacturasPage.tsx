@@ -25,6 +25,7 @@ interface FacturaPedido {
   totalCalculado:   string
   totalManual:      string | null
   costoEnvio:       string
+  costoBidones:     string
   formaCobro:       string | null
   montoCobrado:     string | null
   notasProduccion:  string | null
@@ -133,6 +134,12 @@ function Factura({ pedido, posicion }: { pedido: FacturaPedido; posicion: 0|1|2|
             <span>${formatPeso(pedido.costoEnvio)}</span>
           </div>
         )}
+        {Number(pedido.costoBidones) > 0 && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#8E8E93', marginBottom: 1 }}>
+            <span>Bidones</span>
+            <span>${formatPeso(pedido.costoBidones)}</span>
+          </div>
+        )}
         <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 900, fontSize: 10, color: '#3DD6B5', marginTop: 2 }}>
           <span>TOTAL</span>
           <span>${formatPeso(total)}</span>
@@ -218,6 +225,7 @@ export default function FacturasPage() {
         totalCalculado:   String(p.total_calculado ?? '0'),
         totalManual:      p.total_manual != null ? String(p.total_manual) : null,
         costoEnvio:       String(p.costo_envio ?? '0'),
+        costoBidones:     String(p.costo_bidones ?? '0'),
         formaCobro:       p.forma_cobro,
         montoCobrado:     p.monto_cobrado != null ? String(p.monto_cobrado) : null,
         notasProduccion:  p.notas_produccion,
