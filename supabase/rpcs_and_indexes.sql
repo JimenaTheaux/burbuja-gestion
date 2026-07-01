@@ -350,6 +350,41 @@ GRANT EXECUTE ON FUNCTION public.get_dashboard_stats(date)
   TO authenticated;
 
 
+-- ─── RPC 5: get_all_perfiles ─────────────────────────────────────────────────
+-- Devuelve todos los perfiles para la vista de admin de Usuarios. perfiles solo
+-- tiene la policy RLS "perfil_propio" (SELECT de la fila propia), así que sin
+-- esta RPC (SECURITY DEFINER) el listado quedaba vacío para todos. Solo
+-- admin/superadmin puede listar todos los usuarios.
+
+CREATE OR REPLACE FUNCTION public.get_all_perfiles()
+RETURNS TABLE (
+  id         uuid,
+  nombre     text,
+  rol        text,
+  activo     boolean,
+  created_at timestamptz
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF public._rol_actual() NOT IN ('admin', 'superadmin') THEN
+    RAISE EXCEPTION 'No autorizado';
+  END IF;
+
+  RETURN QUERY
+  SELECT p.id, p.nombre, p.rol, p.activo, p.created_at
+  FROM perfiles p
+  ORDER BY p.created_at;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_all_perfiles()
+  TO authenticated;
+
+
 -- ─── Verificar que las funciones existen ────────────────────────────────────
 SELECT
   proname   AS funcion,
@@ -360,6 +395,7 @@ WHERE proname IN (
   'cerrar_pedido',
   'anular_pedido',
   'get_dashboard_stats',
+  'get_all_perfiles',
   '_rol_actual'
 )
 AND pronamespace = 'public'::regnamespace
