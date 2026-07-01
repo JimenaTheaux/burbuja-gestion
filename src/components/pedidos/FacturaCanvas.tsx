@@ -1,6 +1,6 @@
 import { Fragment } from 'react'
 import type { PedidoDetalle } from '@/services/pedidos'
-import { totalPedido } from '@/types'
+import { totalPedido, formatUnidad } from '@/types'
 
 function fmtFecha(iso: string | null): string {
   if (!iso) return '—'
@@ -127,8 +127,10 @@ export function FacturaCanvas({ pedido }: { pedido: PedidoDetalle }) {
               <tr>
                 <td style={{ padding: '8px 6px 2px 6px', verticalAlign: 'top' }}>
                   <div style={{ fontSize: 12, fontWeight: 500, color: '#1C1C1E', lineHeight: 1.3 }}>
-                    {item.productos?.nombre ?? '—'}
-                    {item.productos?.presentacion ? ` — ${item.productos.presentacion}L` : ''}
+                    {[item.productos?.nombre, item.productos?.fragancia].filter(Boolean).join(' ') || '—'}
+                    {item.productos?.presentacion != null && item.productos?.unidad_medida
+                      ? ` · ${formatUnidad(item.productos.presentacion, item.productos.unidad_medida)}`
+                      : ''}
                   </div>
                 </td>
                 <td style={{ textAlign: 'center', padding: '8px 6px 2px', fontSize: 12, verticalAlign: 'top' }}>

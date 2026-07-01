@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Printer, X } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import type { EstadoPedido } from '@/types'
+import { formatUnidad, type EstadoPedido } from '@/types'
 
 // ─── Tipos locales (la página fetchea directamente y mapea a camelCase) ─────────
 
@@ -113,7 +113,7 @@ function Factura({ pedido, posicion }: { pedido: FacturaPedido; posicion: 0|1|2|
                 <tr key={item.id ?? i} style={{ borderBottom: '0.3px solid #E5E7EB' }}>
                   <td style={{ padding: '1px 2px', maxWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {item.productoNombre}
-                    {item.productoPresentacion && <span style={{ color: '#6B7280' }}> {item.productoPresentacion}L</span>}
+                    {item.productoPresentacion && <span style={{ color: '#6B7280' }}> {item.productoPresentacion}</span>}
                     {item.bidonNuevo && <span style={{ color: '#F57C00', fontWeight: 700 }}> 🆕</span>}
                   </td>
                   <td style={{ padding: '1px 2px', textAlign: 'center', fontWeight: 700 }}>{item.cantidad}</td>
@@ -211,7 +211,7 @@ export default function FacturasPage() {
 
       const { data: items } = await supabase
         .from('pedido_items')
-        .select('*, productos(nombre, fragancia, presentacion, precio_minorista, precio_mayorista)')
+        .select('*, productos(nombre, fragancia, presentacion, unidad_medida, precio_minorista, precio_mayorista)')
         .eq('pedido_id', id)
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -235,7 +235,9 @@ export default function FacturasPage() {
         items: (items ?? []).map((item: any): FacturaItem => ({
           id:                   item.id,
           productoNombre:       item.productos?.nombre ?? '',
-          productoPresentacion: item.productos?.presentacion != null ? String(item.productos.presentacion) : null,
+          productoPresentacion: item.productos?.presentacion != null && item.productos?.unidad_medida
+            ? formatUnidad(Number(item.productos.presentacion), item.productos.unidad_medida)
+            : null,
           cantidad:             String(item.cantidad),
           precioUnitario:       String(item.precio_unitario),
           bidonNuevo:           item.bidon_nuevo ?? false,

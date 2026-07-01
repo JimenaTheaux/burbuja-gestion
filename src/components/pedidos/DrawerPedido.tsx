@@ -11,6 +11,7 @@ import { useProductos, useCategorias } from '@/services/productos'
 import { useCrearPedido, useEditarPedido, type PedidoDetalle, type ItemForm, type CrearPedidoInput } from '@/services/pedidos'
 import { useDebounce } from '@/hooks/useDebounce'
 import type { Producto, Cliente } from '@/types'
+import { esUnidadEntera, formatUnidad } from '@/types'
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -18,11 +19,22 @@ const itemSchema = z.object({
   productoId:       z.string().min(1, 'Seleccioná un producto'),
   productoNombre:   z.string(),
   presentacion:     z.string(),
-  cantidad:         z.string().min(1).regex(/^\d+(\.\d+)?$/, 'Cantidad inválida'),
+  unidadMedida:     z.string(),
+  cantidad:         z.string().min(1, 'Cantidad requerida'),
   precioUnitario:   z.string().min(1).regex(/^\d+(\.\d{0,2})?$/, 'Precio inválido'),
   precioReferencia: z.string(),
   costoSnapshot:    z.string(),
   bidonNuevo:       z.boolean(),
+}).superRefine((data, ctx) => {
+  const entera  = esUnidadEntera(data.unidadMedida)
+  const pattern = entera ? /^\d+$/ : /^\d+(\.\d+)?$/
+  if (!pattern.test(data.cantidad)) {
+    ctx.addIssue({
+      code:    'custom',
+      path:    ['cantidad'],
+      message: entera ? 'Cantidad debe ser un número entero' : 'Cantidad inválida',
+    })
+  }
 })
 
 const schema = z.object({
@@ -301,6 +313,7 @@ function ItemCard({ index, watch, onEdit, onRemove }: {
 }) {
   const nombre         = watch(`items.${index}.productoNombre`)
   const presentacion   = watch(`items.${index}.presentacion`)
+  const unidadMedida   = watch(`items.${index}.unidadMedida`)
   const cantidad       = watch(`items.${index}.cantidad`)
   const precioUnitario = watch(`items.${index}.precioUnitario`)
   const bidonNuevo     = watch(`items.${index}.bidonNuevo`)
@@ -330,7 +343,7 @@ function ItemCard({ index, watch, onEdit, onRemove }: {
         )}
         {presentacion && (
           <span style={{ fontSize: 9, background: '#F5F7F9', color: '#8E8E93', padding: '1px 5px', borderRadius: 99, flexShrink: 0 }}>
-            {presentacion}L
+            {formatUnidad(Number(presentacion), unidadMedida ?? 'litros')}
           </span>
         )}
         <span style={{ fontSize: 13, fontWeight: 500, color: '#3DD6B5', flexShrink: 0 }}>
@@ -384,10 +397,8 @@ function SelectorProducto({
           border: '0.5px solid #7EB8E8', minHeight: 40,
         }}>
           <span style={{ fontSize: 13, fontWeight: 500, color: '#1C1C1E', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {selected.nombre}{selected.fragancia ? ` (${selected.fragancia})` : ''}
-            <span style={{ marginLeft: 6, fontSize: 9, background: '#E8FAF6', color: '#3DD6B5', padding: '1px 5px', borderRadius: 99 }}>
-              {selected.presentacion}L
-            </span>
+            {[selected.nombre, selected.fragancia, formatUnidad(selected.presentacion, selected.unidad_medida)]
+              .filter(Boolean).join(' · ')}
           </span>
           <button
             type="button"
@@ -428,16 +439,15 @@ function SelectorProducto({
                   style={{
                     width: '100%', textAlign: 'left', padding: '8px 12px',
                     background: 'none', border: 'none', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', gap: 8,
+                    display: 'flex', flexDirection: 'column', gap: 1,
                     borderBottom: '0.5px solid #F5F7F9',
                   }}
                 >
-                  <span style={{ fontWeight: 500, fontSize: 13, color: '#1C1C1E', flex: 1 }}>
+                  <span style={{ fontWeight: 500, fontSize: 13, color: '#1C1C1E' }}>
                     {p.nombre}
-                    {p.fragancia && <span style={{ fontWeight: 400, color: '#8E8E93' }}> ({p.fragancia})</span>}
                   </span>
-                  <span style={{ fontSize: 9, background: '#F5F7F9', color: '#8E8E93', padding: '1px 5px', borderRadius: 99, flexShrink: 0 }}>
-                    {p.presentacion}L
+                  <span style={{ fontSize: 11, color: '#8E8E93' }}>
+                    {[p.fragancia, formatUnidad(p.presentacion, p.unidad_medida)].filter(Boolean).join(' · ')}
                   </span>
                 </button>
               )) : (
@@ -468,6 +478,7 @@ interface ItemFormInlineProps {
     productoId:       string
     productoNombre:   string
     presentacion:     string
+    unidadMedida:     string
     cantidad:         string
     precioUnitario:   string
     precioReferencia: string
@@ -506,6 +517,7 @@ function ItemFormInline({
   const eBidon      = isEdit ? watch?.(`items.${index!}.bidonNuevo`)        : lBidon
 
   const productoSel = productos.find(p => p.id === eProducId)
+  const esEntera     = esUnidadEntera(productoSel?.unidad_medida)
 
   useEffect(() => {
     if (!productoSel) return
@@ -517,6 +529,7 @@ function ItemFormInline({
       setValue(`items.${index}.costoSnapshot`,    costo)
       setValue(`items.${index}.productoNombre`,   productoSel.nombre)
       setValue(`items.${index}.presentacion`,     String(productoSel.presentacion))
+      setValue(`items.${index}.unidadMedida`,     productoSel.unidad_medida)
     } else {
       setLPrecio(precio)
       setLPrecRef(precio)
@@ -536,13 +549,18 @@ function ItemFormInline({
   const handleConfirm = () => {
     if (isEdit) { onConfirm(); return }
     if (!lProdId) { setLErr('Seleccioná un producto'); return }
-    if (!lCant || !/^\d+(\.\d+)?$/.test(lCant)) { setLErr('Cantidad inválida'); return }
+    const cantidadPattern = esEntera ? /^\d+$/ : /^\d+(\.\d+)?$/
+    if (!lCant || !cantidadPattern.test(lCant)) {
+      setLErr(esEntera ? 'Cantidad debe ser un número entero' : 'Cantidad inválida')
+      return
+    }
     if (!lPrecio || !/^\d+(\.\d{0,2})?$/.test(lPrecio)) { setLErr('Precio inválido'); return }
     setLErr('')
     onConfirm({
       productoId:       lProdId,
       productoNombre:   productoSel?.nombre ?? '',
       presentacion:     String(productoSel?.presentacion ?? ''),
+      unidadMedida:     productoSel?.unidad_medida ?? 'litros',
       cantidad:         lCant,
       precioUnitario:   lPrecio,
       precioReferencia: lPrecRef,
@@ -631,7 +649,13 @@ function ItemFormInline({
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
         {isEdit && register && index !== undefined ? (
           <>
-            <FloatInput label="Cantidad" {...register(`items.${index}.cantidad`)} inputMode="decimal" />
+            <FloatInput
+              label="Cantidad"
+              {...register(`items.${index}.cantidad`)}
+              type="number"
+              step={esEntera ? 1 : 0.5}
+              inputMode={esEntera ? 'numeric' : 'decimal'}
+            />
             <FloatInput
               label="Precio unit."
               {...register(`items.${index}.precioUnitario`)}
@@ -641,7 +665,12 @@ function ItemFormInline({
           </>
         ) : (
           <>
-            <FloatInput label="Cantidad"    value={lCant}   onChange={e => setLCant(e.target.value)}   inputMode="decimal" />
+            <FloatInput
+              label="Cantidad" value={lCant} onChange={e => setLCant(e.target.value)}
+              type="number"
+              step={esEntera ? 1 : 0.5}
+              inputMode={esEntera ? 'numeric' : 'decimal'}
+            />
             <FloatInput label="Precio unit." value={lPrecio} onChange={e => setLPrecio(e.target.value)} inputMode="decimal" />
           </>
         )}
@@ -788,7 +817,7 @@ export function DrawerPedido({ open, onClose, pedido, onSaved }: Props) {
   }
 
   const handleItemAdded = (item: {
-    productoId: string; productoNombre: string; presentacion: string
+    productoId: string; productoNombre: string; presentacion: string; unidadMedida: string
     cantidad: string; precioUnitario: string; precioReferencia: string; costoSnapshot: string; bidonNuevo: boolean
   }) => {
     append(item)
@@ -1149,6 +1178,7 @@ function buildDefaults(pedido: PedidoDetalle | null): FormData {
       productoId:       i.producto_id,
       productoNombre:   i.productos?.nombre ?? '',
       presentacion:     String(i.productos?.presentacion ?? ''),
+      unidadMedida:     i.productos?.unidad_medida ?? 'litros',
       cantidad:         String(i.cantidad),
       precioUnitario:   String(i.precio_unitario),
       precioReferencia: String(i.precio_referencia),

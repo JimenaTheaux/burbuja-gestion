@@ -177,7 +177,7 @@ export const usePedidoDetalle = (id: string | null) =>
           .maybeSingle(),
         supabase
           .from('pedido_items')
-          .select('*, productos(nombre, fragancia, presentacion, precio_minorista, precio_mayorista)')
+          .select('*, productos(nombre, fragancia, presentacion, unidad_medida, precio_minorista, precio_mayorista)')
           .eq('pedido_id', id!),
         supabase
           .from('pedido_historial')
@@ -220,7 +220,7 @@ export async function fetchPedidoDetalle(id: string): Promise<PedidoDetalle> {
       .maybeSingle(),
     supabase
       .from('pedido_items')
-      .select('*, productos(nombre, fragancia, presentacion, precio_minorista, precio_mayorista)')
+      .select('*, productos(nombre, fragancia, presentacion, unidad_medida, precio_minorista, precio_mayorista)')
       .eq('pedido_id', id),
     supabase
       .from('pedido_historial')

@@ -15,19 +15,26 @@ import {
   useEditarCategoria, useBorrarCategoria, useBorrarProducto,
 } from '@/services/productos'
 import { useDebounce } from '@/hooks/useDebounce'
-import type { Producto } from '@/types'
+import { formatUnidad, type Producto } from '@/types'
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
+
+const PRESENTACIONES = ['0.5', '3', '5', '10', '20'] as const
 
 const schema = z.object({
   nombre:          z.string().min(1, 'El nombre es obligatorio'),
   fragancia:       z.string().optional(),
   categoriaId:     z.string().optional(),
-  presentacion:    z.enum(['0.5', '3', '5', '10', '20'], { message: 'Seleccioná una presentación' }),
+  unidadMedida:    z.enum(['litros', 'un'], { message: 'Seleccioná una unidad' }),
+  presentacion:    z.string().min(1, 'Requerido'),
   precioMinorista: z.string().min(1, 'Requerido').regex(/^\d+(\.\d{0,2})?$/, 'Precio inválido'),
   precioMayorista: z.string().min(1, 'Requerido').regex(/^\d+(\.\d{0,2})?$/, 'Precio inválido'),
   costoProduccion: z.string().optional().refine(v => !v || /^\d+(\.\d{0,2})?$/.test(v), 'Costo inválido'),
   codigo:          z.string().optional(),
+}).superRefine((data, ctx) => {
+  if (data.unidadMedida === 'litros' && !PRESENTACIONES.includes(data.presentacion as typeof PRESENTACIONES[number])) {
+    ctx.addIssue({ code: 'custom', path: ['presentacion'], message: 'Seleccioná una presentación' })
+  }
 })
 
 type FormData = z.infer<typeof schema>
@@ -64,17 +71,19 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
       nombre:          producto?.nombre                                                    ?? '',
       fragancia:       producto?.fragancia                                                 ?? '',
       categoriaId:     producto?.categoria_id                                              ?? '',
-      presentacion:    (producto?.presentacion != null ? String(producto.presentacion) : '5') as FormData['presentacion'],
+      unidadMedida:    producto?.unidad_medida === 'un' ? 'un' : 'litros',
+      presentacion:    producto?.presentacion != null ? String(producto.presentacion) : '5',
       precioMinorista: producto?.precio_minorista != null ? String(producto.precio_minorista) : '',
       precioMayorista: producto?.precio_mayorista != null ? String(producto.precio_mayorista) : '',
       codigo:          producto?.codigo                                                    ?? '',
     },
   })
 
-  const categoriaVal = watch('categoriaId')
+  const categoriaVal  = watch('categoriaId')
+  const unidadMedidaVal = watch('unidadMedida')
 
   const onSubmit = async (data: FormData) => {
-    const presentacionNum = parseFloat(data.presentacion)
+    const presentacionNum = data.unidadMedida === 'un' ? 1 : parseFloat(data.presentacion)
     const minorista       = parseFloat(data.precioMinorista)
     const mayorista       = parseFloat(data.precioMayorista)
     const costoProduccion = data.costoProduccion ? parseFloat(data.costoProduccion) : 0
@@ -85,6 +94,7 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
           nombre:           data.nombre,
           fragancia:        data.fragancia   || null,
           categoria_id:     data.categoriaId || null,
+          unidad_medida:    data.unidadMedida,
           presentacion:     presentacionNum,
           precio_minorista: minorista,
           precio_mayorista: mayorista,
@@ -98,7 +108,7 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
           nombre:           data.nombre,
           fragancia:        data.fragancia   || null,
           categoria_id:     data.categoriaId || null,
-          unidad_medida:    'litros',
+          unidad_medida:    data.unidadMedida,
           presentacion:     presentacionNum,
           precio_minorista: minorista,
           precio_mayorista: mayorista,
@@ -123,7 +133,8 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
       nombre:          producto?.nombre                                                    ?? '',
       fragancia:       producto?.fragancia                                                 ?? '',
       categoriaId:     producto?.categoria_id                                              ?? '',
-      presentacion:    (producto?.presentacion != null ? String(producto.presentacion) : '5') as FormData['presentacion'],
+      unidadMedida:    producto?.unidad_medida === 'un' ? 'un' : 'litros',
+      presentacion:    producto?.presentacion != null ? String(producto.presentacion) : '5',
       precioMinorista: producto?.precio_minorista != null ? String(producto.precio_minorista) : '',
       precioMayorista: producto?.precio_mayorista != null ? String(producto.precio_mayorista) : '',
       costoProduccion: producto?.costo_produccion != null ? String(producto.costo_produccion) : '0',
@@ -286,12 +297,46 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
           </div>
         </div>
 
-        {/* Grid 2: Fragancia + Presentación */}
+        {/* Grid 2: Fragancia + Unidad */}
         <div className="form-grid-2">
           <FloatInput label="Fragancia" {...register('fragancia')} />
 
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={LABEL_S}>Presentación *</span>
+            <span style={LABEL_S}>Unidad *</span>
+            <div style={{ position: 'relative' }}>
+              <select
+                {...register('unidadMedida', {
+                  onChange: e => {
+                    if (e.target.value === 'un') {
+                      setValue('presentacion', '1', { shouldValidate: true })
+                    } else if (!PRESENTACIONES.includes(watch('presentacion') as typeof PRESENTACIONES[number])) {
+                      setValue('presentacion', '5', { shouldValidate: true })
+                    }
+                  },
+                })}
+                className="fi-input"
+                style={{ ...selectStyle, borderColor: errors.unidadMedida ? '#D32F2F' : '#E5E5EA' }}
+              >
+                <option value="litros">Litros</option>
+                <option value="un">Unidades</option>
+              </select>
+              <ChevronDown size={13} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#8E8E93' }} />
+            </div>
+            {errors.unidadMedida && <span style={{ color: '#D32F2F', fontSize: 11, marginTop: 4 }}>{errors.unidadMedida.message}</span>}
+          </div>
+        </div>
+
+        {/* Presentación */}
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <span style={LABEL_S}>Presentación *</span>
+          {unidadMedidaVal === 'un' ? (
+            <input
+              readOnly
+              {...register('presentacion')}
+              className="fi-input"
+              style={{ ...selectStyle, background: '#F5F7F9', color: '#9CA3AF', cursor: 'not-allowed', padding: '0 12px' }}
+            />
+          ) : (
             <div style={{ position: 'relative' }}>
               <select
                 {...register('presentacion')}
@@ -306,11 +351,11 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
               </select>
               <ChevronDown size={13} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#8E8E93' }} />
             </div>
-            {errors.presentacion && <span style={{ color: '#D32F2F', fontSize: 11, marginTop: 4 }}>{errors.presentacion.message}</span>}
-          </div>
+          )}
+          {errors.presentacion && <span style={{ color: '#D32F2F', fontSize: 11, marginTop: 4 }}>{errors.presentacion.message}</span>}
         </div>
 
-        {/* Grid 3: Precio min + Precio may */}
+        {/* Precio min + Precio may */}
         <div className="form-grid-2">
           <FloatInput label="Precio minorista *" error={errors.precioMinorista?.message} {...register('precioMinorista')} inputMode="decimal" />
           <FloatInput label="Precio mayorista *" error={errors.precioMayorista?.message} {...register('precioMayorista')} inputMode="decimal" />
@@ -404,10 +449,6 @@ const ACTIVO_MAP: Record<ActivoFiltro, boolean | null> = {
 
 const ACTIVO_LABELS: Record<ActivoFiltro, string> = {
   todos: 'Todos', activo: 'Activos', inactivo: 'Inactivos',
-}
-
-function presentacionLabel(p: number) {
-  return p === 0.5 ? '500 ml' : `${p} L`
 }
 
 // ─── Gestión de categorías ────────────────────────────────────────────────────
@@ -1005,7 +1046,7 @@ export default function ProductosPage() {
                       {p.categorias_producto?.nombre ?? '—'}
                     </td>
                     <td style={{ padding: '0 14px', height: 48, fontSize: 12, color: '#1C1C1E', borderBottom: '0.5px solid #F5F7F9', whiteSpace: 'nowrap' }}>
-                      {presentacionLabel(p.presentacion)}
+                      {formatUnidad(p.presentacion, p.unidad_medida)}
                     </td>
                     <td style={{ padding: '0 14px', height: 48, borderBottom: '0.5px solid #F5F7F9', whiteSpace: 'nowrap' }}>
                       <span style={{ fontSize: 9, color: '#8E8E93', marginRight: 3 }}>Min</span>
@@ -1125,7 +1166,7 @@ export default function ProductosPage() {
                   </div>
                   {/* Línea 2 */}
                   <p style={{ fontSize: 12, color: '#8E8E93', margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {presentacionLabel(p.presentacion)}
+                    {formatUnidad(p.presentacion, p.unidad_medida)}
                     {p.categorias_producto?.nombre ? ` · ${p.categorias_producto.nombre}` : ''}
                   </p>
                   {/* Línea 3 */}

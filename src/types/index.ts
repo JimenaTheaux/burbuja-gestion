@@ -91,7 +91,7 @@ export interface PedidoItem {
   costo_snapshot:    number
   bidon_nuevo:       boolean
   // Join opcional
-  productos?: Pick<Producto, 'nombre' | 'fragancia' | 'presentacion' | 'precio_minorista' | 'precio_mayorista'> | null
+  productos?: Pick<Producto, 'nombre' | 'fragancia' | 'presentacion' | 'unidad_medida' | 'precio_minorista' | 'precio_mayorista'> | null
 }
 
 export interface PedidoHistorial {
@@ -173,6 +173,17 @@ export interface Egreso {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 export const formatNumero = (n: number): string => `P-${String(n).padStart(5, '0')}`
+
+/** Litros y ml admiten decimales; cualquier otra unidad (unidades, un., etc.) es de conteo entero */
+export const esUnidadEntera = (unidadMedida?: string | null): boolean =>
+  unidadMedida !== 'litros' && unidadMedida !== 'ml'
+
+/** Formatea presentación + unidad para mostrar, ej: "500ml", "20L", "1 un." */
+export const formatUnidad = (presentacion: number, unidadMedida: string): string => {
+  if (unidadMedida === 'litros') return presentacion === 0.5 ? '500ml' : `${presentacion}L`
+  if (unidadMedida === 'ml')     return `${presentacion}ml`
+  return `${presentacion} un.`
+}
 
 /** Retorna el total a mostrar: manual si existe, calculado si no */
 export const totalPedido = (

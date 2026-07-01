@@ -8,7 +8,7 @@ import {
   usePedidoDetalle, useCambiarEstado, useAnularPedido, useEditarCobro, useCerrarPedido,
   totalPedido, type PedidoDetalle,
 } from '@/services/pedidos'
-import { ESTADO_CONFIG, ESTADOS_FACTURABLES, formatNumero, type EstadoPedido } from '@/types'
+import { ESTADO_CONFIG, ESTADOS_FACTURABLES, formatNumero, formatUnidad, type EstadoPedido } from '@/types'
 import { useAuthStore }      from '@/store/authStore'
 import { useCompartirFactura } from '@/hooks/useCompartirFactura'
 
@@ -292,7 +292,12 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
                   <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: 10, marginBottom: 10, borderBottom: '1px solid #F5F7F9' }}>
                     <div>
                       <p style={{ margin: 0, fontSize: 14, fontWeight: 500 }}>
-                        {item.productos?.nombre}
+                        {[item.productos?.nombre, item.productos?.fragancia].filter(Boolean).join(' ')}
+                        {item.productos?.presentacion != null && item.productos?.unidad_medida && (
+                          <span style={{ color: '#8E8E93', fontWeight: 400 }}>
+                            {' · '}{formatUnidad(item.productos.presentacion, item.productos.unidad_medida)}
+                          </span>
+                        )}
                         {item.bidon_nuevo && (
                           <span style={{ marginLeft: 6, fontSize: 9, fontWeight: 700, background: '#FFF3E0', color: '#F57C00', padding: '2px 6px', borderRadius: 99 }}>BIDÓN NUEVO</span>
                         )}
