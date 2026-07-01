@@ -592,7 +592,7 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
                           aria-disabled={isPending}
                           aria-label={`${label} — pedido P-${String(p.numero).padStart(5, '0')}`}
                           style={{
-                            background: isPending ? `${cfg.color}80` : cfg.color,
+                            background: isPending ? 'rgba(61,214,181,0.5)' : '#3DD6B5',
                             color: '#fff', border: 'none', borderRadius: 10,
                             padding: '14px', minHeight: 48, fontSize: 15, fontWeight: 700,
                             cursor: isPending ? 'not-allowed' : 'pointer', outlineOffset: 2,

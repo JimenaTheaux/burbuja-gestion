@@ -520,9 +520,9 @@ function CardRepartidor({ pedido, isExpanded, onToggle, isOnline, addAction, onS
                       aria-label={`Confirmar avance de emergencia del pedido ${numStr}`}
                       className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                       style={{
-                        flex: 1, background: loading ? 'rgba(245,124,0,0.5)' : '#F57C00',
-                        color: '#fff', border: 'none',
-                        borderRadius: 10, height: 44, fontSize: 13, fontWeight: 500,
+                        flex: 1, background: loading ? '#fee2e2' : '#FEF2F2',
+                        color: '#C0392B', border: '1px solid #F05252',
+                        borderRadius: 10, height: 44, fontSize: 13, fontWeight: 600,
                         cursor: loading ? 'not-allowed' : 'pointer',
                       }}
                     >
@@ -549,8 +549,8 @@ function CardRepartidor({ pedido, isExpanded, onToggle, isOnline, addAction, onS
                   aria-label={`Ya retiré el pedido ${numStr}`}
                   className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                   style={{
-                    width: '100%', background: '#fff', color: '#F57C00',
-                    border: '0.5px solid #F57C00', borderRadius: 10,
+                    width: '100%', background: '#fff', color: '#8E8E93',
+                    border: '1px solid #E5E5EA', borderRadius: 10,
                     height: 44, fontSize: 13, fontWeight: 500,
                     cursor: 'pointer', fontFamily: 'Inter, sans-serif',
                   }}
