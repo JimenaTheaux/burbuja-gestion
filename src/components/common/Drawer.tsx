@@ -37,6 +37,7 @@ export function Drawer({ open, onClose, title, children, footer, scrollRef, pane
           background: 'rgba(0,0,0,0.45)',
           zIndex: 200,
           animation: 'fadeIn 0.2s ease',
+          pointerEvents: 'auto',
         }}
       />
 
@@ -54,6 +55,12 @@ export function Drawer({ open, onClose, title, children, footer, scrollRef, pane
           flexDirection: 'column',
           animation: 'slideInDrawer 0.25s ease',
           overflow: 'hidden',
+          // Un Sheet (Radix) que se cierra en el mismo tick deja
+          // document.body.style.pointerEvents = 'none' hasta que termina
+          // su animación de salida (~300ms). Sin este override, este panel
+          // hereda ese `none` y queda inclickeable/no-tipeable al abrirse
+          // justo cuando se cierra un Sheet (p.ej. Editar pedido).
+          pointerEvents: 'auto',
           ...panelStyle,
         }}
       >
