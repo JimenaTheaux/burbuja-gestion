@@ -58,14 +58,12 @@ export function Navbar() {
       }}
     >
       {/* Brand */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginRight: 32, flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', marginRight: 28, flexShrink: 0 }}>
         {!logoError ? (
           <img
             src="/Logo_sin_fondo_negro.png"
-            alt=""
-            width={28}
-            height={28}
-            style={{ borderRadius: 8, objectFit: 'contain' }}
+            alt="Burbuja"
+            style={{ height: 40, width: 'auto', objectFit: 'contain' }}
             onError={() => setLogoError(true)}
           />
         ) : (
@@ -85,9 +83,6 @@ export function Navbar() {
             Bu
           </div>
         )}
-        <span style={{ fontSize: 14, fontWeight: 800, color: '#3DD6B5', letterSpacing: '-0.5px' }}>
-          burbuja
-        </span>
       </div>
 
       {/* Nav links */}
