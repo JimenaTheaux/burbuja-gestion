@@ -11,6 +11,7 @@ import { useToast }       from '@/hooks/useToast'
 import { useAuthStore }   from '@/store/authStore'
 import { supabase }       from '@/lib/supabase'
 import { useQuery }       from '@tanstack/react-query'
+import { queryKeys }      from '@/lib/queryKeys'
 import {
   useEgresos, useCrearEgreso, useEditarEgreso, useEliminarEgreso,
 } from '@/services/egresos'
@@ -75,7 +76,7 @@ type FormData = z.infer<typeof schema>
 
 function useUsuariosActivos() {
   return useQuery({
-    queryKey: ['perfiles-activos'],
+    queryKey: queryKeys.perfilesActivos(),
     staleTime: 1000 * 60 * 10,
     queryFn: async () => {
       const { data, error } = await supabase

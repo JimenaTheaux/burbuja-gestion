@@ -1,8 +1,9 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import { queryKeys } from '@/lib/queryKeys'
 import type { Cliente } from '@/types'
 
-const KEY = ['clientes']
+const KEY = queryKeys.clientes.all()
 
 const SELECT = 'id, nombre, telefono, direccion, tipo_cliente, notas, activo, created_at, updated_at'
 

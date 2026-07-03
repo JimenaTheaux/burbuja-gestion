@@ -8,6 +8,7 @@ import {
 import * as XLSX from 'xlsx'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { Skeleton } from '@/components/ui/skeleton'
+import { queryKeys } from '@/lib/queryKeys'
 import { useEditarCobro, fetchPedidoDetalle } from '@/services/pedidos'
 import { useCompartirFactura } from '@/hooks/useCompartirFactura'
 import { useDashboard } from '@/services/produccion'
@@ -93,7 +94,7 @@ function fmtDiaAno(d: Date): string {
 
 function usePedidosPeriodo(inicio: string, fin: string) {
   return useQuery({
-    queryKey:        ['pedidos', 'dash-periodo-v2', inicio, fin],
+    queryKey:        [...queryKeys.pedidos.all(), 'dash-periodo-v2', inicio, fin],
     placeholderData: keepPreviousData,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -111,7 +112,7 @@ function usePedidosPeriodo(inicio: string, fin: string) {
 
 function usePendientesCierre() {
   return useQuery({
-    queryKey:        ['pedidos', 'pendientes-cierre'],
+    queryKey:        [...queryKeys.pedidos.all(), 'pendientes-cierre'],
     placeholderData: keepPreviousData,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -128,7 +129,7 @@ function usePendientesCierre() {
 
 function usePedidosCobradosDetalle(desde: string, hasta: string) {
   return useQuery({
-    queryKey:        ['pedidos', 'cobrados-detalle', desde, hasta],
+    queryKey:        [...queryKeys.pedidos.all(), 'cobrados-detalle', desde, hasta],
     placeholderData: keepPreviousData,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -158,7 +159,7 @@ function usePedidosCobradosDetalle(desde: string, hasta: string) {
 function useEvolucionRango(desde: string, hasta: string) {
   const mesAnteriorDesde = restarUnMes(desde)
   return useQuery({
-    queryKey:        ['pedidos', 'dash-evolucion-rango', desde, hasta],
+    queryKey:        [...queryKeys.pedidos.all(), 'dash-evolucion-rango', desde, hasta],
     placeholderData: keepPreviousData,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -177,7 +178,7 @@ function useEvolucionRango(desde: string, hasta: string) {
 
 function useEgresosDashboard(desde: string, hasta: string) {
   return useQuery({
-    queryKey:        ['dashboard-egresos', desde, hasta],
+    queryKey:        [...queryKeys.egresos.all(), 'dashboard', desde, hasta],
     placeholderData: keepPreviousData,
     queryFn: async () => {
       const { data } = await supabase

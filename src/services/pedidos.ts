@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import { queryKeys } from '@/lib/queryKeys'
 import { useAuthStore } from '@/store/authStore'
 import { totalPedido } from '@/types'
 import type { Pedido, PedidoItem, PedidoHistorial, Cliente, Producto, EstadoPedido } from '@/types'
@@ -102,14 +103,14 @@ const LIST_SELECT = `
   clientes!inner(nombre, direccion, tipo_cliente, telefono)
 ` as const
 
-const KEY = ['pedidos']
+const KEY = queryKeys.pedidos.all()
 
 // El Dashboard usa queryKey ['dashboard', fecha] — no comparte prefijo con
 // 'pedidos', así que cualquier mutación que cambie cobros/estados debe
 // invalidarlo explícitamente o el panel queda desactualizado hasta que
 // venza el staleTime global.
 function invalidarDashboard(qc: ReturnType<typeof useQueryClient>) {
-  qc.invalidateQueries({ queryKey: ['dashboard'] })
+  qc.invalidateQueries({ queryKey: queryKeys.dashboard.all() })
 }
 
 // ─── usePedidos ───────────────────────────────────────────────────────────────
@@ -420,7 +421,7 @@ export const useCambiarEstado = () => {
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: KEY })
-      qc.invalidateQueries({ queryKey: ['produccion'] })
+      qc.invalidateQueries({ queryKey: queryKeys.produccion.all() })
       invalidarDashboard(qc)
     },
   })
@@ -469,7 +470,7 @@ export const useAnularPedido = () => {
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: KEY })
-      qc.invalidateQueries({ queryKey: ['produccion'] })
+      qc.invalidateQueries({ queryKey: queryKeys.produccion.all() })
       invalidarDashboard(qc)
     },
   })

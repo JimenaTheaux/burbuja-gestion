@@ -1,9 +1,10 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import { queryKeys } from '@/lib/queryKeys'
 import type { Producto, CategoriaProducto } from '@/types'
 
-const KEY     = ['productos']
-const CAT_KEY = ['categorias']
+const KEY     = queryKeys.productos.all()
+const CAT_KEY = queryKeys.categorias.all()
 
 // Supabase devuelve NUMERIC como string — parseamos a number para coincidir con el tipo
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
