@@ -142,7 +142,7 @@ const SELECT_STYLE: React.CSSProperties = {
   height: 36, border: '0.5px solid #E5E5EA', borderRadius: 8,
   padding: '0 28px 0 10px', fontSize: 12, color: '#1C1C1E',
   background: '#fff', outline: 'none', appearance: 'none',
-  cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+  cursor: 'pointer', fontFamily: 'Inter Variable, sans-serif',
 }
 
 // ─── Drawer de crear/editar ───────────────────────────────────────────────────
@@ -204,7 +204,7 @@ function EgresoDrawer({ open, onClose, egreso, onSaved }: EgresoDrawerProps) {
   }
   const inputBase: React.CSSProperties = {
     width: '100%', border: '0.5px solid #E5E5EA', borderRadius: 8,
-    fontFamily: 'Inter, sans-serif', color: '#1C1C1E', outline: 'none',
+    fontFamily: 'Inter Variable, sans-serif', color: '#1C1C1E', outline: 'none',
     background: '#fff', boxSizing: 'border-box', fontSize: 14,
     transition: 'border-color 0.15s',
   }

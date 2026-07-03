@@ -61,7 +61,7 @@ export default function LoginPage() {
         padding: '32px 24px',
         position: 'relative',
         overflow: 'hidden',
-        fontFamily: 'Inter, sans-serif',
+        fontFamily: 'Inter Variable, sans-serif',
       }}
     >
       {/* SVG decorativo de fondo */}
@@ -205,7 +205,7 @@ export default function LoginPage() {
               borderRadius: 10,
               fontSize: 14,
               fontWeight: 500,
-              fontFamily: 'Inter, sans-serif',
+              fontFamily: 'Inter Variable, sans-serif',
               cursor: canSubmit ? 'pointer' : 'not-allowed',
               marginTop: 8,
               transition: 'background 0.2s',

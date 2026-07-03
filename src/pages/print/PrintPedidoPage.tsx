@@ -64,7 +64,7 @@ export default function PrintPedidoPage() {
       <div className="no-print" style={{ height: 56 }} />
       <div style={{
         maxWidth: 680, margin: '0 auto', padding: '32px 24px',
-        fontFamily: 'Inter, sans-serif', background: 'white',
+        fontFamily: 'Inter Variable, sans-serif', background: 'white',
         minHeight: '100vh',
       }}>
 

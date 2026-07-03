@@ -91,7 +91,7 @@ function FormaCobroSelector({
               background: sel ? '#EBF5FF' : '#fff',
               color: sel ? '#3DD6B5' : '#8E8E93',
               fontWeight: sel ? 500 : 400,
-              fontFamily: 'Inter, sans-serif',
+              fontFamily: 'Inter Variable, sans-serif',
               transition: 'all 0.15s ease',
             }}
           >
@@ -358,7 +358,7 @@ function CardRepartidor({ pedido, isExpanded, onToggle, isOnline, addAction, onS
                         style={{
                           width: '100%', height: 44, padding: '0 10px',
                           border: '0.5px solid #E5E5EA', borderRadius: 8,
-                          fontSize: 13, fontFamily: 'Inter, sans-serif',
+                          fontSize: 13, fontFamily: 'Inter Variable, sans-serif',
                           outline: 'none', boxSizing: 'border-box',
                           background: '#fff',
                         }}
@@ -405,7 +405,7 @@ function CardRepartidor({ pedido, isExpanded, onToggle, isOnline, addAction, onS
                     style={{
                       background: 'none', border: 'none', color: '#8E8E93',
                       fontSize: 12, cursor: 'pointer', textAlign: 'center', padding: '2px 0',
-                      fontFamily: 'Inter, sans-serif',
+                      fontFamily: 'Inter Variable, sans-serif',
                     }}
                   >
                     Cancelar
@@ -460,7 +460,7 @@ function CardRepartidor({ pedido, isExpanded, onToggle, isOnline, addAction, onS
                     style={{
                       width: '100%', padding: '8px 10px',
                       border: '0.5px solid #E5E5EA', borderRadius: 8,
-                      fontSize: 13, fontFamily: 'Inter, sans-serif',
+                      fontSize: 13, fontFamily: 'Inter Variable, sans-serif',
                       resize: 'vertical', outline: 0, background: '#fff',
                       boxSizing: 'border-box',
                     }}
@@ -485,7 +485,7 @@ function CardRepartidor({ pedido, isExpanded, onToggle, isOnline, addAction, onS
                     height: 44, fontSize: 13, fontWeight: 500,
                     cursor: !motivo.trim() ? 'not-allowed' : 'pointer',
                     opacity: !motivo.trim() ? 0.6 : 1,
-                    fontFamily: 'Inter, sans-serif',
+                    fontFamily: 'Inter Variable, sans-serif',
                   }}
                 >
                   {loading ? 'Guardando…' : 'Confirmar falla'}
@@ -496,7 +496,7 @@ function CardRepartidor({ pedido, isExpanded, onToggle, isOnline, addAction, onS
                   style={{
                     background: 'none', border: 'none', color: '#8E8E93',
                     fontSize: 12, cursor: 'pointer', textAlign: 'center', padding: '2px 0',
-                    fontFamily: 'Inter, sans-serif',
+                    fontFamily: 'Inter Variable, sans-serif',
                   }}
                 >
                   Cancelar
@@ -536,7 +536,7 @@ function CardRepartidor({ pedido, isExpanded, onToggle, isOnline, addAction, onS
                         flex: 1, background: '#fff', color: '#8E8E93',
                         border: '0.5px solid #E5E5EA', borderRadius: 10,
                         height: 44, fontSize: 13, cursor: 'pointer',
-                        fontFamily: 'Inter, sans-serif',
+                        fontFamily: 'Inter Variable, sans-serif',
                       }}
                     >
                       Cancelar
@@ -552,7 +552,7 @@ function CardRepartidor({ pedido, isExpanded, onToggle, isOnline, addAction, onS
                     width: '100%', background: '#fff', color: '#8E8E93',
                     border: '1px solid #E5E5EA', borderRadius: 10,
                     height: 44, fontSize: 13, fontWeight: 500,
-                    cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                    cursor: 'pointer', fontFamily: 'Inter Variable, sans-serif',
                   }}
                 >
                   Ya retiré este pedido
@@ -648,7 +648,7 @@ export function RepartidorView() {
                   height: 48, fontSize: 14, fontWeight: 600,
                   cursor: cambiar.isPending ? 'not-allowed' : 'pointer',
                   marginBottom: 12,
-                  fontFamily: 'Inter, sans-serif',
+                  fontFamily: 'Inter Variable, sans-serif',
                 }}
               >
                 Salir a repartir ({listos.length} pedido{listos.length !== 1 ? 's' : ''})

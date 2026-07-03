@@ -351,7 +351,7 @@ export default function ClientesPage() {
               width: '100%', height: 36, padding: '0 12px 0 32px',
               border: '0.5px solid #E5E5EA', borderRadius: 8,
               fontSize: 13, outline: 0, background: '#fff',
-              boxSizing: 'border-box', fontFamily: 'Inter, sans-serif',
+              boxSizing: 'border-box', fontFamily: 'Inter Variable, sans-serif',
             }}
             onFocus={e => (e.target.style.borderColor = '#7EB8E8')}
             onBlur={e  => (e.target.style.borderColor = '#E5E5EA')}

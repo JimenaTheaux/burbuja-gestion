@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClient } from '@/lib/queryClient'
 import { initVitals } from '@/lib/vitals'
+import '@fontsource-variable/inter/index.css'
 import './index.css'
 import App from './App'
 

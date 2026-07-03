@@ -21,7 +21,7 @@ export const FloatSelect = forwardRef<HTMLSelectElement, FloatSelectProps>(
               outline:      0,
               border:       '1px solid rgba(105,105,105,0.4)',
               borderRadius: 10,
-              fontFamily:   'Inter, sans-serif',
+              fontFamily:   'Inter Variable, sans-serif',
               fontSize:     14,
               background:   'white',
               appearance:   'none',

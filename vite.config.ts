@@ -41,20 +41,8 @@ export default defineConfig({
 
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        navigationPreload: true,
         runtimeCaching: [
-          {
-            // Cache de fuentes de Google
-            urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
-            handler:    'CacheFirst',
-            options: {
-              cacheName:    'google-fonts-cache',
-              expiration: {
-                maxEntries:      10,
-                maxAgeSeconds:   60 * 60 * 24 * 365, // 1 año
-              },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
           {
             // Rutas de API — NetworkFirst para datos frescos con fallback offline
             urlPattern: /^\/api\/.*/i,
@@ -68,6 +56,23 @@ export default defineConfig({
               },
               cacheableResponse: { statuses: [0, 200] },
             },
+          },
+          {
+            // Supabase REST — StaleWhileRevalidate: la UI ve datos del cache
+            // al instante mientras se actualizan en background
+            urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/.*/i,
+            handler:    'StaleWhileRevalidate',
+            options: {
+              cacheName: 'supabase-api-cache',
+              expiration: { maxEntries: 50, maxAgeSeconds: 60 * 5 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            // Supabase Auth — NetworkFirst, nunca servir tokens desde cache
+            urlPattern: /^https:\/\/.*\.supabase\.co\/auth\/.*/i,
+            handler:    'NetworkFirst',
+            options: { cacheName: 'supabase-auth-cache' },
           },
         ],
       },

@@ -122,7 +122,7 @@ export function SelectorFecha({ fecha, onChange }: SelectorFechaProps) {
             onBlur={() => setTimeout(() => setPickerOpen(false), 150)}
             style={{
               padding: '6px 10px', border: '1px solid #E5E5EA',
-              borderRadius: 8, fontSize: 13, fontFamily: 'Inter, sans-serif',
+              borderRadius: 8, fontSize: 13, fontFamily: 'Inter Variable, sans-serif',
               outline: 'none', cursor: 'pointer',
             }}
             onFocus={e => (e.target.style.borderColor = '#7EB8E8')}

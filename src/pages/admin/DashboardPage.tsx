@@ -378,7 +378,7 @@ function GraficoLinea({ labels, actual, anterior }: {
         scales: {
           x: {
             grid:   { display: false },
-            ticks:  { font: { size: 10, family: 'Inter' }, color: '#9CA3AF' },
+            ticks:  { font: { size: 10, family: 'Inter Variable' }, color: '#9CA3AF' },
             border: { display: false },
           },
           y: { display: false },
@@ -569,7 +569,7 @@ function FilaPendiente({ p, onCobrado }: {
                 style={{
                   width: '100%', height: 34,
                   border: `1px solid ${error ? '#F05252' : '#E5E5EA'}`,
-                  borderRadius: 8, padding: '0 10px', fontSize: 13, fontFamily: 'Inter, sans-serif',
+                  borderRadius: 8, padding: '0 10px', fontSize: 13, fontFamily: 'Inter Variable, sans-serif',
                   outline: 'none', boxSizing: 'border-box',
                 }}
               />
@@ -584,7 +584,7 @@ function FilaPendiente({ p, onCobrado }: {
                 onChange={e => setFechaCobro(e.target.value)}
                 style={{
                   width: '100%', height: 34, border: '1px solid #E5E5EA', borderRadius: 8,
-                  padding: '0 10px', fontSize: 13, fontFamily: 'Inter, sans-serif',
+                  padding: '0 10px', fontSize: 13, fontFamily: 'Inter Variable, sans-serif',
                   outline: 'none', boxSizing: 'border-box',
                 }}
               />
@@ -787,7 +787,7 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, fontFamily: 'Inter, sans-serif' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, fontFamily: 'Inter Variable, sans-serif' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: 48 }}>
           <Skeleton style={{ height: 14, width: 72, borderRadius: 4 }} />
           <div style={{ display: 'flex', gap: 8 }}>
@@ -836,7 +836,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, fontFamily: 'Inter, sans-serif' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, fontFamily: 'Inter Variable, sans-serif' }}>
 
       {/* ── Topbar ── */}
       <div style={{
@@ -850,7 +850,7 @@ export default function DashboardPage() {
             onChange={e => handleDesde(e.target.value)}
             style={{
               height: 32, border: '0.5px solid #E5E5EA', borderRadius: 6,
-              padding: '0 10px', fontSize: 11, fontFamily: 'Inter, sans-serif',
+              padding: '0 10px', fontSize: 11, fontFamily: 'Inter Variable, sans-serif',
               color: '#1C1C1E', background: '#fff', outline: 'none', boxSizing: 'border-box',
             }}
             onFocus={e => (e.target.style.borderColor = '#7EB8E8')}
@@ -861,7 +861,7 @@ export default function DashboardPage() {
             onChange={e => handleHasta(e.target.value)}
             style={{
               height: 32, border: '0.5px solid #E5E5EA', borderRadius: 6,
-              padding: '0 10px', fontSize: 11, fontFamily: 'Inter, sans-serif',
+              padding: '0 10px', fontSize: 11, fontFamily: 'Inter Variable, sans-serif',
               color: '#1C1C1E', background: '#fff', outline: 'none', boxSizing: 'border-box',
             }}
             onFocus={e => (e.target.style.borderColor = '#7EB8E8')}
@@ -873,7 +873,7 @@ export default function DashboardPage() {
               height: 32, padding: '0 12px', fontSize: 11, fontWeight: 500,
               color: '#8E8E93', background: '#fff',
               border: '0.5px solid #E5E5EA', borderRadius: 6,
-              cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+              cursor: 'pointer', fontFamily: 'Inter Variable, sans-serif',
             }}
           >
             Listado del día
@@ -927,7 +927,7 @@ export default function DashboardPage() {
               style={{
                 ...subSt, display: 'inline-block', marginTop: 4,
                 color: '#D32F2F', background: 'none', border: 'none',
-                cursor: 'pointer', padding: 0, fontFamily: 'Inter, sans-serif',
+                cursor: 'pointer', padding: 0, fontFamily: 'Inter Variable, sans-serif',
               }}
             >
               Ver detalle →
@@ -1097,7 +1097,7 @@ export default function DashboardPage() {
               background: 'transparent', color: '#8E8E93',
               fontSize: 11, fontWeight: 500, cursor: 'pointer',
               display: 'flex', alignItems: 'center', gap: 6,
-              fontFamily: 'Inter, sans-serif',
+              fontFamily: 'Inter Variable, sans-serif',
             }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = '#3DD6B5'; e.currentTarget.style.color = '#28B99A' }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = '#E5E5EA'; e.currentTarget.style.color = '#8E8E93' }}

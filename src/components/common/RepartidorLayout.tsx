@@ -150,7 +150,7 @@ export function RepartidorLayout() {
             style={{
               background: '#F9A825', color: '#fff', border: 'none',
               borderRadius: 6, padding: '3px 10px', fontSize: 11,
-              fontWeight: 500, cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+              fontWeight: 500, cursor: 'pointer', fontFamily: 'Inter Variable, sans-serif',
             }}
           >
             Sincronizar

@@ -68,7 +68,7 @@ function ModalAnular({ onConfirm, onCancel }: { onConfirm: (motivo: string) => v
         <p style={{ fontWeight: 700, fontSize: 16, margin: '0 0 8px' }}>Anular pedido</p>
         <p style={{ fontSize: 13, color: '#8E8E93', margin: '0 0 16px' }}>Esta acción no se puede deshacer. Ingresá el motivo.</p>
         <textarea value={motivo} onChange={e => setMotivo(e.target.value)} placeholder="Motivo de anulación…" rows={3}
-          style={{ width: '100%', padding: '10px 12px', border: '1px solid #E5E5EA', borderRadius: 10, fontSize: 14, resize: 'vertical', fontFamily: 'Inter, sans-serif' }} />
+          style={{ width: '100%', padding: '10px 12px', border: '1px solid #E5E5EA', borderRadius: 10, fontSize: 14, resize: 'vertical', fontFamily: 'Inter Variable, sans-serif' }} />
         <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
           <button onClick={() => motivo.trim() && onConfirm(motivo.trim())} disabled={!motivo.trim()}
             style={{ flex: 1, background: !motivo.trim() ? 'rgba(211,47,47,0.4)' : '#D32F2F', color: '#fff', border: 'none', borderRadius: 10, padding: '12px', fontSize: 14, fontWeight: 600, cursor: motivo.trim() ? 'pointer' : 'not-allowed', minHeight: 44 }}>
@@ -90,7 +90,7 @@ function ModalMotivo({ titulo, onConfirm, onCancel }: {
       <div style={{ background: '#fff', borderRadius: 20, padding: 24, maxWidth: 380, width: '100%' }}>
         <p style={{ fontWeight: 700, fontSize: 16, margin: '0 0 8px' }}>{titulo}</p>
         <textarea value={motivo} onChange={e => setMotivo(e.target.value)} placeholder="Motivo…" rows={3}
-          style={{ width: '100%', padding: '10px 12px', border: '1px solid #E5E5EA', borderRadius: 10, fontSize: 14, resize: 'vertical', fontFamily: 'Inter, sans-serif' }} />
+          style={{ width: '100%', padding: '10px 12px', border: '1px solid #E5E5EA', borderRadius: 10, fontSize: 14, resize: 'vertical', fontFamily: 'Inter Variable, sans-serif' }} />
         <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
           <button onClick={() => motivo.trim() && onConfirm(motivo.trim())} disabled={!motivo.trim()}
             style={{ flex: 1, background: !motivo.trim() ? 'rgba(61,214,181,0.4)' : '#3DD6B5', color: '#fff', border: 'none', borderRadius: 10, padding: '12px', fontSize: 14, fontWeight: 600, cursor: motivo.trim() ? 'pointer' : 'not-allowed', minHeight: 44 }}>
@@ -116,7 +116,7 @@ interface Props {
 const inputFechaStyle: React.CSSProperties = {
   width: '100%', height: 44, padding: '0 10px',
   border: '1px solid rgba(105,105,105,0.4)',
-  borderRadius: 10, fontSize: 14, fontFamily: 'Inter, sans-serif',
+  borderRadius: 10, fontSize: 14, fontFamily: 'Inter Variable, sans-serif',
   outline: 'none', boxSizing: 'border-box',
 }
 
@@ -385,7 +385,7 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
                       <div>
                         <label style={labelUpperStyle}>Forma de cobro</label>
                         <select value={cobroForma} onChange={e => setCobroForma(e.target.value)}
-                          style={{ width: '100%', padding: '10px 12px', border: '1px solid #E5E5EA', borderRadius: 10, fontSize: 14, fontFamily: 'Inter, sans-serif', outline: 'none' }}>
+                          style={{ width: '100%', padding: '10px 12px', border: '1px solid #E5E5EA', borderRadius: 10, fontSize: 14, fontFamily: 'Inter Variable, sans-serif', outline: 'none' }}>
                           <option value="efectivo">Efectivo</option>
                           <option value="transferencia">Transferencia</option>
                           <option value="pendiente">Pendiente</option>
@@ -394,7 +394,7 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
                       <div>
                         <label style={labelUpperStyle}>Monto cobrado</label>
                         <input type="number" value={cobroMonto} onChange={e => setCobroMonto(e.target.value)} placeholder="0.00"
-                          style={{ width: '100%', padding: '10px 12px', border: '1px solid #E5E5EA', borderRadius: 10, fontSize: 14, fontFamily: 'Inter, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
+                          style={{ width: '100%', padding: '10px 12px', border: '1px solid #E5E5EA', borderRadius: 10, fontSize: 14, fontFamily: 'Inter Variable, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
                       </div>
                       {cobroForma !== 'pendiente' && (
                         <div>
@@ -531,7 +531,7 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
                         style={{
                           width: '100%', padding: '10px 12px',
                           border: `1.5px solid ${cerrarError ? '#D32F2F' : '#E5E5EA'}`,
-                          borderRadius: 10, fontSize: 14, fontFamily: 'Inter, sans-serif',
+                          borderRadius: 10, fontSize: 14, fontFamily: 'Inter Variable, sans-serif',
                           outline: 0, boxSizing: 'border-box',
                         }}
                         onFocus={e => (e.target.style.borderColor = '#145A32')}

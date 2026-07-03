@@ -261,7 +261,7 @@ function ModalAnular({ pedido, onConfirm, onCancel, loading }: {
           style={{
             width: '100%', padding: '10px 12px',
             border: '1.5px solid #E5E5EA', borderRadius: 10,
-            fontSize: 13, resize: 'none', fontFamily: 'Inter, sans-serif',
+            fontSize: 13, resize: 'none', fontFamily: 'Inter Variable, sans-serif',
             outline: 0, boxSizing: 'border-box', marginBottom: 12,
           }}
           onFocus={e => (e.target.style.borderColor = '#D32F2F')}

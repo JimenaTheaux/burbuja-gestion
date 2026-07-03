@@ -63,6 +63,8 @@ export function Navbar() {
           <img
             src="/Logo_sin_fondo_negro.png"
             alt="Burbuja"
+            fetchPriority="high"
+            loading="eager"
             style={{ height: 40, width: 'auto', objectFit: 'contain' }}
             onError={() => setLogoError(true)}
           />

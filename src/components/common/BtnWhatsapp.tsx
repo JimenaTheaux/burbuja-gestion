@@ -42,7 +42,7 @@ export function BtnWhatsapp({
           cursor:         isDisabled ? 'not-allowed' : 'pointer',
           transition:     'background 0.15s',
           whiteSpace:     'nowrap',
-          fontFamily:     'Inter, sans-serif',
+          fontFamily:     'Inter Variable, sans-serif',
         }}
         onMouseEnter={e => { if (!isDisabled) (e.currentTarget as HTMLButtonElement).style.background = '#1ebe5a' }}
         onMouseLeave={e => { if (!isDisabled) (e.currentTarget as HTMLButtonElement).style.background = '#25D366' }}

@@ -26,7 +26,7 @@ const LABEL_STYLE: React.CSSProperties = {
 const BASE_INPUT: React.CSSProperties = {
   border:       '0.5px solid #E5E5EA',
   borderRadius: 8,
-  fontFamily:   'Inter, sans-serif',
+  fontFamily:   'Inter Variable, sans-serif',
   color:        '#1C1C1E',
   outline:      'none',
   width:        '100%',

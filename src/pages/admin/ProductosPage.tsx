@@ -206,7 +206,7 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
   const selectStyle: CSSProperties = {
     width: '100%', padding: '0 28px 0 12px',
     border: '0.5px solid #E5E5EA', borderRadius: 8,
-    fontFamily: 'Inter, sans-serif', background: '#fff',
+    fontFamily: 'Inter Variable, sans-serif', background: '#fff',
     appearance: 'none', outline: 'none', cursor: 'pointer',
     color: '#1C1C1E', boxSizing: 'border-box',
   }
@@ -257,7 +257,7 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
                   }}
                   placeholder="Buscar o crear…"
                   className="fi-input"
-                  style={{ padding: '0 12px', border: '0.5px solid #E5E5EA', borderRadius: 8, outline: 0, width: '100%', fontFamily: 'Inter, sans-serif', boxSizing: 'border-box', background: '#fff', color: '#1C1C1E' }}
+                  style={{ padding: '0 12px', border: '0.5px solid #E5E5EA', borderRadius: 8, outline: 0, width: '100%', fontFamily: 'Inter Variable, sans-serif', boxSizing: 'border-box', background: '#fff', color: '#1C1C1E' }}
                 />
                 {catDrop && (
                   <div style={{
@@ -517,7 +517,7 @@ function CategoriasDrawer({ open, onClose, onMsg }: CatDrawerProps) {
   const inputStyle: CSSProperties = {
     flex: 1, height: 32, padding: '0 10px',
     border: '1.5px solid #7EB8E8', borderRadius: 6,
-    fontSize: 13, outline: 0, fontFamily: 'Inter, sans-serif', boxSizing: 'border-box',
+    fontSize: 13, outline: 0, fontFamily: 'Inter Variable, sans-serif', boxSizing: 'border-box',
   }
   const btnIconStyle: CSSProperties = {
     width: 32, height: 32, background: 'transparent', border: 'none',
@@ -912,7 +912,7 @@ export default function ProductosPage() {
               width: '100%', height: 36, padding: '0 12px 0 32px',
               border: '0.5px solid #E5E5EA', borderRadius: 8,
               fontSize: 13, outline: 0, background: '#fff',
-              boxSizing: 'border-box', fontFamily: 'Inter, sans-serif',
+              boxSizing: 'border-box', fontFamily: 'Inter Variable, sans-serif',
             }}
             onFocus={e => (e.target.style.borderColor = '#7EB8E8')}
             onBlur={e  => (e.target.style.borderColor = '#E5E5EA')}

@@ -77,7 +77,8 @@
     height: 100%;
     width: 100%;
     overflow-x: hidden;
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'Inter Variable', system-ui, sans-serif;
+    font-display: swap;
     background-color: #F5F7F9;
     color: #1C1C1E;
     -webkit-font-smoothing: antialiased;
@@ -210,7 +211,7 @@
     outline: 0;
     border: 1px solid rgba(105, 105, 105, 0.4);
     border-radius: 10px;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Inter Variable', sans-serif;
     font-size: 14px;
     transition: border-color 0.2s ease;
     background: white;

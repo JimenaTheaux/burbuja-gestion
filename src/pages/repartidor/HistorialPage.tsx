@@ -203,7 +203,7 @@ export default function HistorialPage() {
               style={{
                 background: 'none', border: '1px solid #E5E5EA', color: '#3DD6B5',
                 fontSize: 13, cursor: 'pointer', borderRadius: 8,
-                padding: '8px 16px', fontFamily: 'Inter, sans-serif', minHeight: 36,
+                padding: '8px 16px', fontFamily: 'Inter Variable, sans-serif', minHeight: 36,
               }}
             >
               Ver hoy →

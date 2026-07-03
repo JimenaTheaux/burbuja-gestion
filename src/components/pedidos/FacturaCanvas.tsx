@@ -24,7 +24,7 @@ export function FacturaCanvas({ pedido }: { pedido: PedidoDetalle }) {
       style={{
         width: 600,
         background: '#ffffff',
-        fontFamily: 'Inter, Arial, sans-serif',
+        fontFamily: 'Inter Variable, Arial, sans-serif',
         padding: '32px 36px',
         boxSizing: 'border-box',
         color: '#1C1C1E',

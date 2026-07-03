@@ -54,7 +54,7 @@ export function ButtonGroup<T extends string>({
                 cursor:       disabled ? 'not-allowed' : 'pointer',
                 opacity:      disabled ? 0.5 : 1,
                 transition:   'all 0.15s ease',
-                fontFamily:   'Inter, sans-serif',
+                fontFamily:   'Inter Variable, sans-serif',
                 whiteSpace:   'nowrap',
               }}
             >

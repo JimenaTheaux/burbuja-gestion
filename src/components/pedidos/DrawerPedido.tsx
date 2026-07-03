@@ -210,7 +210,7 @@ function SelectorCliente({
                 width: '100%', padding: '0 12px',
                 border: `0.5px solid ${error ? '#D32F2F' : '#E5E5EA'}`,
                 borderRadius: 8, outline: 0, background: '#fff',
-                fontFamily: 'Inter, sans-serif', boxSizing: 'border-box', color: '#1C1C1E',
+                fontFamily: 'Inter Variable, sans-serif', boxSizing: 'border-box', color: '#1C1C1E',
               }}
               onFocusCapture={e => { e.currentTarget.style.borderColor = '#7EB8E8' }}
               onBlurCapture={e  => { e.currentTarget.style.borderColor = error ? '#D32F2F' : '#E5E5EA' }}
@@ -421,7 +421,7 @@ function SelectorProducto({
               width: '100%', padding: '0 12px',
               border: `0.5px solid ${error ? '#D32F2F' : '#E5E5EA'}`,
               borderRadius: 8, outline: 0, background: '#fff',
-              fontFamily: 'Inter, sans-serif', boxSizing: 'border-box', color: '#1C1C1E',
+              fontFamily: 'Inter Variable, sans-serif', boxSizing: 'border-box', color: '#1C1C1E',
             }}
             onFocusCapture={e => { e.currentTarget.style.borderColor = '#7EB8E8' }}
             onBlurCapture={e  => { e.currentTarget.style.borderColor = error ? '#D32F2F' : '#E5E5EA' }}
@@ -588,7 +588,7 @@ function ItemFormInline({
             style={{
               width: '100%', height: 40, padding: '0 12px',
               border: '0.5px solid #E5E5EA', borderRadius: 8, outline: 0,
-              background: '#fff', fontFamily: 'Inter, sans-serif',
+              background: '#fff', fontFamily: 'Inter Variable, sans-serif',
               fontSize: 13, color: '#1C1C1E', boxSizing: 'border-box',
             }}
           >
@@ -1047,7 +1047,7 @@ export function DrawerPedido({ open, onClose, pedido, onSaved }: Props) {
                 style={{
                   width: 80, height: 28, border: '0.5px solid #E5E5EA', borderRadius: 6,
                   padding: '0 8px', fontSize: 12, textAlign: 'right',
-                  fontFamily: 'Inter, sans-serif', outline: 'none', background: '#fff', color: '#1C1C1E',
+                  fontFamily: 'Inter Variable, sans-serif', outline: 'none', background: '#fff', color: '#1C1C1E',
                 }}
                 onFocus={e => { e.currentTarget.style.borderColor = '#7EB8E8' }}
                 onBlur={e  => { e.currentTarget.style.borderColor = '#E5E5EA' }}
@@ -1064,7 +1064,7 @@ export function DrawerPedido({ open, onClose, pedido, onSaved }: Props) {
                 style={{
                   width: 80, height: 28, border: '0.5px solid #E5E5EA', borderRadius: 6,
                   padding: '0 8px', fontSize: 12, textAlign: 'right',
-                  fontFamily: 'Inter, sans-serif', outline: 'none', background: '#fff', color: '#1C1C1E',
+                  fontFamily: 'Inter Variable, sans-serif', outline: 'none', background: '#fff', color: '#1C1C1E',
                 }}
                 onFocus={e => { e.currentTarget.style.borderColor = '#7EB8E8' }}
                 onBlur={e  => { e.currentTarget.style.borderColor = '#E5E5EA' }}
