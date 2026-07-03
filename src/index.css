@@ -215,6 +215,35 @@
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
   }
+
+  /* ─── Navbar horizontal (Admin — desktop) ─────────────────────────────────── */
+  .navbar-link {
+    padding:        6px 12px;
+    border-radius:  8px;
+    font-size:      12px;
+    font-weight:    500;
+    color:          #8E8E93;
+    display:        flex;
+    align-items:    center;
+    gap:            6px;
+    text-decoration: none;
+    cursor:         pointer;
+    transition:     all 0.15s ease;
+    white-space:    nowrap;
+  }
+  .navbar-link:hover {
+    background: #F5F7F9;
+    color:      #3A3A3C;
+  }
+  .navbar-link--active,
+  .navbar-link--active:hover {
+    background:  #E8FAF6;
+    color:       #28B99A;
+    font-weight: 600;
+  }
+  .navbar-logout:hover {
+    color: #F05252;
+  }
 }
 
 /* ─── Print ──────────────────────────────────────────────────────────────── */
