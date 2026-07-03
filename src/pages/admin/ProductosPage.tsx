@@ -179,10 +179,10 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
         type="submit"
         form="producto-form"
         disabled={saving}
-        className="btn-press"
+        className="btn-press btn-drawer-primary"
         style={{
           background: saving ? 'rgba(61,214,181,0.5)' : '#3DD6B5', color: '#fff',
-          border: 'none', borderRadius: 10, height: 44, width: '100%',
+          border: 'none', borderRadius: 10,
           fontSize: 14, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer',
         }}
       >
@@ -191,10 +191,10 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
       <button
         type="button"
         onClick={onClose}
-        className="btn-press"
+        className="btn-press btn-drawer-ghost"
         style={{
           background: 'transparent', color: '#8E8E93',
-          border: 'none', height: 36, width: '100%',
+          border: 'none',
           fontSize: 13, cursor: 'pointer',
         }}
       >
@@ -221,7 +221,7 @@ function ProductoDrawer({ open, onClose, producto, onSaved }: DrawerProps) {
       <form
         id="producto-form"
         onSubmit={handleSubmit(onSubmit)}
-        style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+        className="drawer-form"
       >
         {/* Grid 1: Nombre + Categoría */}
         <div className="form-grid-2">

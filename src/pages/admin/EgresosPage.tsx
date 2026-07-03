@@ -217,12 +217,12 @@ function EgresoDrawer({ open, onClose, egreso, onSaved }: EgresoDrawerProps) {
         type="submit"
         form="egreso-form"
         disabled={saving}
-        className="btn-press"
+        className="btn-press btn-drawer-primary"
         style={{
           background: saving ? 'rgba(61,214,181,0.5)' : '#3DD6B5',
           color: '#fff', border: 'none', borderRadius: 10,
-          height: 44, fontSize: 14, fontWeight: 600,
-          cursor: saving ? 'not-allowed' : 'pointer', width: '100%',
+          fontSize: 14, fontWeight: 600,
+          cursor: saving ? 'not-allowed' : 'pointer',
         }}
       >
         {saving ? 'Guardando…' : egreso ? 'Guardar cambios' : 'Registrar egreso'}
@@ -230,10 +230,10 @@ function EgresoDrawer({ open, onClose, egreso, onSaved }: EgresoDrawerProps) {
       <button
         type="button"
         onClick={onClose}
-        className="btn-press"
+        className="btn-press btn-drawer-ghost"
         style={{
           background: 'transparent', color: '#8E8E93', border: 'none',
-          height: 36, fontSize: 13, cursor: 'pointer', width: '100%',
+          fontSize: 13, cursor: 'pointer',
         }}
       >
         Cancelar
@@ -251,7 +251,7 @@ function EgresoDrawer({ open, onClose, egreso, onSaved }: EgresoDrawerProps) {
       <form
         id="egreso-form"
         onSubmit={handleSubmit(onSubmit)}
-        style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+        className="drawer-form"
       >
         {/* Fecha + Categoría en grid 2 col desktop */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>

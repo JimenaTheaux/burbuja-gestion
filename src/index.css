@@ -15,6 +15,14 @@
   from { transform: translateX(100%); }
   to   { transform: translateX(0); }
 }
+@keyframes slideUpDrawer {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+@keyframes dialogIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
 @keyframes shimmer {
   0%   { opacity: 1; }
   50%  { opacity: 0.4; }
@@ -96,11 +104,34 @@
   }
 
   /* ─── Drawer ──────────────────────────────────────────────────────────────── */
-  .drawer-panel {
-    width: 50%;
+  /* Desktop: dialog centrado (ver Drawer.tsx, inline). Mobile: panel full-screen. */
+
+  .drawer-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
   }
-  @media (max-width: 767px) {
-    .drawer-panel { width: 100%; }
+
+  .drawer-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  @media (min-width: 1024px) {
+    .drawer-footer { flex-direction: row; gap: 8px; flex-wrap: wrap; }
+  }
+
+  .btn-drawer-primary {
+    width: 100%;
+    min-height: 46px;
+  }
+  .btn-drawer-ghost {
+    width: 100%;
+    min-height: 40px;
+  }
+  @media (min-width: 1024px) {
+    .btn-drawer-primary { width: auto; flex: 1; min-height: 36px; }
+    .btn-drawer-ghost   { width: auto; flex: none; padding: 0 16px; min-height: 36px; }
   }
 
   /* ─── Cards tappables ─────────────────────────────────────────────────────── */
@@ -151,7 +182,7 @@
     font-size: 16px; /* iOS zoom prevention on mobile */
   }
   @media (min-width: 1024px) {
-    .fi-input { height: 40px; font-size: 13px; }
+    .fi-input { height: 36px; font-size: 13px; }
   }
   .fi-textarea {
     min-height: 72px;

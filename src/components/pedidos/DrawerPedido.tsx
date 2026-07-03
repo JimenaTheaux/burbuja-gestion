@@ -66,7 +66,7 @@ interface Props {
 function SecLabel({ label, badge }: { label: string; badge?: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-      <span style={{ fontSize: 9, fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+      <span style={{ fontSize: 9, fontWeight: 600, color: '#8E8E93', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
         {label}
       </span>
       {badge && (
@@ -822,11 +822,12 @@ export function DrawerPedido({ open, onClose, pedido, onSaved }: Props) {
         type="button"
         onClick={handleSubmit(d => submit(d, 'confirmar'))}
         disabled={saving}
+        className="btn-drawer-primary"
         style={{
           background: saving ? 'rgba(61,214,181,0.5)' : '#3DD6B5',
           color: '#fff', border: 'none', borderRadius: 10,
-          height: 44, fontSize: 14, fontWeight: 700,
-          cursor: saving ? 'not-allowed' : 'pointer', width: '100%',
+          fontSize: 14, fontWeight: 700,
+          cursor: saving ? 'not-allowed' : 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
         }}
       >
@@ -840,11 +841,12 @@ export function DrawerPedido({ open, onClose, pedido, onSaved }: Props) {
           type="button"
           onClick={handleSubmit(d => submit(d, 'borrador'))}
           disabled={saving}
+          className="btn-drawer-ghost"
           style={{
             background: 'transparent', color: '#3DD6B5',
             border: '0.5px solid #3DD6B5', borderRadius: 10,
-            height: 38, fontSize: 13, fontWeight: 600,
-            cursor: saving ? 'not-allowed' : 'pointer', width: '100%',
+            fontSize: 13, fontWeight: 600,
+            cursor: saving ? 'not-allowed' : 'pointer',
           }}
         >
           Guardar borrador
@@ -1026,7 +1028,7 @@ export function DrawerPedido({ open, onClose, pedido, onSaved }: Props) {
 
         {/* ── BLOQUE 4 — Totales ──────────────────────────────────────────────── */}
         <div>
-          <div style={{ background: '#F5F7F9', borderRadius: 8, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ background: '#F5F7F9', borderRadius: 10, padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
             {/* Subtotal */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 12, color: '#8E8E93' }}>Subtotal</span>

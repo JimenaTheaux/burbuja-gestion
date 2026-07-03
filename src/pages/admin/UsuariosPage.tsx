@@ -78,10 +78,10 @@ function CrearUsuarioDrawer({ open, onClose, onSaved }: CrearDrawerProps) {
         type="submit"
         form="crear-usuario-form"
         disabled={saving}
-        className="btn-press"
+        className="btn-press btn-drawer-primary"
         style={{
           background: saving ? 'rgba(61,214,181,0.5)' : '#3DD6B5', color: '#fff',
-          border: 'none', borderRadius: 10, height: 44, width: '100%',
+          border: 'none', borderRadius: 10,
           fontSize: 14, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer',
         }}
       >
@@ -90,10 +90,10 @@ function CrearUsuarioDrawer({ open, onClose, onSaved }: CrearDrawerProps) {
       <button
         type="button"
         onClick={onClose}
-        className="btn-press"
+        className="btn-press btn-drawer-ghost"
         style={{
           background: 'transparent', color: '#8E8E93', border: 'none',
-          height: 36, width: '100%', fontSize: 13, cursor: 'pointer',
+          fontSize: 13, cursor: 'pointer',
         }}
       >
         Cancelar
@@ -106,7 +106,7 @@ function CrearUsuarioDrawer({ open, onClose, onSaved }: CrearDrawerProps) {
       <form
         id="crear-usuario-form"
         onSubmit={handleSubmit(onSubmit)}
-        style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+        className="drawer-form"
       >
         {/* Nombre + Email */}
         <div className="form-grid-2">
@@ -285,10 +285,10 @@ function EditarUsuarioDrawer({ open, onClose, usuario, onSaved, selfId }: Editar
         type="submit"
         form="editar-usuario-form"
         disabled={saving}
-        className="btn-press"
+        className="btn-press btn-drawer-primary"
         style={{
           background: saving ? 'rgba(61,214,181,0.5)' : '#3DD6B5', color: '#fff',
-          border: 'none', borderRadius: 10, height: 44, width: '100%',
+          border: 'none', borderRadius: 10,
           fontSize: 14, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer',
         }}
       >
@@ -302,12 +302,12 @@ function EditarUsuarioDrawer({ open, onClose, usuario, onSaved, selfId }: Editar
             onSaved(`Usuario ${!usuario.activo ? 'activado' : 'desactivado'}`)
             onClose()
           }}
-          className="btn-press"
+          className="btn-press btn-drawer-ghost"
           style={{
             background: usuario.activo ? '#FDECEA' : '#E8F8F0',
             color: usuario.activo ? '#D32F2F' : '#2E9E5C',
             border: `1.5px solid ${usuario.activo ? '#D32F2F' : '#2E9E5C'}`,
-            borderRadius: 10, height: 40, width: '100%',
+            borderRadius: 10,
             fontSize: 13, fontWeight: 600, cursor: 'pointer',
           }}
         >
@@ -317,10 +317,10 @@ function EditarUsuarioDrawer({ open, onClose, usuario, onSaved, selfId }: Editar
       <button
         type="button"
         onClick={onClose}
-        className="btn-press"
+        className="btn-press btn-drawer-ghost"
         style={{
           background: 'transparent', color: '#8E8E93', border: 'none',
-          height: 36, width: '100%', fontSize: 13, cursor: 'pointer',
+          fontSize: 13, cursor: 'pointer',
         }}
       >
         Cancelar
@@ -334,7 +334,7 @@ function EditarUsuarioDrawer({ open, onClose, usuario, onSaved, selfId }: Editar
         <form
           id="editar-usuario-form"
           onSubmit={handleSubmit(onSubmit)}
-          style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+          className="drawer-form"
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 10px', background: '#F5F7F9', borderRadius: 8 }}>
             <Mail size={13} color="#8E8E93" />
