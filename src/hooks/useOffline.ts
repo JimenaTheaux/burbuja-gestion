@@ -14,7 +14,7 @@ import type { EstadoPedido } from '@/types'
 
 export type AddActionInput =
   | { type: 'cambiarEstado'; pedidoId: string; estadoActual: EstadoPedido; estadoNuevo: EstadoPedido; notas?: string }
-  | { type: 'cerrarPedido';  pedidoId: string; estadoActual: EstadoPedido; formaCobro: string; montoCobrado?: string; estadoPago: 'cobrado' | 'pendiente'; notasEntrega?: string; fechaCobro?: string }
+  | { type: 'cerrarPedido';  pedidoId: string; estadoActual: EstadoPedido; pagos: { forma_pago: string; monto: number }[]; notas?: string }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
@@ -57,16 +57,10 @@ export function useOffline() {
             if (error) throw new Error(error.message)
           } else if (action.type === 'cerrarPedido') {
             const { error } = await supabase.rpc('cerrar_pedido', {
-              p_pedido_id:       action.pedidoId,
-              p_estado_anterior: action.estadoActual,
-              p_forma_cobro:     action.formaCobro,
-              p_monto_cobrado:   action.montoCobrado ? parseFloat(action.montoCobrado) : null,
-              p_estado_pago:     action.estadoPago,
-              p_notas_entrega:   action.notasEntrega ?? null,
-              p_fecha_cobro:     action.formaCobro === 'pendiente'
-                ? null
-                : (action.fechaCobro ?? new Date().toISOString().split('T')[0]),
-              p_usuario_id:      usuario?.id ?? null,
+              p_pedido_id:  action.pedidoId,
+              p_usuario_id: usuario?.id ?? null,
+              p_pagos:      JSON.stringify(action.pagos),
+              p_notas:      action.notas ?? null,
             })
             if (error) throw new Error(error.message)
           }

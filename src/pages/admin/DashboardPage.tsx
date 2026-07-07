@@ -8,19 +8,26 @@ import {
 import * as XLSX from 'xlsx'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { Skeleton } from '@/components/ui/skeleton'
+import { FormPagos } from '@/components/pedidos/FormPagos'
 import { queryKeys } from '@/lib/queryKeys'
-import { useEditarCobro, fetchPedidoDetalle } from '@/services/pedidos'
+import { fetchPedidoDetalle } from '@/services/pedidos'
+import { useRegistrarPago, usePendientesCobro, type PedidoPendienteDetalle } from '@/services/pedidoPagos'
 import { useCompartirFactura } from '@/hooks/useCompartirFactura'
-import { useDashboard } from '@/services/produccion'
 import { formatNumero, type EstadoPedido } from '@/types'
-import type { PedidoPendienteCobro } from '@/services/produccion'
 import { supabase } from '@/lib/supabase'
 
 Chart.register(...registerables)
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface PedidoCobradoItem {
+interface PagoPeriodo {
+  pedido_id:  string
+  monto:      number
+  forma_pago: string
+  fecha_pago: string
+}
+
+interface ItemConCosto {
   cantidad:        number
   costo_snapshot:  number
   precio_unitario: number
@@ -31,14 +38,9 @@ interface PedidoCobradoItem {
   } | null
 }
 
-interface PedidoCobradoDetalle {
-  id:               string
-  numero:           number
-  monto_cobrado:    number | null
-  forma_cobro:      string | null
-  fecha_cobro:      string | null
-  fecha_produccion: string | null
-  pedido_items:     PedidoCobradoItem[]
+interface PedidoConItems {
+  id:           string
+  pedido_items: ItemConCosto[]
 }
 
 interface PedidoRow {
@@ -52,11 +54,9 @@ type EgresoItem = {
   fecha_egreso: string
 }
 
-type EvolItem = {
-  monto_cobrado: string | null
-  fecha_cobro:   string | null
-  estado_pago:   string | null
-  forma_cobro:   string | null
+type PagoEvol = {
+  monto:      number
+  fecha_pago: string
 }
 
 // ─── Date helpers ─────────────────────────────────────────────────────────────
@@ -127,29 +127,56 @@ function usePendientesCierre() {
   })
 }
 
-function usePedidosCobradosDetalle(desde: string, hasta: string) {
+// Pagos del período + los pedidos (con items/costo) que generaron esos pagos.
+// Se usa para KPIs de cobro, costo de producción, top ventas y resumen quincenal —
+// todo se ancla a pedido_pagos.fecha_pago en vez de pedidos.fecha_cobro.
+function usePagosPeriodoDetalle(desde: string, hasta: string) {
   return useQuery({
-    queryKey:        [...queryKeys.pedidos.all(), 'cobrados-detalle', desde, hasta],
+    queryKey:        [...queryKeys.pedidos.all(), 'dash-pagos-detalle', desde, hasta],
     placeholderData: keepPreviousData,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: pagosRaw, error: e1 } = await supabase
+        .from('pedido_pagos')
+        .select('pedido_id, monto, forma_pago, fecha_pago')
+        .gte('fecha_pago', desde)
+        .lte('fecha_pago', hasta)
+      if (e1) throw new Error(e1.message)
+
+      const pagos: PagoPeriodo[] = (pagosRaw ?? []).map(p => ({
+        pedido_id:  p.pedido_id,
+        monto:      Number(p.monto),
+        forma_pago: p.forma_pago,
+        fecha_pago: p.fecha_pago,
+      }))
+
+      const ids = [...new Set(pagos.map(p => p.pedido_id))]
+      if (ids.length === 0) return { pagos, pedidos: [] as PedidoConItems[] }
+
+      const { data: pedidosRaw, error: e2 } = await supabase
         .from('pedidos')
         .select(`
-          id, numero, monto_cobrado, forma_cobro, fecha_cobro, fecha_produccion,
+          id,
           pedido_items (
             cantidad, costo_snapshot, precio_unitario,
-            productos (
-              nombre, fragancia,
-              categorias_producto (nombre)
-            )
+            productos ( nombre, fragancia, categorias_producto (nombre) )
           )
         `)
-        .eq('estado', 'cerrado')
-        .eq('estado_pago', 'cobrado')
-        .gte('fecha_cobro', desde)
-        .lte('fecha_cobro', hasta)
-      if (error) throw new Error(error.message)
-      return (data ?? []) as unknown as PedidoCobradoDetalle[]
+        .in('id', ids)
+      if (e2) throw new Error(e2.message)
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pedidos = (pedidosRaw ?? []).map((p: any): PedidoConItems => ({
+        id: p.id,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        pedido_items: (p.pedido_items ?? []).map((i: any): ItemConCosto => ({
+          cantidad:        Number(i.cantidad),
+          costo_snapshot:  Number(i.costo_snapshot),
+          precio_unitario: Number(i.precio_unitario),
+          productos:       i.productos ?? null,
+        })),
+      }))
+
+      return { pagos, pedidos }
     },
     refetchInterval: 30_000,
     staleTime:       0,
@@ -159,17 +186,16 @@ function usePedidosCobradosDetalle(desde: string, hasta: string) {
 function useEvolucionRango(desde: string, hasta: string) {
   const mesAnteriorDesde = restarUnMes(desde)
   return useQuery({
-    queryKey:        [...queryKeys.pedidos.all(), 'dash-evolucion-rango', desde, hasta],
+    queryKey:        [...queryKeys.pedidos.all(), 'dash-evolucion-rango-v2', desde, hasta],
     placeholderData: keepPreviousData,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('pedidos')
-        .select('monto_cobrado, fecha_cobro, estado_pago, forma_cobro')
-        .eq('estado', 'cerrado')
-        .gte('fecha_cobro', mesAnteriorDesde)
-        .lte('fecha_cobro', hasta)
+        .from('pedido_pagos')
+        .select('monto, fecha_pago')
+        .gte('fecha_pago', mesAnteriorDesde)
+        .lte('fecha_pago', hasta)
       if (error) throw new Error(error.message)
-      return (data ?? []) as EvolItem[]
+      return (data ?? []).map(p => ({ monto: Number(p.monto), fecha_pago: p.fecha_pago as string })) as PagoEvol[]
     },
     refetchInterval: 30_000,
     staleTime:       0,
@@ -194,13 +220,7 @@ function useEgresosDashboard(desde: string, hasta: string) {
 
 // ─── Calculation helpers ──────────────────────────────────────────────────────
 
-function esCobrado(p: { estado: string; estado_pago: string | null; forma_cobro: string | null }): boolean {
-  if (p.estado !== 'cerrado') return false
-  if (p.estado_pago === 'cobrado') return true
-  return p.estado_pago == null && !!p.forma_cobro && p.forma_cobro !== 'pendiente'
-}
-
-function calcEvolucionRango(pedidosTodos: EvolItem[], desde: string, hasta: string) {
+function calcEvolucionRango(pagos: PagoEvol[], desde: string, hasta: string) {
   const mesAnteriorDesde = restarUnMes(desde)
   const dDesde    = new Date(desde + 'T12:00:00')
   const dHasta    = new Date(hasta + 'T12:00:00')
@@ -208,10 +228,9 @@ function calcEvolucionRango(pedidosTodos: EvolItem[], desde: string, hasta: stri
   const porDia    = totalDays <= 31
 
   const byDia: Record<string, number> = {}
-  for (const p of pedidosTodos) {
-    if (!p.fecha_cobro || !p.monto_cobrado) continue
-    if (!esCobrado({ estado: 'cerrado', estado_pago: p.estado_pago, forma_cobro: p.forma_cobro })) continue
-    byDia[p.fecha_cobro] = (byDia[p.fecha_cobro] || 0) + Number(p.monto_cobrado)
+  for (const p of pagos) {
+    if (!p.fecha_pago) continue
+    byDia[p.fecha_pago] = (byDia[p.fecha_pago] || 0) + p.monto
   }
 
   const labels: string[] = []
@@ -248,7 +267,7 @@ function calcEvolucionRango(pedidosTodos: EvolItem[], desde: string, hasta: stri
   return { labels, actual, anterior }
 }
 
-function calcTopVentas(pedidos: PedidoCobradoDetalle[]) {
+function calcTopVentas(pedidos: PedidoConItems[]) {
   const porCategoria: Record<string, number> = {}
   const porProducto: Record<string, { nombre: string; fragancia: string | null; cantidad: number }> = {}
 
@@ -300,16 +319,19 @@ function generarQuincenas(desde: string, hasta: string): { inicio: Date; fin: Da
   return quincenas
 }
 
-function calcQuincena(pedidos: PedidoCobradoDetalle[], inicio: Date, fin: Date) {
-  const filtrados = pedidos.filter(p => {
-    if (!p.fecha_cobro) return false
-    const fecha = new Date(p.fecha_cobro + 'T12:00:00')
+function calcQuincena(pagos: PagoPeriodo[], pedidosMap: Map<string, PedidoConItems>, inicio: Date, fin: Date) {
+  const filtrados = pagos.filter(p => {
+    if (!p.fecha_pago) return false
+    const fecha = new Date(p.fecha_pago + 'T12:00:00')
     return fecha >= inicio && fecha <= fin
   })
-  const totalVendido = filtrados.reduce((s, p) => s + (Number(p.monto_cobrado) || 0), 0)
-  const totalCosto   = filtrados.reduce((sum, p) =>
-    sum + p.pedido_items.reduce((s, i) => s + Number(i.cantidad) * Number(i.costo_snapshot), 0), 0
-  )
+  const totalVendido = filtrados.reduce((s, p) => s + p.monto, 0)
+  const idsUnicos     = [...new Set(filtrados.map(p => p.pedido_id))]
+  const totalCosto    = idsUnicos.reduce((sum, id) => {
+    const pedido = pedidosMap.get(id)
+    if (!pedido) return sum
+    return sum + pedido.pedido_items.reduce((s, i) => s + i.cantidad * i.costo_snapshot, 0)
+  }, 0)
   return { totalVendido, totalCosto, ganancia: totalVendido - totalCosto }
 }
 
@@ -398,48 +420,41 @@ function GraficoLinea({ labels, actual, anterior }: {
 
 // ─── FilaPendiente ────────────────────────────────────────────────────────────
 
-function FilaPendiente({ p, onCobrado }: {
-  p:         PedidoPendienteCobro
-  onCobrado: (msg: string) => void
+const FORMA_PAGO_LABEL: Record<string, string> = { efectivo: 'Efectivo', transferencia: 'Transferencia' }
+
+function FilaPendiente({ p, onPagoRegistrado }: {
+  p:                PedidoPendienteDetalle
+  onPagoRegistrado: () => void
 }) {
-  const editarCobro = useEditarCobro()
+  const registrarPago = useRegistrarPago()
   const { compartir, loading: loadingWA } = useCompartirFactura()
-  const [abierto,    setAbierto]    = useState(false)
-  const [forma,      setForma]      = useState<'efectivo' | 'transferencia'>('efectivo')
-  const [monto,      setMonto]      = useState(String(Math.round(p.totalPedido)))
-  const [fechaCobro, setFechaCobro] = useState(() => new Date().toISOString().split('T')[0])
-  const [loading,    setLoading]    = useState(false)
-  const [error,      setError]      = useState<string | null>(null)
-  const montoRef = useRef<HTMLInputElement>(null)
+  const [abierto, setAbierto] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error,   setError]   = useState<string | null>(null)
 
-  useEffect(() => { if (abierto) montoRef.current?.focus() }, [abierto])
-
-  const handleAbrir = () => {
-    setMonto(String(Math.round(p.totalPedido)))
-    setForma('efectivo')
-    setFechaCobro(new Date().toISOString().split('T')[0])
-    setError(null)
-    setAbierto(true)
-  }
-
-  const handleConfirmar = async () => {
-    if (!monto.trim()) { setError('Ingresá el monto cobrado'); return }
+  const handleConfirmarPagos = async (pagosForm: { forma_pago: string; monto: number }[]) => {
     setLoading(true); setError(null)
     try {
-      await editarCobro.mutateAsync({
-        id:          p.id,
-        forma_cobro: forma,
-        monto_cobrado: monto,
-        estado_pago: 'cobrado',
-        fecha_cobro: fechaCobro,
-      })
-      onCobrado(`P-${String(p.numero).padStart(5, '0')} marcado como cobrado`)
+      for (const pago of pagosForm) {
+        await registrarPago.mutateAsync({
+          pedido_id:  p.id,
+          forma_pago: pago.forma_pago as 'efectivo' | 'transferencia',
+          monto:      pago.monto,
+        })
+      }
+      onPagoRegistrado()
+      setAbierto(false)
     } catch {
       setError('No se pudo guardar. Intentá de nuevo.')
     } finally {
       setLoading(false)
     }
   }
+
+  const pagadoPorForma = p.pagos.reduce<Record<string, number>>((acc, pg) => {
+    acc[pg.forma_pago] = (acc[pg.forma_pago] ?? 0) + pg.monto
+    return acc
+  }, {})
 
   const fmtCorta = (iso: string) =>
     new Date(iso + 'T00:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })
@@ -468,16 +483,21 @@ function FilaPendiente({ p, onCobrado }: {
         {p.clienteNombre}
       </div>
 
-      <div style={{ display: 'flex', gap: 4, marginBottom: 14, flexWrap: 'wrap' }}>
-        {p.fechaProduccion && (
-          <span style={{ fontSize: 11, color: '#8E8E93' }}>
-            Prod: {fmtCorta(p.fechaProduccion)}
-          </span>
-        )}
-        <span style={{ fontSize: 11, color: '#8E8E93' }}>
-          {p.fechaProduccion ? ' · ' : ''}
-          {p.fechaCobro ? `Cobro: ${fmtCorta(p.fechaCobro)}` : 'Sin fecha de cobro'}
-        </span>
+      {p.fechaProduccion && (
+        <div style={{ fontSize: 11, color: '#8E8E93', marginBottom: 6 }}>
+          Prod: {fmtCorta(p.fechaProduccion)}
+        </div>
+      )}
+
+      {p.totalPagado > 0 && (
+        <div style={{ fontSize: 12, color: '#28B99A', marginBottom: 2 }}>
+          Pagado: {pesos(p.totalPagado)} ({Object.entries(pagadoPorForma)
+            .map(([forma, monto]) => `${FORMA_PAGO_LABEL[forma] ?? forma} ${pesos(monto)}`)
+            .join(', ')})
+        </div>
+      )}
+      <div style={{ fontSize: 13, fontWeight: 700, color: '#D32F2F', marginBottom: 14 }}>
+        Resta: {pesos(p.restante)}
       </div>
 
       {!abierto ? (
@@ -507,8 +527,8 @@ function FilaPendiente({ p, onCobrado }: {
           </button>
 
           <button
-            onClick={handleAbrir}
-            aria-label={`Registrar cobro del pedido ${formatNumero(p.numero)}`}
+            onClick={() => setAbierto(true)}
+            aria-label={`Agregar pago al pedido ${formatNumero(p.numero)}`}
             style={{
               flex: 1, height: 36, border: 'none', borderRadius: 10,
               background: '#3DD6B5', color: '#fff', fontSize: 12, fontWeight: 600,
@@ -517,112 +537,23 @@ function FilaPendiente({ p, onCobrado }: {
             onMouseEnter={e => (e.currentTarget.style.background = '#28B99A')}
             onMouseLeave={e => (e.currentTarget.style.background = '#3DD6B5')}
           >
-            Registrar cobro
+            Agregar pago
           </button>
         </div>
       ) : (
-        <div role="group" aria-label={`Registrar cobro — ${formatNumero(p.numero)}`}>
+        <div role="group" aria-label={`Registrar pago — ${formatNumero(p.numero)}`}>
           <div style={{ height: 1, background: '#E5E5EA', margin: '0 0 14px' }} />
-
-          <div style={{ marginBottom: 10 }}>
-            <div style={{ fontSize: 9, fontWeight: 700, color: '#8E8E93', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
-              Forma de cobro
-            </div>
-            <div role="radiogroup" aria-label="Forma de cobro" style={{ display: 'flex', gap: 6 }}>
-              {(['efectivo', 'transferencia'] as const).map(f => (
-                <button
-                  key={f}
-                  type="button"
-                  role="radio"
-                  aria-checked={forma === f}
-                  onClick={() => setForma(f)}
-                  style={{
-                    flex: 1, height: 34, borderRadius: 8,
-                    border:     `1px solid ${forma === f ? '#3DD6B5' : '#E5E5EA'}`,
-                    background: forma === f ? '#E8FAF6' : 'transparent',
-                    color:      forma === f ? '#28B99A' : '#8E8E93',
-                    fontSize: 12, fontWeight: 600,
-                    cursor: 'pointer', transition: 'all 0.15s', textTransform: 'capitalize',
-                  }}
-                >
-                  {f}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 9, fontWeight: 700, color: '#8E8E93', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
-                Monto
-              </div>
-              <input
-                ref={montoRef}
-                id={`monto-${p.id}`}
-                type="number"
-                inputMode="decimal"
-                value={monto}
-                onChange={e => setMonto(e.target.value)}
-                aria-describedby={error ? `error-${p.id}` : undefined}
-                aria-invalid={!!error}
-                onKeyDown={e => { if (e.key === 'Enter') handleConfirmar() }}
-                style={{
-                  width: '100%', height: 34,
-                  border: `1px solid ${error ? '#F05252' : '#E5E5EA'}`,
-                  borderRadius: 8, padding: '0 10px', fontSize: 13, fontFamily: 'Inter Variable, sans-serif',
-                  outline: 'none', boxSizing: 'border-box',
-                }}
-              />
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 9, fontWeight: 700, color: '#8E8E93', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
-                Fecha cobro
-              </div>
-              <input
-                type="date"
-                value={fechaCobro}
-                onChange={e => setFechaCobro(e.target.value)}
-                style={{
-                  width: '100%', height: 34, border: '1px solid #E5E5EA', borderRadius: 8,
-                  padding: '0 10px', fontSize: 13, fontFamily: 'Inter Variable, sans-serif',
-                  outline: 'none', boxSizing: 'border-box',
-                }}
-              />
-            </div>
-          </div>
-
+          <FormPagos
+            totalPedido={p.restante}
+            loading={loading}
+            onConfirmar={handleConfirmarPagos}
+            onCancelar={() => setAbierto(false)}
+          />
           {error && (
-            <p id={`error-${p.id}`} role="alert" style={{ margin: '0 0 10px', fontSize: 12, color: '#F05252' }}>
+            <p role="alert" style={{ margin: '10px 0 0', fontSize: 12, color: '#F05252' }}>
               {error}
             </p>
           )}
-
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              onClick={() => setAbierto(false)}
-              disabled={loading}
-              style={{
-                flex: 1, height: 34, border: '1px solid #E5E5EA', borderRadius: 8,
-                background: 'transparent', color: '#8E8E93', fontSize: 12, fontWeight: 500,
-                cursor: loading ? 'not-allowed' : 'pointer',
-              }}
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleConfirmar}
-              disabled={loading}
-              aria-disabled={loading}
-              style={{
-                flex: 2, height: 34, border: 'none', borderRadius: 8,
-                background: loading ? 'rgba(61,214,181,0.5)' : '#3DD6B5',
-                color: '#fff', fontSize: 12, fontWeight: 600,
-                cursor: loading ? 'not-allowed' : 'pointer',
-              }}
-            >
-              {loading ? 'Guardando…' : 'Confirmar cobro'}
-            </button>
-          </div>
         </div>
       )}
     </div>
@@ -634,18 +565,17 @@ function FilaPendiente({ p, onCobrado }: {
 function SheetPendientes({ open, onClose, pendientes, onRefetch }: {
   open:       boolean
   onClose:    () => void
-  pendientes: { count: number; total: number; pedidos: PedidoPendienteCobro[] }
+  pendientes: { count: number; total: number; pedidos: PedidoPendienteDetalle[] }
   onRefetch:  () => void
 }) {
-  const [lista, setLista] = useState<PedidoPendienteCobro[]>(pendientes.pedidos)
+  const [lista, setLista] = useState<PedidoPendienteDetalle[]>(pendientes.pedidos)
 
   useEffect(() => { setLista(pendientes.pedidos) }, [pendientes.pedidos])
 
-  const total = lista.reduce((acc, p) => acc + p.totalPedido, 0)
+  const total = lista.reduce((acc, p) => acc + p.restante, 0)
 
-  const handleCobrado = (msg: string) => {
-    const numero = parseInt(msg.match(/P-(\d+)/)?.[1] ?? '0')
-    setLista(prev => prev.filter(p => p.numero !== numero))
+  const handlePagoRegistrado = (id: string) => {
+    setLista(prev => prev.filter(p => p.id !== id))
     onRefetch()
   }
 
@@ -672,7 +602,7 @@ function SheetPendientes({ open, onClose, pendientes, onRefetch }: {
               <p style={{ fontSize: 13, color: '#8E8E93', margin: '4px 0 0' }}>No hay cobros pendientes</p>
             </div>
           ) : lista.map(p => (
-            <FilaPendiente key={p.id} p={p} onCobrado={handleCobrado} />
+            <FilaPendiente key={p.id} p={p} onPagoRegistrado={() => handlePagoRegistrado(p.id)} />
           ))}
         </div>
 
@@ -703,8 +633,8 @@ export default function DashboardPage() {
 
   const { data: pedidos,    isLoading }              = usePedidosPeriodo(desde, hasta)
   const { data: pendCierre }                         = usePendientesCierre()
-  const { data: pedCobrados }                        = usePedidosCobradosDetalle(desde, hasta)
-  const { data: dashData, refetch }                  = useDashboard()
+  const { data: pagosDetalle }                       = usePagosPeriodoDetalle(desde, hasta)
+  const { data: pendientes, refetch: refetchPend }   = usePendientesCobro()
   const { data: evolData }                           = useEvolucionRango(desde, hasta)
   const { data: egresosData, isLoading: loadingEg }  = useEgresosDashboard(desde, hasta)
 
@@ -712,28 +642,30 @@ export default function DashboardPage() {
 
   const countPedidos      = pedidos?.length ?? 0
   const pendientesCierre  = pendCierre ?? 0
-  const cobrados          = pedCobrados ?? []
 
-  const totalCobrado = cobrados.reduce((s, p) => s + (Number(p.monto_cobrado) || 0), 0)
-  const totalEfectivo = cobrados
-    .filter(p => p.forma_cobro === 'efectivo')
-    .reduce((s, p) => s + (Number(p.monto_cobrado) || 0), 0)
-  const totalTransf = cobrados
-    .filter(p => p.forma_cobro === 'transferencia')
-    .reduce((s, p) => s + (Number(p.monto_cobrado) || 0), 0)
+  const pagosPeriodo    = pagosDetalle?.pagos ?? []
+  const pedidosConItems = pagosDetalle?.pedidos ?? []
+  const pedidosMap       = new Map(pedidosConItems.map(p => [p.id, p]))
 
-  const totalCostoProduccion = cobrados.reduce((sum, p) =>
-    sum + p.pedido_items.reduce((s, i) => s + Number(i.cantidad) * Number(i.costo_snapshot), 0), 0
+  const totalCobrado = pagosPeriodo.reduce((s, p) => s + p.monto, 0)
+  const totalEfectivo = pagosPeriodo
+    .filter(p => p.forma_pago === 'efectivo')
+    .reduce((s, p) => s + p.monto, 0)
+  const totalTransf = pagosPeriodo
+    .filter(p => p.forma_pago === 'transferencia')
+    .reduce((s, p) => s + p.monto, 0)
+
+  const totalCostoProduccion = pedidosConItems.reduce((sum, p) =>
+    sum + p.pedido_items.reduce((s, i) => s + i.cantidad * i.costo_snapshot, 0), 0
   )
 
   const totalEgresos  = egresosData ? egresosData.reduce((s, e) => s + Number(e.monto), 0) : 0
   const gananciaNeta  = totalCobrado - totalCostoProduccion - totalEgresos
 
-  const montoPendienteCobro = dashData?.pendientes?.total ?? 0
-  const pendientes          = dashData?.pendientes
+  const montoPendienteCobro = pendientes?.total ?? 0
 
-  const { topCategorias, topProductos } = cobrados.length > 0
-    ? calcTopVentas(cobrados)
+  const { topCategorias, topProductos } = pedidosConItems.length > 0
+    ? calcTopVentas(pedidosConItems)
     : { topCategorias: [] as [string, number][], topProductos: [] as { nombre: string; fragancia: string | null; cantidad: number }[] }
 
   const evolucion = evolData ? calcEvolucionRango(evolData, desde, hasta) : null
@@ -762,7 +694,7 @@ export default function DashboardPage() {
 
   const descargarExcel = () => {
     const filas = quincenas.map(({ inicio, fin }) => {
-      const { totalVendido, totalCosto, ganancia } = calcQuincena(cobrados, inicio, fin)
+      const { totalVendido, totalCosto, ganancia } = calcQuincena(pagosPeriodo, pedidosMap, inicio, fin)
       return {
         'Período':          `${fmtDia(inicio)} al ${fmtDiaAno(fin)}`,
         'Total vendido':    totalVendido,
@@ -1123,7 +1055,7 @@ export default function DashboardPage() {
                 </td>
               </tr>
             ) : quincenas.map(({ inicio, fin }, i) => {
-              const { totalVendido, totalCosto, ganancia } = calcQuincena(cobrados, inicio, fin)
+              const { totalVendido, totalCosto, ganancia } = calcQuincena(pagosPeriodo, pedidosMap, inicio, fin)
               return (
                 <tr key={i} style={{ borderBottom: '1px solid #E5E5EA' }}>
                   <td style={tdStyle}>{fmtDia(inicio)} al {fmtDiaAno(fin)}</td>
@@ -1159,7 +1091,7 @@ export default function DashboardPage() {
           open={sheetPend}
           onClose={() => setSheetPend(false)}
           pendientes={pendientes}
-          onRefetch={() => refetch()}
+          onRefetch={() => refetchPend()}
         />
       )}
     </div>

@@ -16,6 +16,7 @@ export type Rol = 'admin' | 'produccion' | 'repartidor' | 'superadmin'
 export type TipoCliente = 'minorista' | 'mayorista'
 export type TipoPrecio  = 'minorista' | 'mayorista'
 export type FormaCobro  = 'efectivo' | 'transferencia' | 'pendiente'
+export type FormaPago   = 'efectivo' | 'transferencia'
 
 // ─── Config de estados — valores exactos del design system ───────────────────
 
@@ -79,6 +80,15 @@ export interface Producto {
   updated_at:       string
   // Join opcional
   categorias_producto?: CategoriaProducto | null
+}
+
+export type PedidoPago = {
+  id:         string
+  pedido_id:  string
+  forma_pago: FormaPago
+  monto:      number
+  fecha_pago: string
+  created_at: string
 }
 
 export interface PedidoItem {

@@ -1,13 +1,15 @@
-import { useState, useEffect, useRef } from 'react'
-import { Clock, Edit2, XCircle, ChevronRight, Check } from 'lucide-react'
+import { useState } from 'react'
+import { Clock, Edit2, XCircle, ChevronRight } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { BadgeEstado }   from '@/components/common/BadgeEstado'
 import { BtnWhatsapp }  from '@/components/common/BtnWhatsapp'
 import { Skeleton }     from '@/components/ui/skeleton'
+import { FormPagos }    from '@/components/pedidos/FormPagos'
 import {
-  usePedidoDetalle, useCambiarEstado, useAnularPedido, useEditarCobro, useCerrarPedido,
+  usePedidoDetalle, useCambiarEstado, useAnularPedido, useCerrarPedido,
   totalPedido, type PedidoDetalle,
 } from '@/services/pedidos'
+import { usePagosPedido, useRegistrarPago } from '@/services/pedidoPagos'
 import { ESTADO_CONFIG, ESTADOS_FACTURABLES, formatNumero, formatUnidad, type EstadoPedido } from '@/types'
 import { useAuthStore }      from '@/store/authStore'
 import { useCompartirFactura } from '@/hooks/useCompartirFactura'
@@ -115,24 +117,12 @@ interface Props {
   onSaved:  (msg: string) => void
 }
 
-const inputFechaStyle: React.CSSProperties = {
-  width: '100%', height: 44, padding: '0 10px',
-  border: '1px solid rgba(105,105,105,0.4)',
-  borderRadius: 10, fontSize: 14, fontFamily: 'Inter Variable, sans-serif',
-  outline: 'none', boxSizing: 'border-box',
-}
-
-const labelUpperStyle: React.CSSProperties = {
-  fontSize: 11, color: '#8E8E93', fontWeight: 600,
-  display: 'block', marginBottom: 6,
-  textTransform: 'uppercase', letterSpacing: '0.06em',
-}
-
 export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Props) {
   const { data: pedido, isLoading } = usePedidoDetalle(pedidoId)
+  const { data: pagos = [] }        = usePagosPedido(pedidoId)
   const cambiarEstado = useCambiarEstado()
   const anular        = useAnularPedido()
-  const editarCobro   = useEditarCobro()
+  const registrarPago = useRegistrarPago()
   const cerrarPedido  = useCerrarPedido()
 
   const usuario = useAuthStore(s => s.usuario)
@@ -143,37 +133,10 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
   const [confirmando,      setConfirmando]      = useState<EstadoPedido | null>(null)
   const [anulando,         setAnulando]         = useState(false)
   const [fallaMotivo,      setFallaMotivo]      = useState(false)
-  const [editandoCobro,    setEditandoCobro]    = useState(false)
-  const [cobroForma,       setCobroForma]       = useState('')
-  const [cobroMonto,       setCobroMonto]       = useState('')
-  const [cobroFechaCobro,  setCobroFechaCobro]  = useState('')
+  const [agregandoPago,    setAgregandoPago]    = useState(false)
 
-  // Flujo "Cerrar venta" con form de cobro inline
-  const [cerrando,         setCerrando]         = useState(false)
-  const [cerrarForma,      setCerrarForma]      = useState<'efectivo' | 'transferencia' | 'pendiente'>('efectivo')
-  const [cerrarMonto,      setCerrarMonto]      = useState('')
-  const [cerrarFechaCobro, setCerrarFechaCobro] = useState(() => new Date().toISOString().split('T')[0])
-  const [cerrarError,      setCerrarError]      = useState<string | null>(null)
-  const cerrarBtnRef = useRef<HTMLButtonElement>(null)
-
-  // Pre-llenar cobro al abrir el form de cierre
-  useEffect(() => {
-    if (cerrando && p) {
-      setCerrarForma((p.forma_cobro ?? 'efectivo') as typeof cerrarForma)
-      setCerrarMonto(
-        p.monto_cobrado != null
-          ? String(p.monto_cobrado)
-          : String(Math.round(Number(totalPedido(p))))
-      )
-      setCerrarFechaCobro(new Date().toISOString().split('T')[0])
-      setCerrarError(null)
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cerrando])
-
-  useEffect(() => {
-    if (cerrando) cerrarBtnRef.current?.focus()
-  }, [cerrando])
+  // Flujo "Cerrar venta" con FormPagos inline
+  const [cerrando, setCerrando] = useState(false)
 
   const handleEstado = async (nuevoEstado: EstadoPedido, notas?: string) => {
     if (!pedido) return
@@ -199,45 +162,31 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
     }
   }
 
-  const handleGuardarCobro = async () => {
+  const handleCerrarVenta = async (pagosForm: { forma_pago: string; monto: number }[]) => {
     if (!pedido) return
-    const estadoPago: 'cobrado' | 'pendiente' = cobroForma === 'pendiente' ? 'pendiente' : 'cobrado'
     try {
-      await editarCobro.mutateAsync({
-        id:            pedido.id,
-        forma_cobro:   cobroForma,
-        monto_cobrado: cobroMonto || undefined,
-        fecha_cobro:   cobroFechaCobro || undefined,
-        estado_pago:   estadoPago,
-      })
-      onSaved('Cobro actualizado')
-      setEditandoCobro(false)
-    } catch (e) {
-      onSaved((e instanceof Error ? e.message : 'Error') + '|error')
-    }
-  }
-
-  const handleCerrarVenta = async () => {
-    if (!pedido) return
-    if (cerrarForma !== 'pendiente' && !cerrarMonto.trim()) {
-      setCerrarError('El monto cobrado es obligatorio')
-      return
-    }
-    setCerrarError(null)
-    const estadoPago: 'cobrado' | 'pendiente' = cerrarForma === 'pendiente' ? 'pendiente' : 'cobrado'
-    try {
-      await cerrarPedido.mutateAsync({
-        id:            pedido.id,
-        estadoActual:  pedido.estado,
-        forma_cobro:   cerrarForma,
-        monto_cobrado: cerrarMonto.trim() || undefined,
-        estado_pago:   estadoPago,
-        fecha_cobro:   cerrarForma !== 'pendiente' ? cerrarFechaCobro : undefined,
-      })
+      await cerrarPedido.mutateAsync({ id: pedido.id, pagos: pagosForm })
       onSaved('Pedido cerrado correctamente')
       setCerrando(false)
     } catch (e) {
-      setCerrarError(e instanceof Error ? e.message : 'No se pudo cerrar el pedido')
+      onSaved((e instanceof Error ? e.message : 'No se pudo cerrar el pedido') + '|error')
+    }
+  }
+
+  const handleAgregarPago = async (pagosForm: { forma_pago: string; monto: number }[]) => {
+    if (!pedido) return
+    try {
+      for (const pago of pagosForm) {
+        await registrarPago.mutateAsync({
+          pedido_id:  pedido.id,
+          forma_pago: pago.forma_pago as 'efectivo' | 'transferencia',
+          monto:      pago.monto,
+        })
+      }
+      onSaved('Pago registrado')
+      setAgregandoPago(false)
+    } catch (e) {
+      onSaved((e instanceof Error ? e.message : 'No se pudo registrar el pago') + '|error')
     }
   }
 
@@ -246,7 +195,9 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
     ? (isAdmin ? TRANSICIONES_ADMIN[p.estado] : TRANSICIONES[p.estado]) ?? []
     : []
 
-  const showCobro = p?.estado === 'cerrado'
+  const showCobro   = p?.estado === 'cerrado'
+  const totalPagado = pagos.reduce((s, pg) => s + pg.monto, 0)
+  const restante     = p ? Math.max(0, Number(totalPedido(p)) - totalPagado) : 0
   // Admin puede editar en cualquier estado activo; cerrado solo mientras el cobro siga pendiente
   const puedeEditar = !!p && isAdmin && p.estado !== 'anulado' && (p.estado !== 'cerrado' || p.estado_pago === 'pendiente')
 
@@ -342,88 +293,57 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
                 </div>
               )}
 
-              {/* Cobro */}
+              {/* Pagos */}
               {showCobro && (
                 <div style={{ background: '#fff', borderRadius: 16, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                    <p style={{ margin: 0, fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#8E8E93' }}>Cobro</p>
-                    {!editandoCobro && (
-                      <button type="button"
-                        onClick={() => {
-                          setCobroForma(p.forma_cobro ?? 'pendiente')
-                          setCobroMonto(p.monto_cobrado != null ? String(p.monto_cobrado) : '')
-                          setCobroFechaCobro(p.fecha_cobro ?? new Date().toISOString().split('T')[0])
-                          setEditandoCobro(true)
-                        }}
-                        style={{ fontSize: 12, color: '#3DD6B5', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
-                        Editar
-                      </button>
-                    )}
-                  </div>
+                  <p style={{ margin: '0 0 12px', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#8E8E93' }}>
+                    Pagos registrados
+                  </p>
 
-                  {!editandoCobro ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: 13, color: '#8E8E93' }}>Forma de cobro</span>
-                        <span style={{ fontSize: 13, fontWeight: 600, textTransform: 'capitalize' }}>{p.forma_cobro ?? '—'}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: 13, color: '#8E8E93' }}>Monto cobrado</span>
-                        <span style={{ fontSize: 13, fontWeight: 600 }}>
-                          {p.monto_cobrado != null
-                            ? `$${p.monto_cobrado.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`
-                            : '—'}
-                        </span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: 13, color: '#8E8E93' }}>Fecha de cobro</span>
-                        <span style={{ fontSize: 13, fontWeight: 600 }}>
-                          {p.fecha_cobro
-                            ? new Date(p.fecha_cobro + 'T00:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' })
-                            : '—'}
-                        </span>
-                      </div>
-                    </div>
+                  {pagos.length === 0 ? (
+                    <p style={{ margin: '0 0 12px', fontSize: 13, color: '#8E8E93' }}>Sin pagos registrados</p>
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                      <div>
-                        <label style={labelUpperStyle}>Forma de cobro</label>
-                        <select value={cobroForma} onChange={e => setCobroForma(e.target.value)}
-                          style={{ width: '100%', padding: '10px 12px', border: '1px solid #E5E5EA', borderRadius: 10, fontSize: 14, fontFamily: 'Inter Variable, sans-serif', outline: 'none' }}>
-                          <option value="efectivo">Efectivo</option>
-                          <option value="transferencia">Transferencia</option>
-                          <option value="pendiente">Pendiente</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label style={labelUpperStyle}>Monto cobrado</label>
-                        <input type="number" value={cobroMonto} onChange={e => setCobroMonto(e.target.value)} placeholder="0.00"
-                          style={{ width: '100%', padding: '10px 12px', border: '1px solid #E5E5EA', borderRadius: 10, fontSize: 14, fontFamily: 'Inter Variable, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
-                      </div>
-                      {cobroForma !== 'pendiente' && (
-                        <div>
-                          <label style={labelUpperStyle}>Fecha de cobro</label>
-                          <input
-                            type="date"
-                            value={cobroFechaCobro}
-                            onChange={e => setCobroFechaCobro(e.target.value)}
-                            style={inputFechaStyle}
-                            onFocus={e => (e.target.style.borderColor = '#7EB8E8')}
-                            onBlur={e  => (e.target.style.borderColor = 'rgba(105,105,105,0.4)')}
-                          />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
+                      {pagos.map(pago => (
+                        <div key={pago.id} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: 13, color: '#1C1C1E', textTransform: 'capitalize' }}>{pago.forma_pago}</span>
+                          <span style={{ fontSize: 13, color: '#8E8E93' }}>
+                            {new Date(pago.fecha_pago + 'T00:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })}
+                          </span>
+                          <span style={{ fontSize: 13, fontWeight: 600 }}>
+                            ${pago.monto.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                          </span>
                         </div>
-                      )}
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <button type="button" onClick={handleGuardarCobro} disabled={editarCobro.isPending}
-                          style={{ flex: 1, background: '#3DD6B5', color: '#fff', border: 'none', borderRadius: 10, padding: '10px', fontSize: 14, fontWeight: 600, cursor: 'pointer', minHeight: 40, opacity: editarCobro.isPending ? 0.6 : 1 }}>
-                          {editarCobro.isPending ? 'Guardando…' : 'Guardar'}
-                        </button>
-                        <button type="button" onClick={() => setEditandoCobro(false)}
-                          style={{ flex: 1, background: 'transparent', color: '#8E8E93', border: '1.5px solid #E5E5EA', borderRadius: 10, padding: '10px', fontSize: 14, fontWeight: 600, cursor: 'pointer', minHeight: 40 }}>
-                          Cancelar
-                        </button>
+                      ))}
+                      <div style={{ height: 1, background: '#E5E5EA', margin: '4px 0' }} />
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: 13, fontWeight: 700 }}>Total cobrado</span>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: '#28B99A' }}>
+                          ${totalPagado.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                        </span>
                       </div>
                     </div>
+                  )}
+
+                  {p.estado_pago === 'pendiente' && (
+                    agregandoPago ? (
+                      <FormPagos
+                        totalPedido={restante}
+                        loading={registrarPago.isPending}
+                        onConfirmar={handleAgregarPago}
+                        onCancelar={() => setAgregandoPago(false)}
+                      />
+                    ) : (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: '#C47B00' }}>
+                          Resta: ${restante.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                        </span>
+                        <button type="button" onClick={() => setAgregandoPago(true)}
+                          style={{ fontSize: 12, color: '#3DD6B5', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+                          Agregar pago
+                        </button>
+                      </div>
+                    )
                   )}
                 </div>
               )}
@@ -471,117 +391,12 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
                     <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#145A32' }}>
                       Confirmar cobro y cerrar venta
                     </p>
-
-                    {/* Total de referencia */}
-                    <div style={{
-                      background: '#D4EDDA', borderRadius: 10, padding: '10px 14px',
-                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    }}>
-                      <span style={{ fontSize: 12, color: '#145A32', fontWeight: 600 }}>Total pedido</span>
-                      <span style={{ fontSize: 20, fontWeight: 900, color: '#145A32', letterSpacing: -0.5 }}>
-                        ${Number(totalPedido(p)).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
-                      </span>
-                    </div>
-
-                    {/* Forma de cobro */}
-                    <div>
-                      <label style={labelUpperStyle}>Forma de cobro</label>
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        {(['efectivo', 'transferencia', 'pendiente'] as const).map(f => (
-                          <button
-                            key={f}
-                            type="button"
-                            onClick={() => setCerrarForma(f)}
-                            style={{
-                              flex: 1, padding: '9px 6px', borderRadius: 8, fontSize: 13, fontWeight: 600,
-                              border: `1.5px solid ${cerrarForma === f ? '#145A32' : '#E5E5EA'}`,
-                              background: cerrarForma === f ? '#D4EDDA' : '#fff',
-                              color: cerrarForma === f ? '#145A32' : '#8E8E93',
-                              cursor: 'pointer',
-                            }}
-                          >
-                            {f === 'efectivo' ? 'Efectivo' : f === 'transferencia' ? 'Transf.' : 'Pendiente'}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Fecha de cobro */}
-                    {cerrarForma !== 'pendiente' && (
-                      <div>
-                        <label style={labelUpperStyle}>Fecha de cobro</label>
-                        <input
-                          type="date"
-                          value={cerrarFechaCobro}
-                          onChange={e => setCerrarFechaCobro(e.target.value)}
-                          style={inputFechaStyle}
-                          onFocus={e => (e.target.style.borderColor = '#7EB8E8')}
-                          onBlur={e  => (e.target.style.borderColor = 'rgba(105,105,105,0.4)')}
-                        />
-                      </div>
-                    )}
-
-                    {/* Monto cobrado */}
-                    <div>
-                      <label style={labelUpperStyle}>
-                        Monto cobrado {cerrarForma !== 'pendiente' ? '*' : '(opcional)'}
-                      </label>
-                      <input
-                        type="number"
-                        value={cerrarMonto}
-                        onChange={e => setCerrarMonto(e.target.value)}
-                        placeholder="0.00"
-                        inputMode="decimal"
-                        style={{
-                          width: '100%', padding: '10px 12px',
-                          border: `1.5px solid ${cerrarError ? '#D32F2F' : '#E5E5EA'}`,
-                          borderRadius: 10, fontSize: 14, fontFamily: 'Inter Variable, sans-serif',
-                          outline: 0, boxSizing: 'border-box',
-                        }}
-                        onFocus={e => (e.target.style.borderColor = '#145A32')}
-                        onBlur={e  => (e.target.style.borderColor = cerrarError ? '#D32F2F' : '#E5E5EA')}
-                      />
-                    </div>
-
-                    {cerrarError && (
-                      <p style={{ color: '#D32F2F', fontSize: 12, margin: 0 }} role="alert">
-                        {cerrarError}
-                      </p>
-                    )}
-
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <button
-                        ref={cerrarBtnRef}
-                        type="button"
-                        onClick={handleCerrarVenta}
-                        disabled={cerrarPedido.isPending}
-                        aria-disabled={cerrarPedido.isPending}
-                        aria-label={`Confirmar cierre de pedido P-${String(p.numero).padStart(5, '0')}`}
-                        style={{
-                          flex: 1,
-                          background: cerrarPedido.isPending ? 'rgba(20,90,50,0.5)' : '#145A32',
-                          color: '#fff', border: 'none', borderRadius: 10,
-                          padding: '13px', minHeight: 48, fontSize: 15, fontWeight: 700,
-                          cursor: cerrarPedido.isPending ? 'not-allowed' : 'pointer',
-                          outlineOffset: 2,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                        }}
-                      >
-                        {cerrarPedido.isPending ? 'Cerrando…' : <><Check size={15} /> Confirmar cierre</>}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => { setCerrando(false); setCerrarError(null) }}
-                        disabled={cerrarPedido.isPending}
-                        style={{
-                          flex: 1, background: 'transparent', color: '#8E8E93',
-                          border: '1.5px solid #E5E5EA', borderRadius: 10,
-                          padding: '12px', fontSize: 14, cursor: 'pointer', minHeight: 48,
-                        }}
-                      >
-                        Cancelar
-                      </button>
-                    </div>
+                    <FormPagos
+                      totalPedido={Number(totalPedido(p))}
+                      loading={cerrarPedido.isPending}
+                      onConfirmar={handleCerrarVenta}
+                      onCancelar={() => setCerrando(false)}
+                    />
                   </div>
                 ) : (
                   <>

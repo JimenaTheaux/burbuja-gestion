@@ -477,35 +477,26 @@ export const useAnularPedido = () => {
 }
 
 // ─── useCerrarPedido ──────────────────────────────────────────────────────────
-// Cierra un pedido en_reparto: registra cobro y cambia estado a 'cerrado' en un solo RPC.
+// Cierra un pedido en_reparto: registra los pagos y cambia estado a 'cerrado'
+// en un solo RPC. p_pagos es un array [{ forma_pago, monto }] — puede ir vacío
+// (venta cerrada sin cobro, queda pendiente) o cubrir el total en una o varias
+// formas de pago.
 
 export const useCerrarPedido = () => {
   const qc      = useQueryClient()
   const usuario = useAuthStore(s => s.usuario)
 
   return useMutation({
-    mutationFn: async ({ id, estadoActual, forma_cobro, monto_cobrado, estado_pago, notas_entrega, fecha_cobro }: {
-      id:              string
-      estadoActual:    EstadoPedido
-      forma_cobro:     'efectivo' | 'transferencia' | 'pendiente'
-      monto_cobrado?:  string
-      estado_pago:     'cobrado' | 'pendiente'
-      notas_entrega?:  string
-      fecha_cobro?:    string
+    mutationFn: async ({ id, pagos, notas }: {
+      id:     string
+      pagos:  { forma_pago: string; monto: number }[]
+      notas?: string
     }) => {
-      const fechaCobroFinal = forma_cobro === 'pendiente'
-        ? null
-        : (fecha_cobro ?? new Date().toISOString().split('T')[0])
-
       const { error } = await supabase.rpc('cerrar_pedido', {
-        p_pedido_id:       id,
-        p_estado_anterior: estadoActual,
-        p_forma_cobro:     forma_cobro,
-        p_monto_cobrado:   monto_cobrado ? parseFloat(monto_cobrado) : null,
-        p_estado_pago:     estado_pago,
-        p_notas_entrega:   notas_entrega ?? null,
-        p_fecha_cobro:     fechaCobroFinal,
-        p_usuario_id:      usuario?.id ?? null,
+        p_pedido_id:  id,
+        p_usuario_id: usuario?.id ?? null,
+        p_pagos:      JSON.stringify(pagos),
+        p_notas:      notas ?? null,
       })
       if (error) throw new Error(error.message)
     },
@@ -523,44 +514,6 @@ export const useCerrarPedido = () => {
       ctx?.snapshots.forEach(([key, data]) => qc.setQueryData(key, data))
     },
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: KEY })
-      invalidarDashboard(qc)
-    },
-  })
-}
-
-// ─── useEditarCobro ───────────────────────────────────────────────────────────
-
-export const useEditarCobro = () => {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: async ({ id, forma_cobro, monto_cobrado, estado_pago, fecha_cobro }: {
-      id:              string
-      forma_cobro:     string
-      monto_cobrado?:  string
-      estado_pago?:    'cobrado' | 'pendiente'
-      fecha_cobro?:    string
-    }) => {
-      const patch: Record<string, unknown> = {
-        forma_cobro,
-        monto_cobrado: monto_cobrado ? parseFloat(monto_cobrado) : null,
-        updated_at:    new Date().toISOString(),
-      }
-      if (estado_pago !== undefined) patch.estado_pago = estado_pago
-      if (fecha_cobro !== undefined) {
-        patch.fecha_cobro = forma_cobro === 'pendiente'
-          ? null
-          : (fecha_cobro || new Date().toISOString().split('T')[0])
-      }
-
-      const { error } = await supabase
-        .from('pedidos')
-        .update(patch)
-        .eq('id', id)
-
-      if (error) throw new Error(error.message)
-    },
-    onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEY })
       invalidarDashboard(qc)
     },
