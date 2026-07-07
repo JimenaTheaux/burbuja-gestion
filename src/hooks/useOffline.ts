@@ -59,7 +59,7 @@ export function useOffline() {
             const { error } = await supabase.rpc('cerrar_pedido', {
               p_pedido_id:  action.pedidoId,
               p_usuario_id: usuario?.id ?? null,
-              p_pagos:      JSON.stringify(action.pagos),
+              p_pagos:      action.pagos,
               p_notas:      action.notas ?? null,
             })
             if (error) throw new Error(error.message)

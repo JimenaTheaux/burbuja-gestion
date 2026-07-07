@@ -495,7 +495,7 @@ export const useCerrarPedido = () => {
       const { error } = await supabase.rpc('cerrar_pedido', {
         p_pedido_id:  id,
         p_usuario_id: usuario?.id ?? null,
-        p_pagos:      JSON.stringify(pagos),
+        p_pagos:      pagos,
         p_notas:      notas ?? null,
       })
       if (error) throw new Error(error.message)
