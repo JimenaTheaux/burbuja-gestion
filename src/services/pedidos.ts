@@ -272,7 +272,7 @@ export const useCrearPedido = () => {
           costo_envio:       costoEnvio,
           costo_bidones:     costoBidones,
           total_calculado:   totalCalculado,
-          total_manual:      data.total_manual ? parseFloat(data.total_manual) : null,
+          total_manual:      parseFloat(data.total_manual) || null,
           estado:            estadoInicial,
           creado_por:        usuario?.id ?? null,
         })
@@ -337,7 +337,7 @@ export const useEditarPedido = () => {
       if (data.notas_produccion  !== undefined) patch.notas_produccion  = data.notas_produccion  || null
       if (costoEnvio             !== undefined) patch.costo_envio       = costoEnvio
       if (costoBidones           !== undefined) patch.costo_bidones     = costoBidones
-      if (data.total_manual      !== undefined) patch.total_manual      = data.total_manual ? parseFloat(data.total_manual) : null
+      if (data.total_manual      !== undefined) patch.total_manual      = parseFloat(data.total_manual) || null
       if (totalCalculado         !== undefined) patch.total_calculado   = totalCalculado
 
       const { error: updateErr } = await supabase.from('pedidos').update(patch).eq('id', id)

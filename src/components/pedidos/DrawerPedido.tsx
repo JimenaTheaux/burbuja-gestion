@@ -1082,27 +1082,26 @@ export function DrawerPedido({ open, onClose, pedido, onSaved }: Props) {
                 ${totalMostrado.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
               </span>
             </div>
-
-            {totalEditado && (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11, color: '#F57C00' }}>
-                <span>Modificado · calculado: ${totalCalculado.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
-                <button type="button" onClick={() => setValue('totalManual', '')}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7EB8E8', fontSize: 11, fontWeight: 600, textDecoration: 'underline', padding: 0 }}>
-                  Restaurar
-                </button>
-              </div>
-            )}
           </div>
 
-          {/* Total manual — campo oculto salvo que quieran override */}
-          {!totalEditado && (
-            <div style={{ marginTop: 6 }}>
-              <FloatInput
-                label="Total manual (opcional — deja vacío para calculado)"
-                {...register('totalManual')}
-                inputMode="decimal"
-                style={{ textAlign: 'right' } as React.CSSProperties}
-              />
+          {/* Total manual — siempre visible, override opcional del calculado */}
+          <div style={{ marginTop: 6 }}>
+            <FloatInput
+              label="Total manual (opcional — deja vacío para calculado)"
+              {...register('totalManual')}
+              inputMode="decimal"
+              placeholder="0"
+              style={{ textAlign: 'right' } as React.CSSProperties}
+            />
+          </div>
+
+          {totalEditado && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11, color: '#F57C00', marginTop: 6, padding: '0 2px' }}>
+              <span>Modificado · calculado: ${totalCalculado.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
+              <button type="button" onClick={() => setValue('totalManual', '')}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7EB8E8', fontSize: 11, fontWeight: 600, textDecoration: 'underline', padding: 0 }}>
+                Restaurar
+              </button>
             </div>
           )}
         </div>
