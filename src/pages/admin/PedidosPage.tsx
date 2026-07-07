@@ -35,7 +35,7 @@ const PRIMARY_ACTION: Partial<Record<EstadoPedido, { label: string; labelCorto: 
   borrador:        { label: 'Confirmar',           labelCorto: 'Confirmar',    next: 'confirmado'    },
   confirmado:      { label: 'Enviar a producción', labelCorto: 'A producción', next: 'en_produccion' },
   en_produccion:   { label: 'Marcar listo',        labelCorto: 'Marcar listo', next: 'listo_reparto' },
-  listo_reparto:   { label: 'Iniciar reparto',     labelCorto: 'A reparto',    next: 'en_reparto'    },
+  listo_reparto:   { label: 'Registrar entrega',   labelCorto: 'Entregar',    next: 'cerrado'       },
   en_reparto:      { label: 'Registrar entrega',    labelCorto: 'Entregar',    next: 'cerrado'       },
   entrega_fallida: { label: 'Reagendar',           labelCorto: 'Reagendar',    next: 'listo_reparto' },
 }
@@ -127,7 +127,8 @@ function AccionesDropdown({ pedido, onVerDetalle, onEditar, onAnular }: {
     }
   }, [open])
 
-  const canEditar = !['cerrado', 'anulado'].includes(pedido.estado)
+  // cerrado sigue siendo editable si el cobro quedó pendiente (puede corregirse antes de cobrar)
+  const canEditar = pedido.estado !== 'anulado' && (pedido.estado !== 'cerrado' || pedido.estado_pago === 'pendiente')
   const canAnular = !['cerrado', 'anulado'].includes(pedido.estado)
 
   return (
@@ -331,7 +332,7 @@ function FilaPedido({ pedido, onVerDetalle, onEditar, onAnularRequest, selected,
   const handleAccion = async (e: React.MouseEvent) => {
     e.stopPropagation()
     if (!action) return
-    if (pedido.estado === 'en_reparto') { onVerDetalle(); return }
+    if (action.next === 'cerrado') { onVerDetalle(); return } // cerrar requiere cobro — se captura en el drawer
     setLoading(true)
     setError(null)
     try {
@@ -511,7 +512,7 @@ function CardMobile({ pedido, expandida, onToggle, onVerDetalle, onAnularRequest
 
   const handleAccion = async () => {
     if (!action) return
-    if (pedido.estado === 'en_reparto') { onVerDetalle(); return }
+    if (action.next === 'cerrado') { onVerDetalle(); return } // cerrar requiere cobro — se captura en el drawer
     setLoading(true)
     setError(null)
     try {
@@ -633,7 +634,7 @@ function CardMobile({ pedido, expandida, onToggle, onVerDetalle, onAnularRequest
               {action && nextCfg && (
                 <button
                   onClick={() => {
-                    if (pedido.estado === 'en_reparto') { onVerDetalle(); return }
+                    if (action.next === 'cerrado') { onVerDetalle(); return }
                     setConfirmando(true)
                   }}
                   className="btn-press"

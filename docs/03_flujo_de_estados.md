@@ -4,13 +4,20 @@
 
 ```
 [BORRADOR] ──► [CONFIRMADO] ──► [EN PRODUCCIÓN] ──► [LISTO REPARTO] ──► [EN REPARTO] ──► [CERRADO]
-                                                                               │
-                                                                               └──► [ENTREGA FALLIDA] ──► [LISTO REPARTO]
+                                                            │                                  ▲
+                                                            └──────────────────────────────────┘
+                                                              atajo Admin (panel /admin/pedidos):
+                                                              "Registrar entrega" cierra directo,
+                                                              sin pasar por EN REPARTO
+                                                            │
+                                                            └──► [ENTREGA FALLIDA] ──► [LISTO REPARTO]
                     │
                [ANULADO] (desde cualquier estado excepto CERRADO, solo Admin)
 ```
 
-El Admin puede hacer override de cualquier transición desde el dashboard. En el uso normal, `borrador`→`confirmado`→`en_produccion` los maneja el Admin al crear/confirmar el pedido; `en_produccion`→`listo_reparto` lo hace el rol Producción; `listo_reparto`→`en_reparto`→`cerrado`/`entrega_fallida` lo hace el rol Repartidor. Ver `02_roles_y_permisos.md` para el detalle por rol.
+El Admin puede hacer override de cualquier transición desde el dashboard. En el uso normal operativo (Producción/Repartidor), `borrador`→`confirmado`→`en_produccion` los maneja el Admin al crear/confirmar el pedido; `en_produccion`→`listo_reparto` lo hace el rol Producción; `listo_reparto`→`en_reparto`→`cerrado`/`entrega_fallida` lo hace el rol Repartidor desde su propia vista (`/repartidor`) — este camino no cambió.
+
+Desde el panel de Admin (`/admin/pedidos`), la acción rápida de un pedido en `listo_reparto` es **"Registrar entrega"**: abre el detalle con el formulario de cobro y cierra el pedido directo a `cerrado`, **sin pasar por `en_reparto`**. Es un atajo administrativo (para cuando el Admin registra la entrega/cobro manualmente, sin que el pedido haya pasado por el circuito del Repartidor); `en_reparto` sigue existiendo y el Admin puede seguir enviando un pedido ahí como override manual si quiere mantener ese paso intermedio.
 
 Cada transición registra: estado anterior, estado nuevo, usuario, timestamp.
 
@@ -31,20 +38,23 @@ Cada transición registra: estado anterior, estado nuevo, usuario, timestamp.
 ### `en_produccion`
 - **Quién lo establece:** Admin (al confirmar pasa automáticamente).
 - **Qué significa:** El pedido está siendo fabricado/armado.
-- **Acciones:** Marcar como "Listo para reparto" (Admin).
+- **Acciones:** Marcar como "Listo para reparto" (Admin), editar pedido (Admin).
 - **Visible en:** Vista Producción del Admin.
 
 ### `listo_reparto`
-- **Quién lo establece:** Admin.
+- **Quién lo establece:** Producción (o Admin).
 - **Qué significa:** Pedido armado, listo para salir.
-- **Acciones:** Marcar como "En reparto" (Admin).
-- **Visible en:** Vista Reparto del Admin.
+- **Acciones:**
+  - Rol Repartidor (vista `/repartidor`): marcar "En reparto" → pasa a `en_reparto`.
+  - Panel Admin (`/admin/pedidos`): acción rápida **"Registrar entrega"** → abre el cobro y cierra directo a `cerrado` (atajo, salta `en_reparto`). El Admin también puede, como override manual, mandarlo a `en_reparto` igual que el Repartidor.
+  - Editar pedido (Admin).
+- **Visible en:** Vista Reparto del Admin y del Repartidor.
 
 ### `en_reparto`
-- **Quién lo establece:** Admin.
-- **Qué significa:** Pedido en camino al cliente.
-- **Acciones:** Cerrar pedido con cobro, o registrar entrega fallida (Admin).
-- **Visible en:** Vista Reparto del Admin.
+- **Quién lo establece:** Rol Repartidor (o Admin como override manual).
+- **Qué significa:** Pedido en camino al cliente. Sigue siendo el paso real que usa el Repartidor en su propia vista; para el Admin es opcional (ver atajo en `listo_reparto`).
+- **Acciones:** Cerrar pedido con cobro, registrar entrega fallida, editar pedido (Admin).
+- **Visible en:** Vista Reparto del Admin y del Repartidor.
 
 ### `cerrado`
 - **Quién lo establece:** Admin.
@@ -53,7 +63,10 @@ Cada transición registra: estado anterior, estado nuevo, usuario, timestamp.
   - `forma_cobro`: efectivo / transferencia / pendiente
   - `monto_cobrado`: numérico (obligatorio si forma ≠ pendiente)
   - `estado_pago`: se deriva automáticamente de `forma_cobro`
-- **Acciones disponibles:** Admin puede editar cobro (forma_cobro, monto_cobrado, fecha_cobro).
+- **Acciones disponibles:**
+  - Admin puede editar cobro (forma_cobro, monto_cobrado, fecha_cobro) siempre, sin importar `estado_pago`.
+  - Si `estado_pago = 'pendiente'`, Admin también puede editar el pedido completo (cliente, ítems, cantidades, precios, notas, fecha de producción) desde "Editar pedido". El total se recalcula y el dashboard/KPIs se refrescan automáticamente al guardar.
+  - Si `estado_pago = 'cobrado'`, el pedido ya no se puede editar (solo queda el editor de cobro de arriba) — evita alterar un total ya facturado/cobrado.
 - **No se puede anular ni retroceder.**
 
 #### Relación `fecha_cobro` / `estado_pago`
@@ -69,10 +82,10 @@ Cada transición registra: estado anterior, estado nuevo, usuario, timestamp.
 - Al editar cobro en pedido cerrado, `estado_pago` se recalcula automáticamente.
 
 ### `entrega_fallida`
-- **Quién lo establece:** Admin.
+- **Quién lo establece:** Admin (o Repartidor desde su vista).
 - **Qué significa:** No se pudo entregar. No es estado final.
 - **Campos:** Motivo (texto libre).
-- **Acciones:** Admin puede re-enviar a "Listo para reparto" para reagendar.
+- **Acciones:** Admin puede re-enviar a "Listo para reparto" para reagendar, o editar el pedido.
 
 ### `anulado`
 - **Quién lo establece:** Solo Admin.
@@ -86,8 +99,10 @@ Cada transición registra: estado anterior, estado nuevo, usuario, timestamp.
 
 1. Los estados avanzan en orden. El Admin puede hacer override desde cualquier estado.
 2. Cada cambio registra: estado anterior, estado nuevo, usuario, timestamp en `pedido_historial`.
-3. Un pedido `cerrado` solo permite editar campos de cobro. No puede anularse ni retroceder.
-4. Usar siempre la RPC `cambiar_estado_pedido` para garantizar atomicidad (pedidos + historial en una sola transacción).
+3. Desde el panel de Admin, `listo_reparto` puede pasar directo a `cerrado` ("Registrar entrega"), sin pasar por `en_reparto`. El circuito real del Repartidor (`listo_reparto` → `en_reparto` → `cerrado`/`entrega_fallida`) no cambia — sigue validado por rol en la RPC `cerrar_pedido`/`cambiar_estado_pedido`.
+4. **Edición de pedidos (solo Admin):** disponible en cualquier estado excepto `anulado`. En `cerrado`, solo mientras `estado_pago = 'pendiente'` — una vez cobrado, el pedido queda fijo y solo se puede editar el cobro (forma, monto, fecha).
+5. Un pedido `cerrado` con `estado_pago = 'cobrado'` no puede anularse, retroceder ni editarse (salvo el cobro).
+6. Usar siempre las RPCs `cambiar_estado_pedido` / `cerrar_pedido` para garantizar atomicidad (pedidos + historial en una sola transacción).
 
 ---
 

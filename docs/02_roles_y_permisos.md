@@ -92,7 +92,7 @@ Todo lo del admin + configuración técnica, gestión de roles, acceso a logs.
 | Ver pedidos en producción | ✅ | ✅ | — |
 | Ver pedidos listos/en reparto | ✅ | — | ✅ |
 | Crear pedido | ✅ | ❌ | ❌ |
-| Editar pedido | ✅ | ❌ | ❌ |
+| Editar pedido (cualquier estado excepto `anulado`; en `cerrado` solo si el cobro está pendiente)* | ✅ | ❌ | ❌ |
 | Anular pedido | ✅ | ❌ | ❌ |
 | Ver precios, totales y margen | ✅ | ❌ | ❌ |
 | Avanzar `en_produccion` → `listo_reparto` | ✅ | ✅ | ❌ |
@@ -104,6 +104,9 @@ Todo lo del admin + configuración técnica, gestión de roles, acceso a logs.
 | ABM clientes / productos / usuarios / egresos | ✅ | ❌ | ❌ |
 | Dashboard general + ventas + margen | ✅ | ❌ | ❌ |
 | Operar sin conexión (offline queue) | — | ❌ | ✅ |
+| Atajo: `listo_reparto` → `cerrado` directo, sin pasar por `en_reparto` | ✅ | ❌ | ❌ |
+
+*Ver detalle de la regla de edición en `03_flujo_de_estados.md` (sección "Reglas del flujo").
 
 ---
 

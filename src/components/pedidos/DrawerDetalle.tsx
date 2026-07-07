@@ -18,18 +18,20 @@ const TRANSICIONES: Partial<Record<EstadoPedido, EstadoPedido[]>> = {
   borrador:        ['confirmado'],
   confirmado:      ['en_produccion'],
   en_produccion:   ['listo_reparto'],
-  listo_reparto:   ['en_reparto'],
+  listo_reparto:   ['cerrado'],
   en_reparto:      ['cerrado', 'entrega_fallida'],
   entrega_fallida: ['listo_reparto'],
 }
 
+// en_reparto ya no forma parte del flujo normal (listo_reparto → cerrado directo);
+// queda solo como override manual del Admin para casos que sí necesiten ese paso intermedio.
 const TRANSICIONES_ADMIN: Partial<Record<EstadoPedido, EstadoPedido[]>> = {
-  borrador:        ['confirmado', 'en_produccion', 'listo_reparto', 'en_reparto', 'cerrado'],
-  confirmado:      ['en_produccion', 'listo_reparto', 'en_reparto', 'cerrado'],
-  en_produccion:   ['listo_reparto', 'en_reparto', 'cerrado'],
-  listo_reparto:   ['en_reparto', 'cerrado'],
+  borrador:        ['confirmado', 'en_produccion', 'listo_reparto', 'cerrado', 'en_reparto'],
+  confirmado:      ['en_produccion', 'listo_reparto', 'cerrado', 'en_reparto'],
+  en_produccion:   ['listo_reparto', 'cerrado', 'en_reparto'],
+  listo_reparto:   ['cerrado', 'en_reparto'],
   en_reparto:      ['cerrado', 'entrega_fallida'],
-  entrega_fallida: ['listo_reparto', 'en_reparto', 'cerrado'],
+  entrega_fallida: ['listo_reparto', 'cerrado', 'en_reparto'],
 }
 
 // Etiqueta de la acción primaria, indexada por el estado ACTUAL del pedido
@@ -37,7 +39,7 @@ const ACCION_LABEL: Partial<Record<EstadoPedido, string>> = {
   borrador:        'Confirmar pedido',
   confirmado:      'Enviar a producción',
   en_produccion:   'Marcar listo para reparto',
-  listo_reparto:   'Iniciar reparto',
+  listo_reparto:   'Registrar entrega',
   en_reparto:      'Registrar entrega',
   entrega_fallida: 'Reagendar entrega',
 }
@@ -245,6 +247,8 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
     : []
 
   const showCobro = p?.estado === 'cerrado'
+  // Admin puede editar en cualquier estado activo; cerrado solo mientras el cobro siga pendiente
+  const puedeEditar = !!p && isAdmin && p.estado !== 'anulado' && (p.estado !== 'cerrado' || p.estado_pago === 'pendiente')
 
   return (
     <>
@@ -637,7 +641,7 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
                   </>
                 )}
 
-                {['borrador', 'confirmado', 'en_produccion'].includes(p.estado) && (
+                {puedeEditar && (
                   <button type="button" onClick={() => pedido && onEditar(pedido)}
                     aria-label={`Editar pedido P-${String(p.numero).padStart(5, '0')}`}
                     style={{ background: 'transparent', color: '#3DD6B5', border: '1.5px solid #3DD6B5', borderRadius: 10, padding: '12px', minHeight: 44, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, outlineOffset: 2 }}>

@@ -814,7 +814,9 @@ export function DrawerPedido({ open, onClose, pedido, onSaved }: Props) {
     else if (expandedIdx !== null && expandedIdx > idx) setExpandedIdx(expandedIdx - 1)
   }
 
-  const canEdit = !pedido || ['borrador', 'confirmado', 'en_produccion'].includes(pedido.estado)
+  // cerrado solo es editable mientras el cobro siga pendiente; anulado nunca se edita
+  const canEdit = !pedido ||
+    (pedido.estado !== 'anulado' && (pedido.estado !== 'cerrado' || pedido.estado_pago === 'pendiente'))
 
   const footer = canEdit ? (
     <>
