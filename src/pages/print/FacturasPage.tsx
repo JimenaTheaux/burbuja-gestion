@@ -44,17 +44,13 @@ function formatFecha(s: string | null | undefined) {
   return new Date(s).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
-// ─── Factura individual (1/4 de A4) ──────────────────────────────────────────
+// ─── Factura individual (1/2 de A4 landscape) ────────────────────────────────
 
-function Factura({ pedido, posicion }: { pedido: FacturaPedido; posicion: 0|1|2|3 }) {
+function Factura({ pedido }: { pedido: FacturaPedido }) {
   const total = Number(pedido.totalManual ?? pedido.totalCalculado)
 
-  // Bordes de corte: solo los bordes internos (entre facturas)
-  const borderRight  = posicion === 0 || posicion === 2 ? '1px dashed #bbb' : 'none'
-  const borderBottom = posicion === 0 || posicion === 1 ? '1px dashed #bbb' : 'none'
-
   return (
-    <div className="factura-cell" style={{ borderRight, borderBottom }}>
+    <div className="factura-cell">
 
       {/* Encabezado empresa — fila única, compacta */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4, paddingBottom: 4, borderBottom: '1.5px solid #3DD6B5', flexShrink: 0 }}>
@@ -163,26 +159,12 @@ function Factura({ pedido, posicion }: { pedido: FacturaPedido; posicion: 0|1|2|
   )
 }
 
-// ─── Hoja A4 con 4 facturas ───────────────────────────────────────────────────
+// ─── Hoja A4 con 2 facturas ───────────────────────────────────────────────────
 
-function HojaA4({ pedidos, indice }: { pedidos: (FacturaPedido | null)[]; indice: number }) {
-  const grupo = [...pedidos]
-  while (grupo.length < 4) grupo.push(null)
-
+function HojaA4({ pedidos }: { pedidos: FacturaPedido[] }) {
   return (
     <div className="hoja-a4" style={{ pageBreakAfter: 'always' }}>
-      {grupo.map((p, i) =>
-        p ? (
-          <Factura key={p.id} pedido={p} posicion={i as 0|1|2|3} />
-        ) : (
-          <div key={`vacio-${indice}-${i}`} className="factura-cell factura-vacia"
-            style={{
-              borderRight:  i === 0 || i === 2 ? '1px dashed #bbb' : 'none',
-              borderBottom: i === 0 || i === 1 ? '1px dashed #bbb' : 'none',
-            }}
-          />
-        )
-      )}
+      {pedidos.map(p => <Factura key={p.id} pedido={p} />)}
     </div>
   )
 }
@@ -266,10 +248,9 @@ export default function FacturasPage() {
     }
   }, [loading, pedidos.length])
 
-  // Agrupar en páginas de 4
+  // Agrupar en páginas de 2
   const hojas: FacturaPedido[][] = []
-  for (let i = 0; i < pedidos.length; i += 4) hojas.push(pedidos.slice(i, i + 4))
-  if (!hojas.length && !loading) hojas.push([]) // página vacía para el mensaje
+  for (let i = 0; i < pedidos.length; i += 2) hojas.push(pedidos.slice(i, i + 2))
 
   return (
     <>
@@ -278,7 +259,7 @@ export default function FacturasPage() {
         /* ─── PRINT ─── */
         @media print {
           @page {
-            size: A4 portrait;
+            size: A4 landscape;
             margin: 0;
           }
 
@@ -289,8 +270,8 @@ export default function FacturasPage() {
           }
 
           html, body {
-            width: 210mm !important;
-            height: 297mm !important;
+            width: 297mm !important;
+            height: 210mm !important;
             margin: 0 !important;
             padding: 0 !important;
             overflow: hidden !important;
@@ -299,37 +280,36 @@ export default function FacturasPage() {
 
           .no-print { display: none !important; }
 
-          /* Cada hoja ocupa exactamente 1 A4 */
+          /* Cada hoja ocupa exactamente 1 A4 landscape */
           .hoja-a4 {
-            width: 210mm !important;
-            height: 297mm !important;
+            width: 297mm !important;
+            height: 210mm !important;
             display: grid !important;
-            grid-template-columns: 105mm 105mm !important;
-            grid-template-rows: 148.5mm 148.5mm !important;
+            grid-template-columns: 1fr 1fr !important;
+            grid-template-rows: 1fr !important;
             overflow: hidden !important;
             page-break-after: always !important;
             break-after: page !important;
           }
 
-          /* Cada factura ocupa exactamente 1/4 de A4 */
+          /* Cada factura ocupa exactamente 1/2 de A4 landscape */
           .factura-cell {
-            width: 105mm !important;
-            height: 148.5mm !important;
+            width: 148.5mm !important;
+            height: 210mm !important;
             overflow: hidden !important;
-            padding: 6mm !important;
+            padding: 8mm !important;
             display: flex !important;
             flex-direction: column !important;
             font-family: Arial, sans-serif !important;
-            font-size: 6.5pt !important;
+            font-size: 8pt !important;
             line-height: 1.25 !important;
+            border-right: 0.5px solid #e0e0e0 !important;
             page-break-inside: avoid !important;
             break-inside: avoid !important;
           }
 
-          .factura-vacia {
-            width: 105mm !important;
-            height: 148.5mm !important;
-            background: white !important;
+          .factura-cell:last-child {
+            border-right: none !important;
           }
         }
 
@@ -338,11 +318,11 @@ export default function FacturasPage() {
           body { background: #E5E7EB; font-family: Arial, sans-serif; }
 
           .hoja-a4 {
-            width: 794px;
-            height: 1123px;
+            width: 1122px;
+            height: 794px;
             display: grid;
-            grid-template-columns: 397px 397px;
-            grid-template-rows: 561px 561px;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr;
             background: white;
             box-shadow: 0 4px 24px rgba(0,0,0,0.15);
             margin: 0 auto 32px;
@@ -350,21 +330,20 @@ export default function FacturasPage() {
           }
 
           .factura-cell {
-            width: 397px;
-            height: 561px;
+            width: 561px;
+            height: 794px;
             overflow: hidden;
-            padding: 16px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
-            font-size: 8px;
+            font-size: 10px;
             line-height: 1.3;
             box-sizing: border-box;
+            border-right: 1px solid #e0e0e0;
           }
 
-          .factura-vacia {
-            width: 397px;
-            height: 561px;
-            background: #FAFAFA;
+          .factura-cell:last-child {
+            border-right: none;
           }
         }
       `}</style>
@@ -443,7 +422,7 @@ export default function FacturasPage() {
       {!loading && pedidos.length > 0 && (
         <div style={{ padding: '32px 0' }}>
           {hojas.map((grupo, idx) => (
-            <HojaA4 key={idx} pedidos={grupo} indice={idx} />
+            <HojaA4 key={idx} pedidos={grupo} />
           ))}
         </div>
       )}
