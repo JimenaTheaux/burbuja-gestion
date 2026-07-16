@@ -54,7 +54,7 @@ function Factura({ pedido }: { pedido: FacturaPedido }) {
 
       {/* Encabezado empresa — fila única, compacta */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4, paddingBottom: 4, borderBottom: '1.5px solid #3DD6B5', flexShrink: 0 }}>
-        <img src="/Logo_sin_fondo_negro.png" alt="Burbuja" height={28} style={{ display: 'block' }} />
+        <img src="/Logo_sin_fondo_negro.png" alt="Burbuja" height={28} style={{ display: 'block', width: 'auto', maxWidth: 110 }} />
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontWeight: 700, fontSize: 9, color: '#1C1C1E' }}>
             P-{String(pedido.numero).padStart(5, '0')}
