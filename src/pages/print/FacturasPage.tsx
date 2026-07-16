@@ -54,16 +54,9 @@ function Factura({ pedido }: { pedido: FacturaPedido }) {
 
       {/* Encabezado empresa — fila única, compacta */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4, paddingBottom: 4, borderBottom: '1.5px solid #3DD6B5', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <div style={{
-            width: 16, height: 16, borderRadius: 3, background: '#3DD6B5',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#fff', fontSize: 6, fontWeight: 900, flexShrink: 0,
-          }}>LM</div>
-          <span style={{ fontWeight: 900, fontSize: 9, color: '#3DD6B5' }}>BURBUJA</span>
-        </div>
+        <img src="/Logo_sin_fondo_negro.png" alt="Burbuja" height={28} style={{ display: 'block' }} />
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontWeight: 900, fontSize: 9, color: '#1C1C1E' }}>
+          <div style={{ fontWeight: 700, fontSize: 9, color: '#1C1C1E' }}>
             P-{String(pedido.numero).padStart(5, '0')}
           </div>
           <div style={{ fontSize: 7, color: '#8E8E93' }}>
@@ -91,15 +84,15 @@ function Factura({ pedido }: { pedido: FacturaPedido }) {
         </span>
       </div>
 
-      {/* Tabla de ítems — flex:1 con overflow:hidden para nunca desbordar */}
-      <div style={{ flex: '1 1 0', overflow: 'hidden', minHeight: 0, marginBottom: 4 }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'inherit' }}>
+      {/* Tabla de ítems — sigue el flujo normal del documento, sin flex de relleno */}
+      <div style={{ marginBottom: 4 }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
           <thead>
-            <tr style={{ background: '#E8F4FC' }}>
-              <th style={{ padding: '1px 2px', textAlign: 'left', fontWeight: 700 }}>Producto</th>
-              <th style={{ padding: '1px 2px', textAlign: 'center', fontWeight: 700, width: 24 }}>Cant</th>
-              <th style={{ padding: '1px 2px', textAlign: 'right', fontWeight: 700, width: 38 }}>Precio</th>
-              <th style={{ padding: '1px 2px', textAlign: 'right', fontWeight: 700, width: 38 }}>Sub</th>
+            <tr>
+              <th style={{ padding: '2px', textAlign: 'left', fontWeight: 600, color: '#8E8E93', fontSize: '7pt', textTransform: 'uppercase' }}>Producto</th>
+              <th style={{ padding: '2px', textAlign: 'center', fontWeight: 600, color: '#8E8E93', fontSize: '7pt', textTransform: 'uppercase', width: 52 }}>Cant</th>
+              <th style={{ padding: '2px', textAlign: 'right', fontWeight: 600, color: '#8E8E93', fontSize: '7pt', textTransform: 'uppercase', width: 80 }}>Precio</th>
+              <th style={{ padding: '2px', textAlign: 'right', fontWeight: 600, color: '#8E8E93', fontSize: '7pt', textTransform: 'uppercase', width: 88 }}>Sub</th>
             </tr>
           </thead>
           <tbody>
@@ -107,14 +100,14 @@ function Factura({ pedido }: { pedido: FacturaPedido }) {
               const sub = Number(item.cantidad) * Number(item.precioUnitario)
               return (
                 <tr key={item.id ?? i} style={{ borderBottom: '0.3px solid #E5E7EB' }}>
-                  <td style={{ padding: '1px 2px', maxWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <td style={{ padding: '2px', maxWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '7.5pt', fontWeight: 400, color: '#1C1C1E' }}>
                     {item.productoNombre}
                     {item.productoPresentacion && <span style={{ color: '#6B7280' }}> {item.productoPresentacion}</span>}
                     {item.bidonNuevo && <span style={{ color: '#F57C00', fontWeight: 700 }}> 🆕</span>}
                   </td>
-                  <td style={{ padding: '1px 2px', textAlign: 'center', fontWeight: 700 }}>{item.cantidad}</td>
-                  <td style={{ padding: '1px 2px', textAlign: 'right', whiteSpace: 'nowrap' }}>${formatPeso(item.precioUnitario)}</td>
-                  <td style={{ padding: '1px 2px', textAlign: 'right', fontWeight: 600, whiteSpace: 'nowrap' }}>${formatPeso(sub)}</td>
+                  <td style={{ padding: '2px', textAlign: 'center', fontSize: '7.5pt', fontWeight: 400, color: '#1C1C1E' }}>{item.cantidad}</td>
+                  <td style={{ padding: '2px', textAlign: 'right', whiteSpace: 'nowrap', fontSize: '7.5pt', fontWeight: 400, color: '#1C1C1E' }}>${formatPeso(item.precioUnitario)}</td>
+                  <td style={{ padding: '2px', textAlign: 'right', whiteSpace: 'nowrap', fontSize: '7.5pt', fontWeight: 400, color: '#1C1C1E' }}>${formatPeso(sub)}</td>
                 </tr>
               )
             })}
@@ -122,21 +115,21 @@ function Factura({ pedido }: { pedido: FacturaPedido }) {
         </table>
       </div>
 
-      {/* Totales */}
+      {/* Totales — pegado a la tabla, no al fondo de la hoja */}
       <div style={{ borderTop: '1px solid #E5E5EA', paddingTop: 3, flexShrink: 0 }}>
         {Number(pedido.costoEnvio) > 0 && (
-          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#8E8E93', marginBottom: 1 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#8E8E93', fontWeight: 400, marginBottom: 1 }}>
             <span>Envío</span>
             <span>${formatPeso(pedido.costoEnvio)}</span>
           </div>
         )}
         {Number(pedido.costoBidones) > 0 && (
-          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#8E8E93', marginBottom: 1 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#8E8E93', fontWeight: 400, marginBottom: 1 }}>
             <span>Bidones</span>
             <span>${formatPeso(pedido.costoBidones)}</span>
           </div>
         )}
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 900, fontSize: 10, color: '#3DD6B5', marginTop: 2 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: 10, color: '#1C1C1E', marginTop: 2 }}>
           <span>TOTAL</span>
           <span>${formatPeso(total)}</span>
         </div>
