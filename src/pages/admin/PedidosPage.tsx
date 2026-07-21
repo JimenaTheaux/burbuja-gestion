@@ -9,10 +9,11 @@ import { useCompartirFactura } from '@/hooks/useCompartirFactura'
 import { DrawerPedido }     from '@/components/pedidos/DrawerPedido'
 import { DrawerDetalle }    from '@/components/pedidos/DrawerDetalle'
 import {
-  usePedidos, useCambiarEstado, useAnularPedido, totalPedido,
+  usePedidos, useCambiarEstado, useAnularPedido, useEliminarPedido, totalPedido,
   fetchPedidoDetalle, type PedidoListItem, type PedidoDetalle,
 } from '@/services/pedidos'
 import { ESTADO_CONFIG, ESTADOS_FACTURABLES, type EstadoPedido, formatNumero } from '@/types'
+import { useAuthStore } from '@/store/authStore'
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
@@ -88,12 +89,15 @@ function ShimmerCard() {
 
 // ─── Dropdown de acciones (desktop) ──────────────────────────────────────────
 
-function AccionesDropdown({ pedido, onVerDetalle, onEditar, onAnular }: {
+function AccionesDropdown({ pedido, onVerDetalle, onEditar, onAnular, onEliminar }: {
   pedido:       PedidoListItem
   onVerDetalle: () => void
   onEditar:     () => void
   onAnular:     () => void
+  onEliminar:   () => void
 }) {
+  const usuario = useAuthStore(s => s.usuario)
+  const isAdmin = usuario?.rol === 'admin' || usuario?.rol === 'superadmin'
   const [open, setOpen] = useState(false)
   const [coords, setCoords] = useState<{ top: number; right: number } | null>(null)
   const btnRef  = useRef<HTMLButtonElement>(null)
@@ -130,6 +134,7 @@ function AccionesDropdown({ pedido, onVerDetalle, onEditar, onAnular }: {
   // cerrado sigue siendo editable si el cobro quedó pendiente (puede corregirse antes de cobrar)
   const canEditar = pedido.estado !== 'anulado' && (pedido.estado !== 'cerrado' || pedido.estado_pago === 'pendiente')
   const canAnular = !['cerrado', 'anulado'].includes(pedido.estado)
+  const canEliminar = isAdmin && pedido.estado !== 'cerrado'
 
   return (
     <div style={{ position: 'relative', display: 'inline-block' }}>
@@ -190,6 +195,18 @@ function AccionesDropdown({ pedido, onVerDetalle, onEditar, onAnular }: {
                 style={{ ...menuItemStyle, color: '#D32F2F' }}
               >
                 Anular
+              </button>
+            </>
+          )}
+          {canEliminar && (
+            <>
+              {!canAnular && <div style={{ borderTop: '1px solid #F5F7F9', margin: '4px 0' }} />}
+              <button
+                role="menuitem"
+                onClick={() => { setOpen(false); onEliminar() }}
+                style={{ ...menuItemStyle, color: '#D32F2F' }}
+              >
+                Eliminar pedido
               </button>
             </>
           )}
@@ -297,16 +314,88 @@ function ModalAnular({ pedido, onConfirm, onCancel, loading }: {
   )
 }
 
+// ─── Modal de eliminación ─────────────────────────────────────────────────────
+
+function ModalEliminar({ pedido, onConfirm, onCancel, loading }: {
+  pedido:    PedidoListItem
+  onConfirm: () => void
+  onCancel:  () => void
+  loading:   boolean
+}) {
+  useEffect(() => {
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') onCancel() }
+    document.addEventListener('keydown', esc)
+    return () => document.removeEventListener('keydown', esc)
+  }, [onCancel])
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Eliminar pedido"
+      onClick={onCancel}
+      style={{
+        position: 'fixed', inset: 0,
+        background: 'rgba(0,0,0,0.45)',
+        zIndex: 400,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 16,
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: '#fff', borderRadius: 16, padding: 24,
+          width: '100%', maxWidth: 400,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.16)',
+        }}
+      >
+        <p style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700, color: '#1C1C1E' }}>
+          ¿Eliminar el pedido P-{String(pedido.numero).padStart(5, '0')}?
+        </p>
+        <p style={{ margin: '0 0 20px', fontSize: 13, color: '#8E8E93' }}>
+          Esta acción no se puede deshacer.
+        </p>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={onCancel}
+            style={{
+              flex: 1, background: 'transparent', color: '#8E8E93',
+              border: '1.5px solid #E5E5EA', borderRadius: 10,
+              padding: '10px', fontSize: 14, cursor: 'pointer', minHeight: 44,
+            }}
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={loading}
+            style={{
+              flex: 1, background: loading ? 'rgba(211,47,47,0.4)' : '#D32F2F',
+              color: '#fff', border: 'none', borderRadius: 10,
+              padding: '10px', fontSize: 14, fontWeight: 700,
+              cursor: loading ? 'not-allowed' : 'pointer', minHeight: 44,
+            }}
+          >
+            {loading ? 'Eliminando…' : 'Eliminar'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Fila de tabla (desktop) ──────────────────────────────────────────────────
 
-function FilaPedido({ pedido, onVerDetalle, onEditar, onAnularRequest, selected, onSelect, onToast }: {
-  pedido:          PedidoListItem
-  onVerDetalle:    () => void
-  onEditar:        () => void
-  onAnularRequest: () => void
-  selected?:       boolean
-  onSelect?:       () => void
-  onToast?:        (msg: string, type: 'success' | 'error') => void
+function FilaPedido({ pedido, onVerDetalle, onEditar, onAnularRequest, onEliminarRequest, selected, onSelect, onToast }: {
+  pedido:            PedidoListItem
+  onVerDetalle:      () => void
+  onEditar:          () => void
+  onAnularRequest:   () => void
+  onEliminarRequest: () => void
+  selected?:         boolean
+  onSelect?:         () => void
+  onToast?:          (msg: string, type: 'success' | 'error') => void
 }) {
   const cambiarEstado = useCambiarEstado()
   const { compartir, loading: loadingWA } = useCompartirFactura()
@@ -468,6 +557,7 @@ function FilaPedido({ pedido, onVerDetalle, onEditar, onAnularRequest, selected,
             onVerDetalle={onVerDetalle}
             onEditar={onEditar}
             onAnular={onAnularRequest}
+            onEliminar={onEliminarRequest}
           />
         </div>
       </td>
@@ -830,12 +920,14 @@ export default function PedidosPage() {
   const [expandidaId, setExpandida] = useState<string | null>(null)
   const [anularPedido, setAnularPedido] = useState<PedidoListItem | null>(null)
   const [anularLoading, setAnularLoading] = useState(false)
+  const [eliminarPedido, setEliminarPedido] = useState<PedidoListItem | null>(null)
 
   const [modoSeleccion,  setModoSeleccion]  = useState(false)
   const [seleccionados,  setSeleccionados]  = useState<Set<string>>(new Set())
 
   const { toasts, show, dismiss } = useToast()
   const anular = useAnularPedido()
+  const eliminar = useEliminarPedido()
 
   const { data: pedidos, isLoading } = usePedidos({
     q: q || undefined,
@@ -868,6 +960,21 @@ export default function PedidosPage() {
       show(e instanceof Error ? e.message : 'Error al anular', 'error')
     } finally {
       setAnularLoading(false)
+    }
+  }
+
+  const handleConfirmarEliminar = async () => {
+    if (!eliminarPedido) return
+    try {
+      await eliminar.mutateAsync({ id: eliminarPedido.id })
+      show('Pedido eliminado', 'success')
+      if (pedidoSelId === eliminarPedido.id) {
+        setDrawerDet(false)
+        setSelId(null)
+      }
+      setEliminarPedido(null)
+    } catch (e) {
+      show(e instanceof Error ? e.message : 'Error al eliminar', 'error')
     }
   }
 
@@ -1045,6 +1152,7 @@ export default function PedidosPage() {
                     onVerDetalle={() => handleVerDetalle(p.id)}
                     onEditar={() => handleVerDetalle(p.id)}
                     onAnularRequest={() => setAnularPedido(p)}
+                    onEliminarRequest={() => setEliminarPedido(p)}
                     selected={seleccionados.has(p.id)}
                     onSelect={modoSeleccion ? () => toggleSeleccion(p.id) : undefined}
                     onToast={(msg, type) => type === 'error' ? show(msg, 'error') : show(msg, 'success')}
@@ -1179,6 +1287,16 @@ export default function PedidosPage() {
           onConfirm={handleConfirmarAnular}
           onCancel={() => setAnularPedido(null)}
           loading={anularLoading}
+        />
+      )}
+
+      {/* Modal eliminar */}
+      {eliminarPedido && (
+        <ModalEliminar
+          pedido={eliminarPedido}
+          onConfirm={handleConfirmarEliminar}
+          onCancel={() => setEliminarPedido(null)}
+          loading={eliminar.isPending}
         />
       )}
 

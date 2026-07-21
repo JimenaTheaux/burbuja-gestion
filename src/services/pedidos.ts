@@ -476,6 +476,26 @@ export const useAnularPedido = () => {
   })
 }
 
+// ─── useEliminarPedido ────────────────────────────────────────────────────────
+// Borrado físico — pedido_items y pedido_historial se eliminan solos por
+// ON DELETE CASCADE. Solo debe ofrecerse en la UI para pedidos no cerrados.
+
+export const useEliminarPedido = () => {
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id }: { id: string }) => {
+      const { error } = await supabase.from('pedidos').delete().eq('id', id)
+      if (error) throw new Error(error.message)
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEY })
+      qc.invalidateQueries({ queryKey: queryKeys.produccion.all() })
+      invalidarDashboard(qc)
+    },
+  })
+}
+
 // ─── useCerrarPedido ──────────────────────────────────────────────────────────
 // Cierra un pedido en_reparto: registra los pagos y cambia estado a 'cerrado'
 // en un solo RPC. p_pagos es un array [{ forma_pago, monto }] — puede ir vacío

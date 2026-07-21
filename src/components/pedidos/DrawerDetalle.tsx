@@ -1,12 +1,12 @@
 import { useState } from 'react'
-import { Clock, Edit2, XCircle, ChevronRight } from 'lucide-react'
+import { Clock, Edit2, XCircle, ChevronRight, Trash2 } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { BadgeEstado }   from '@/components/common/BadgeEstado'
 import { BtnWhatsapp }  from '@/components/common/BtnWhatsapp'
 import { Skeleton }     from '@/components/ui/skeleton'
 import { FormPagos }    from '@/components/pedidos/FormPagos'
 import {
-  usePedidoDetalle, useCambiarEstado, useAnularPedido, useCerrarPedido,
+  usePedidoDetalle, useCambiarEstado, useAnularPedido, useCerrarPedido, useEliminarPedido,
   totalPedido, type PedidoDetalle,
 } from '@/services/pedidos'
 import { usePagosPedido, useRegistrarPago } from '@/services/pedidoPagos'
@@ -107,6 +107,30 @@ function ModalMotivo({ titulo, onConfirm, onCancel }: {
   )
 }
 
+function ModalEliminar({ numero, onConfirm, onCancel, loading }: {
+  numero: number; onConfirm: () => void; onCancel: () => void; loading: boolean
+}) {
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div style={{ background: '#fff', borderRadius: 20, padding: 24, maxWidth: 380, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+        <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: 16, color: '#1C1C1E' }}>
+          ¿Eliminar el pedido P-{String(numero).padStart(5, '0')}?
+        </p>
+        <p style={{ margin: '0 0 20px', fontSize: 13, color: '#8E8E93' }}>
+          Esta acción no se puede deshacer.
+        </p>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={onCancel} style={{ flex: 1, background: 'transparent', color: '#8E8E93', border: '1.5px solid #E5E5EA', borderRadius: 10, padding: '12px', fontSize: 14, fontWeight: 600, cursor: 'pointer', minHeight: 44 }}>Cancelar</button>
+          <button onClick={onConfirm} disabled={loading}
+            style={{ flex: 1, background: loading ? 'rgba(211,47,47,0.4)' : '#D32F2F', color: '#fff', border: 'none', borderRadius: 10, padding: '12px', fontSize: 14, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', minHeight: 44 }}>
+            {loading ? 'Eliminando…' : 'Eliminar'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Drawer detalle ───────────────────────────────────────────────────────────
 
 interface Props {
@@ -124,6 +148,7 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
   const anular        = useAnularPedido()
   const registrarPago = useRegistrarPago()
   const cerrarPedido  = useCerrarPedido()
+  const eliminarPedido = useEliminarPedido()
 
   const usuario = useAuthStore(s => s.usuario)
   const isAdmin = usuario?.rol === 'admin' || usuario?.rol === 'superadmin'
@@ -134,6 +159,7 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
   const [anulando,         setAnulando]         = useState(false)
   const [fallaMotivo,      setFallaMotivo]      = useState(false)
   const [agregandoPago,    setAgregandoPago]    = useState(false)
+  const [eliminando,       setEliminando]       = useState(false)
 
   // Flujo "Cerrar venta" con FormPagos inline
   const [cerrando, setCerrando] = useState(false)
@@ -159,6 +185,18 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
       onClose()
     } catch (e) {
       onSaved((e instanceof Error ? e.message : 'Error') + '|error')
+    }
+  }
+
+  const handleEliminar = async () => {
+    if (!pedido) return
+    try {
+      await eliminarPedido.mutateAsync({ id: pedido.id })
+      onSaved('Pedido eliminado')
+      setEliminando(false)
+      onClose()
+    } catch (e) {
+      onSaved((e instanceof Error ? e.message : 'Error al eliminar') + '|error')
     }
   }
 
@@ -207,8 +245,8 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
         <SheetContent
           side="right"
           style={{ width: '100%', maxWidth: 500, overflowY: 'auto', paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}
-          onPointerDownOutside={e => { if (confirmando || anulando || cerrando) e.preventDefault() }}
-          onInteractOutside={e => { if (confirmando || anulando || cerrando) e.preventDefault() }}
+          onPointerDownOutside={e => { if (confirmando || anulando || cerrando || eliminando) e.preventDefault() }}
+          onInteractOutside={e => { if (confirmando || anulando || cerrando || eliminando) e.preventDefault() }}
         >
           <SheetHeader>
             <SheetTitle>{p ? `P-${String(p.numero).padStart(5, '0')}` : 'Detalle de pedido'}</SheetTitle>
@@ -471,6 +509,14 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
                     <XCircle size={14} /> {p.estado === 'borrador' ? 'Eliminar borrador' : 'Anular pedido'}
                   </button>
                 )}
+
+                {isAdmin && p.estado !== 'cerrado' && (
+                  <button type="button" onClick={() => setEliminando(true)}
+                    aria-label={`Eliminar pedido P-${String(p.numero).padStart(5, '0')}`}
+                    style={{ background: 'transparent', color: '#D32F2F', border: 'none', borderRadius: 10, padding: '10px', minHeight: 40, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, outlineOffset: 2 }}>
+                    <Trash2 size={14} /> Eliminar pedido
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -492,6 +538,14 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
           titulo="Marcar entrega fallida — ingresá el motivo"
           onConfirm={motivo => handleEstado('entrega_fallida', motivo)}
           onCancel={() => setFallaMotivo(false)}
+        />
+      )}
+      {eliminando && p && (
+        <ModalEliminar
+          numero={p.numero}
+          onConfirm={handleEliminar}
+          onCancel={() => setEliminando(false)}
+          loading={eliminarPedido.isPending}
         />
       )}
     </>
