@@ -21,13 +21,13 @@ import { CATEGORIA_EGRESO_LABELS } from '@/types'
 // ─── Colores por categoría ────────────────────────────────────────────────────
 
 const CATEGORIA_COLORS: Record<CategoriaEgreso, { bg: string; color: string }> = {
-  sueldos:   { bg: '#EBF5FF', color: '#3DD6B5' },
-  alquiler:  { bg: '#FFF3E0', color: '#E65100' },
-  drogueria: { bg: '#E8F8F0', color: '#145A32' },
-  grafica:   { bg: '#F3E8FF', color: '#6B21A8' },
-  packaging: { bg: '#FFF9E6', color: '#B45309' },
-  luz:       { bg: '#FFFDE7', color: '#F57F17' },
-  otros:     { bg: '#F5F7F9', color: '#8E8E93' },
+  sueldo:        { bg: '#EBF5FF', color: '#3DD6B5' },
+  todo_droga:    { bg: '#E8F8F0', color: '#145A32' },
+  mym_fragancia: { bg: '#F3E8FF', color: '#6B21A8' },
+  envases:       { bg: '#FFF9E6', color: '#B45309' },
+  casa:          { bg: '#FFF3E0', color: '#E65100' },
+  servicios:     { bg: '#FFFDE7', color: '#F57F17' },
+  otros:         { bg: '#F5F7F9', color: '#8E8E93' },
 }
 
 // ─── Helpers de fecha ─────────────────────────────────────────────────────────
@@ -64,7 +64,7 @@ function aniosDisponibles(): number[] {
 
 const schema = z.object({
   fecha_egreso:   z.string().min(1, 'La fecha es obligatoria'),
-  categoria:      z.enum(['sueldos','alquiler','drogueria','grafica','packaging','luz','otros']),
+  categoria:      z.enum(['sueldo','todo_droga','mym_fragancia','envases','casa','servicios','otros']),
   concepto:       z.string().min(3, 'Mínimo 3 caracteres'),
   monto:          z.string().refine(v => parseFloat(v) > 0, 'El monto debe ser mayor a 0'),
   registrado_por: z.string().optional(),

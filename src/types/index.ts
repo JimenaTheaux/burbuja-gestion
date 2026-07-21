@@ -149,22 +149,22 @@ export interface Pedido {
 // ─── Egresos ─────────────────────────────────────────────────────────────────
 
 export type CategoriaEgreso =
-  | 'sueldos'
-  | 'alquiler'
-  | 'drogueria'
-  | 'grafica'
-  | 'packaging'
-  | 'luz'
+  | 'sueldo'
+  | 'todo_droga'
+  | 'mym_fragancia'
+  | 'envases'
+  | 'casa'
+  | 'servicios'
   | 'otros'
 
 export const CATEGORIA_EGRESO_LABELS: Record<CategoriaEgreso, string> = {
-  sueldos:   'Sueldos',
-  alquiler:  'Alquiler',
-  drogueria: 'Droguería',
-  grafica:   'Gráfica',
-  packaging: 'Packaging',
-  luz:       'Luz',
-  otros:     'Otros',
+  sueldo:        'Sueldo',
+  todo_droga:    'Todo droga',
+  mym_fragancia: 'MyM Fragancia',
+  envases:       'Envases',
+  casa:          'Casa',
+  servicios:     'Servicios',
+  otros:         'Otros',
 }
 
 export interface Egreso {
