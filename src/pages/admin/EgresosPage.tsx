@@ -93,7 +93,8 @@ function useUsuariosActivos() {
 // ─── Badge categoría ──────────────────────────────────────────────────────────
 
 function BadgeCategoria({ categoria }: { categoria: CategoriaEgreso }) {
-  const { bg, color } = CATEGORIA_COLORS[categoria]
+  const { bg, color } = CATEGORIA_COLORS[categoria] ?? CATEGORIA_COLORS.otros
+  const label = CATEGORIA_EGRESO_LABELS[categoria] ?? categoria
   return (
     <span style={{
       backgroundColor: bg, color,
@@ -101,7 +102,7 @@ function BadgeCategoria({ categoria }: { categoria: CategoriaEgreso }) {
       padding: '2px 8px', borderRadius: 99,
       display: 'inline-block', whiteSpace: 'nowrap',
     }}>
-      {CATEGORIA_EGRESO_LABELS[categoria].toUpperCase()}
+      {label.toUpperCase()}
     </span>
   )
 }
