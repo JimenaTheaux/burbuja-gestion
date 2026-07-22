@@ -134,7 +134,7 @@ function AccionesDropdown({ pedido, onVerDetalle, onEditar, onAnular, onEliminar
   // cerrado sigue siendo editable si el cobro quedó pendiente (puede corregirse antes de cobrar)
   const canEditar = pedido.estado !== 'anulado' && (pedido.estado !== 'cerrado' || pedido.estado_pago === 'pendiente')
   const canAnular = !['cerrado', 'anulado'].includes(pedido.estado)
-  const canEliminar = isAdmin && pedido.estado !== 'cerrado'
+  const canEliminar = isAdmin
 
   return (
     <div style={{ position: 'relative', display: 'inline-block' }}>

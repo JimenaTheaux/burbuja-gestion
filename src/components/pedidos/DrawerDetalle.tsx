@@ -510,7 +510,7 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
                   </button>
                 )}
 
-                {isAdmin && p.estado !== 'cerrado' && (
+                {isAdmin && (
                   <button type="button" onClick={() => setEliminando(true)}
                     aria-label={`Eliminar pedido P-${String(p.numero).padStart(5, '0')}`}
                     style={{ background: 'transparent', color: '#D32F2F', border: 'none', borderRadius: 10, padding: '10px', minHeight: 40, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, outlineOffset: 2 }}>

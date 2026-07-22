@@ -478,7 +478,7 @@ export const useAnularPedido = () => {
 
 // ─── useEliminarPedido ────────────────────────────────────────────────────────
 // Borrado físico — pedido_items y pedido_historial se eliminan solos por
-// ON DELETE CASCADE. Solo debe ofrecerse en la UI para pedidos no cerrados.
+// ON DELETE CASCADE. Disponible en la UI para admin en cualquier estado.
 
 export const useEliminarPedido = () => {
   const qc = useQueryClient()
