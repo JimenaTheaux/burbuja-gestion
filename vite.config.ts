@@ -99,7 +99,6 @@ export default defineConfig({
           if (id.includes('@supabase/supabase-js'))  return 'vendor-supabase'
           if (id.includes('@radix-ui') || id.includes('lucide-react')) return 'vendor-ui'
           if (id.includes('chart.js'))                return 'vendor-charts'
-          if (id.includes('xlsx') || id.includes('html2canvas')) return 'vendor-export'
         },
       },
     },

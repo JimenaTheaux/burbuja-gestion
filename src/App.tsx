@@ -4,13 +4,16 @@ import { ProtectedRoute }   from '@/components/common/ProtectedRoute'
 import { AdminLayout }      from '@/components/common/AdminLayout'
 import { ProduccionLayout } from '@/components/common/ProduccionLayout'
 import { RepartidorLayout } from '@/components/common/RepartidorLayout'
+import { PwaUpdater }       from '@/components/common/PwaUpdater'
 import LoginPage            from '@/pages/LoginPage'
+import AdminDashboard       from '@/pages/admin/DashboardPage'
+import AdminPedidos         from '@/pages/admin/PedidosPage'
+import AdminClientes        from '@/pages/admin/ClientesPage'
 
 // ─── Lazy loading por rol — cada grupo carga su chunk independiente ────────────
+// Dashboard, Pedidos y Clientes van eager (arriba): son el flujo diario del
+// admin, ya vienen en el bundle principal — cero espera de red al navegar.
 
-const AdminDashboard  = lazy(() => import('@/pages/admin/DashboardPage'))
-const AdminPedidos    = lazy(() => import('@/pages/admin/PedidosPage'))
-const AdminClientes   = lazy(() => import('@/pages/admin/ClientesPage'))
 const AdminProductos  = lazy(() => import('@/pages/admin/ProductosPage'))
 const AdminUsuarios   = lazy(() => import('@/pages/admin/UsuariosPage'))
 const AdminEgresos    = lazy(() => import('@/pages/admin/EgresosPage'))
@@ -49,7 +52,9 @@ function PageLoader() {
 
 export default function App() {
   return (
-    <Routes>
+    <>
+      <PwaUpdater />
+      <Routes>
       {/* Pública */}
       <Route path="/login" element={<LoginPage />} />
 
@@ -62,9 +67,9 @@ export default function App() {
           </ProtectedRoute>
         }
       >
-        <Route index        element={<Suspense fallback={<PageLoader />}><AdminDashboard /></Suspense>} />
-        <Route path="pedidos"   element={<Suspense fallback={<PageLoader />}><AdminPedidos /></Suspense>} />
-        <Route path="clientes"  element={<Suspense fallback={<PageLoader />}><AdminClientes /></Suspense>} />
+        <Route index        element={<AdminDashboard />} />
+        <Route path="pedidos"   element={<AdminPedidos />} />
+        <Route path="clientes"  element={<AdminClientes />} />
         <Route path="productos" element={<Suspense fallback={<PageLoader />}><AdminProductos /></Suspense>} />
         <Route path="egresos"   element={<Suspense fallback={<PageLoader />}><AdminEgresos /></Suspense>} />
         <Route path="usuarios"  element={<Suspense fallback={<PageLoader />}><AdminUsuarios /></Suspense>} />
@@ -129,6 +134,7 @@ export default function App() {
 
       <Route path="/"  element={<Navigate to="/login" replace />} />
       <Route path="*"  element={<Navigate to="/login" replace />} />
-    </Routes>
+      </Routes>
+    </>
   )
 }

@@ -5,7 +5,6 @@ import {
   Share2, CheckCircle2,
   Package, Banknote, Clock, FlaskConical, BarChart2, Download,
 } from 'lucide-react'
-import * as XLSX from 'xlsx'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { Skeleton } from '@/components/ui/skeleton'
 import { FormPagos } from '@/components/pedidos/FormPagos'
@@ -692,7 +691,8 @@ export default function DashboardPage() {
     else setHasta(val)
   }
 
-  const descargarExcel = () => {
+  const descargarExcel = async () => {
+    const XLSX = await import('xlsx')
     const filas = quincenas.map(({ inicio, fin }) => {
       const { totalVendido, totalCosto, ganancia } = calcQuincena(pagosPeriodo, pedidosMap, inicio, fin)
       return {

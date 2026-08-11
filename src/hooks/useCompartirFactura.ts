@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import html2canvas from 'html2canvas'
 import { createElement } from 'react'
 import { FacturaCanvas } from '@/components/pedidos/FacturaCanvas'
 import type { PedidoDetalle } from '@/services/pedidos'
@@ -31,6 +30,7 @@ export function useCompartirFactura() {
       })
 
       // 3. Capturar con html2canvas
+      const html2canvas = (await import('html2canvas')).default
       canvas = await html2canvas(container, {
         scale:           2,
         useCORS:         true,
