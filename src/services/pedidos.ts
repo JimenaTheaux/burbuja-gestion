@@ -125,6 +125,7 @@ export const usePedidos = (filtros?: {
   useQuery({
     queryKey:        [...KEY, filtros],
     placeholderData: keepPreviousData,
+    refetchOnMount:  'always',
     queryFn: async () => {
       let q = supabase
         .from('pedidos')

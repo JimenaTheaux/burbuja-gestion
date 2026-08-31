@@ -77,6 +77,7 @@ export const usePendientesCobro = () =>
   useQuery({
     queryKey:        [...KEY, 'pendientes-cobro'],
     placeholderData: keepPreviousData,
+    refetchOnMount:  'always',
     queryFn: async () => {
       const { data, error } = await supabase
         .from('pedidos')

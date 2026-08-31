@@ -13,6 +13,7 @@ export const useClientes = (q?: string, activo: boolean | null = true) =>
   useQuery({
     queryKey:        [...KEY, q, activo],
     placeholderData: keepPreviousData,
+    refetchOnMount:  'always',
     staleTime:       1000 * 60 * 2,
     queryFn: async () => {
       let query = supabase

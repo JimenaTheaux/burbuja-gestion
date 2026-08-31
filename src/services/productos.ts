@@ -25,6 +25,7 @@ export const useProductos = (q?: string, categoriaId?: string, activo: boolean |
   useQuery({
     queryKey:        [...KEY, q, categoriaId, activo],
     placeholderData: keepPreviousData,
+    refetchOnMount:  'always',
     staleTime:       1000 * 60 * 5,
     queryFn: async () => {
       let query = supabase

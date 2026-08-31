@@ -96,6 +96,7 @@ export const usePedidosProduccion = (fecha?: string) =>
   useQuery({
     queryKey:        [...queryKeys.produccion.all(), fecha],
     placeholderData: keepPreviousData,
+    refetchOnMount:  'always',
     queryFn: async () => {
       let q = supabase
         .from('pedidos')
@@ -149,6 +150,7 @@ export const usePedidosListosHoy = () => {
   return useQuery({
     queryKey:        [...queryKeys.produccion.all(), 'listos'],
     placeholderData: keepPreviousData,
+    refetchOnMount:  'always',
     queryFn: async () => {
       const { data, error } = await supabase
         .from('pedidos')
@@ -180,6 +182,7 @@ export const useResumenProduccion = (fecha?: string) => {
   return useQuery({
     queryKey:        [...queryKeys.produccion.all(), 'resumen', fechaTarget],
     placeholderData: keepPreviousData,
+    refetchOnMount:  'always',
     queryFn: async () => {
       const { data, error } = await supabase
         .from('pedidos')
@@ -238,6 +241,7 @@ export const useDashboard = () => {
   return useQuery({
     queryKey:        [...queryKeys.dashboard.all(), hoy],
     placeholderData: keepPreviousData,
+    refetchOnMount:  'always',
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_dashboard_stats', { p_fecha: hoy })
 

@@ -31,6 +31,7 @@ export const useUsuarios = () =>
   useQuery({
     queryKey:        KEY,
     placeholderData: keepPreviousData,
+    refetchOnMount:  'always',
     queryFn: async () => {
       // RPC con SECURITY DEFINER — bypasea RLS para devolver todos los perfiles.
       const { data: perfilesRaw, error } = await supabase.rpc('get_all_perfiles')

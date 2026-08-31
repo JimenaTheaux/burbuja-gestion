@@ -96,6 +96,7 @@ function usePedidosPeriodo(inicio: string, fin: string) {
   return useQuery({
     queryKey:        [...queryKeys.pedidos.all(), 'dash-periodo-v2', inicio, fin],
     placeholderData: keepPreviousData,
+    refetchOnMount:  'always',
     queryFn: async () => {
       const { data, error } = await supabase
         .from('pedidos')
@@ -114,6 +115,7 @@ function usePendientesCierre() {
   return useQuery({
     queryKey:        [...queryKeys.pedidos.all(), 'pendientes-cierre'],
     placeholderData: keepPreviousData,
+    refetchOnMount:  'always',
     queryFn: async () => {
       const { data, error } = await supabase
         .from('pedidos')
@@ -134,6 +136,7 @@ function usePagosPeriodoDetalle(desde: string, hasta: string) {
   return useQuery({
     queryKey:        [...queryKeys.pedidos.all(), 'dash-pagos-detalle', desde, hasta],
     placeholderData: keepPreviousData,
+    refetchOnMount:  'always',
     queryFn: async () => {
       const { data: pagosRaw, error: e1 } = await supabase
         .from('pedido_pagos')
@@ -188,6 +191,7 @@ function useEvolucionRango(desde: string, hasta: string) {
   return useQuery({
     queryKey:        [...queryKeys.pedidos.all(), 'dash-evolucion-rango-v2', desde, hasta],
     placeholderData: keepPreviousData,
+    refetchOnMount:  'always',
     queryFn: async () => {
       const { data, error } = await supabase
         .from('pedido_pagos')
@@ -206,6 +210,7 @@ function useEgresosDashboard(desde: string, hasta: string) {
   return useQuery({
     queryKey:        [...queryKeys.egresos.all(), 'dashboard', desde, hasta],
     placeholderData: keepPreviousData,
+    refetchOnMount:  'always',
     queryFn: async () => {
       const { data } = await supabase
         .from('egresos')
