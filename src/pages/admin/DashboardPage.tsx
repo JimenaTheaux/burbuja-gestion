@@ -3,7 +3,7 @@ import { Chart, registerables, type TooltipItem } from 'chart.js'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import {
   Share2, CheckCircle2,
-  Package, Banknote, Clock, FlaskConical, BarChart2, Download,
+  Package, Banknote, Clock, FlaskConical, BarChart2, Download, PiggyBank,
 } from 'lucide-react'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -51,6 +51,7 @@ interface PedidoRow {
 type EgresoItem = {
   monto:        number | string
   fecha_egreso: string
+  categoria:    string
 }
 
 type PagoEvol = {
@@ -208,7 +209,7 @@ function useEgresosDashboard(desde: string, hasta: string) {
     queryFn: async () => {
       const { data } = await supabase
         .from('egresos')
-        .select('monto, fecha_egreso')
+        .select('monto, fecha_egreso, categoria')
         .gte('fecha_egreso', desde)
         .lte('fecha_egreso', hasta)
       return (data ?? []) as EgresoItem[]
@@ -337,6 +338,8 @@ function calcQuincena(pagos: PagoPeriodo[], pedidosMap: Map<string, PedidoConIte
 function pesos(n: number): string {
   return `$${n.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
 }
+
+const CATEGORIAS_REINVERSION = ['todo_droga', 'mym_fragancia', 'envases']
 
 // ─── GraficoLinea ─────────────────────────────────────────────────────────────
 
@@ -659,7 +662,19 @@ export default function DashboardPage() {
   )
 
   const totalEgresos  = egresosData ? egresosData.reduce((s, e) => s + Number(e.monto), 0) : 0
-  const gananciaNeta  = totalCobrado - totalCostoProduccion - totalEgresos
+
+  const totalReinvertido = egresosData
+    ? egresosData
+        .filter(e => CATEGORIAS_REINVERSION.includes(e.categoria))
+        .reduce((s, e) => s + Number(e.monto), 0)
+    : 0
+
+  const totalGastoPuro = totalEgresos - totalReinvertido
+
+  // Ganancia neta: cobrado - costo producción - gasto puro (sin reinversión)
+  const gananciaNeta = totalCobrado - totalCostoProduccion - totalGastoPuro
+
+  const reservaCostos = totalCostoProduccion - totalReinvertido
 
   const montoPendienteCobro = pendientes?.total ?? 0
 
@@ -744,7 +759,7 @@ export default function DashboardPage() {
   // ── Styles ───────────────────────────────────────────────────────────────────
 
   const card = {
-    background: '#fff', border: '0.5px solid #E5E5EA', borderRadius: 10, padding: '14px 16px',
+    background: '#fff', border: '0.5px solid #E5E5EA', borderRadius: 10, padding: '14px',
   }
   const labelRow = {
     display: 'flex', alignItems: 'center', gap: 5, marginBottom: 6,
@@ -816,7 +831,7 @@ export default function DashboardPage() {
       {/* ── Fecha ── */}
       <p style={{ margin: 0, fontSize: 12, fontWeight: 400, color: '#8E8E93' }}>{fechaDisplay}</p>
 
-      {/* ── KPIs — 3 cols desktop / 2 mobile ── */}
+      {/* ── KPIs fila 1 — 3 cols desktop / 2 mobile ── */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
 
         {/* 1 — Pedidos */}
@@ -868,6 +883,10 @@ export default function DashboardPage() {
             <p style={subSt}>Sin pendientes</p>
           )}
         </div>
+      </div>
+
+      {/* ── KPIs fila 2 — 4 cols desktop / 2 mobile ── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
 
         {/* 4 — Costo de producción */}
         <div style={card}>
@@ -877,6 +896,20 @@ export default function DashboardPage() {
           </div>
           <span style={valorSt}>{pesos(totalCostoProduccion)}</span>
           <p style={subSt}>ventas cobradas del período</p>
+        </div>
+
+        {/* 5 — Reinvertido */}
+        <div style={card}>
+          <div style={labelRow}>
+            <FlaskConical size={13} color="#7EB8E8" />
+            <span style={labelSt}>Reinvertido</span>
+          </div>
+          {loadingEg ? (
+            <Skeleton style={{ height: 22, width: 100, borderRadius: 4, marginBottom: 6 }} />
+          ) : (
+            <span style={{ ...valorSt, color: '#4A90C4' }}>{pesos(totalReinvertido)}</span>
+          )}
+          <p style={subSt}>todo_droga · envases · fragancia</p>
         </div>
 
         {/* 6 — Ganancia neta */}
@@ -889,15 +922,31 @@ export default function DashboardPage() {
             <span style={labelSt}>Ganancia neta</span>
           </div>
           {loadingEg ? (
-            <Skeleton style={{ height: 28, width: 100, borderRadius: 4, marginBottom: 6 }} />
+            <Skeleton style={{ height: 22, width: 100, borderRadius: 4, marginBottom: 6 }} />
           ) : (
             <>
               <span style={{ ...valorSt, color: gananciaNeta >= 0 ? '#28B99A' : '#F05252' }}>
                 {pesos(gananciaNeta)}
               </span>
-              <p style={subSt}>Egresos {pesos(totalEgresos)}</p>
+              <p style={subSt}>Egresos {pesos(totalGastoPuro)} · Reinv. {pesos(totalReinvertido)} excluido</p>
             </>
           )}
+        </div>
+
+        {/* 7 — Reserva de costos */}
+        <div style={card}>
+          <div style={labelRow}>
+            <PiggyBank size={14} color={reservaCostos >= 0 ? '#28B99A' : '#F05252'} />
+            <span style={labelSt}>Reserva de costos</span>
+          </div>
+          {loadingEg ? (
+            <Skeleton style={{ height: 22, width: 100, borderRadius: 4, marginBottom: 6 }} />
+          ) : (
+            <span style={{ ...valorSt, color: reservaCostos >= 0 ? '#28B99A' : '#F05252' }}>
+              {pesos(reservaCostos)}
+            </span>
+          )}
+          <p style={subSt}>costo prod. − reinvertido</p>
         </div>
       </div>
 
