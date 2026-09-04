@@ -291,14 +291,56 @@ export type PedidoHistorial = {
 
 ---
 
+### `categorias_egreso`
+Tabla dinámica de categorías de egresos — reemplaza el enum/union type hardcodeado
+que tenía el frontend hasta el 2026-09-04. El ABM vive en `/admin/egresos`, sección
+"Categorías" (colapsable, debajo del listado).
+
+```sql
+CREATE TABLE categorias_egreso (
+  id     UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  nombre TEXT NOT NULL,
+  slug   TEXT NOT NULL UNIQUE,
+  activo BOOLEAN NOT NULL DEFAULT TRUE,
+  orden  INTEGER NOT NULL DEFAULT 0
+);
+```
+
+```typescript
+export type CategoriaEgreso = {
+  id:     string
+  nombre: string
+  slug:   string
+  activo: boolean
+  orden:  number
+}
+```
+
+Slugs existentes (migrados desde el enum viejo, ver `egresos` abajo):
+`sueldo` · `todo_droga` · `mym_fragancia` · `envases` · `casa` · `servicios` · `otros`
+
+- Desactivar una categoría (soft delete, `activo = false`) no borra ni reasigna los
+  egresos que la usan — quedan con ese slug igual. El ABM verifica cuántos egresos
+  tienen ese slug antes de desactivar y lo muestra como aviso, pero no bloquea la acción.
+- No hay borrado físico desde la UI.
+- `src/services/categoriasEgreso.ts` expone `useCategoriasEgreso` (activas, para
+  selects) y `useCategoriasEgresoAdmin` (todas, para el ABM y para resolver el
+  nombre de egresos históricos con categoría desactivada).
+
+> La tabla se creó directamente en Supabase (no vía SQL versionado en este repo),
+> igual que pasó históricamente con otras tablas de este proyecto (ver el
+> "Recordatorio" de la sección RLS más abajo) — verificar en el dashboard de
+> Supabase que RLS esté habilitado y la policy `admin_todo_categorias_egreso`
+> exista antes de asumir que coincide con lo documentado acá.
+
+---
+
 ### `egresos`
 ```sql
 CREATE TABLE egresos (
   id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   fecha_egreso   DATE NOT NULL,
-  categoria      TEXT NOT NULL CHECK (categoria IN (
-                   'sueldos','alquiler','drogueria',
-                   'grafica','packaging','luz','otros')),
+  categoria      TEXT NOT NULL,   -- slug de categorias_egreso; sin CHECK constraint
   concepto       TEXT NOT NULL,
   monto          NUMERIC(10,2) NOT NULL,
   registrado_por UUID REFERENCES perfiles(id),
@@ -307,31 +349,23 @@ CREATE TABLE egresos (
 );
 ```
 
-```typescript
-export type CategoriaEgreso =
-  | 'sueldos' | 'alquiler' | 'drogueria'
-  | 'grafica' | 'packaging' | 'luz' | 'otros'
+> El `CHECK` que existía sobre `categoria` (con los slugs viejos `sueldos, alquiler,
+> drogueria, grafica, packaging, luz, otros`) fue eliminado al pasar a categorías
+> dinámicas. La validación de qué slugs son válidos para elegir en el form ahora la
+> hace el frontend contra `categorias_egreso` (activas); la columna en sí acepta
+> cualquier TEXT. Los egresos existentes con slugs viejos no se migraron.
 
+```typescript
 export type Egreso = {
   id: string
   fecha_egreso: string
-  categoria: CategoriaEgreso
+  categoria: string   // slug de categorias_egreso
   concepto: string
   monto: number
   registrado_por: string | null
   created_at: string
   updated_at: string
   perfiles?: { nombre: string }
-}
-
-export const CATEGORIA_EGRESO_LABELS: Record<CategoriaEgreso, string> = {
-  sueldos:   'Sueldos',
-  alquiler:  'Alquiler',
-  drogueria: 'Droguería',
-  grafica:   'Gráfica',
-  packaging: 'Packaging',
-  luz:       'Luz',
-  otros:     'Otros',
 }
 ```
 
@@ -496,6 +530,7 @@ ALTER TABLE clientes        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE productos       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE perfiles        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE egresos         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE categorias_egreso ENABLE ROW LEVEL SECURITY;
 
 -- Perfil propio
 CREATE POLICY "perfil_propio" ON perfiles
@@ -518,6 +553,11 @@ CREATE POLICY "admin_todo_productos" ON productos
   );
 
 CREATE POLICY "admin_todo_egresos" ON egresos
+  FOR ALL USING (
+    EXISTS (SELECT 1 FROM perfiles WHERE id = auth.uid() AND rol IN ('admin', 'superadmin'))
+  );
+
+CREATE POLICY "admin_todo_categorias_egreso" ON categorias_egreso
   FOR ALL USING (
     EXISTS (SELECT 1 FROM perfiles WHERE id = auth.uid() AND rol IN ('admin', 'superadmin'))
   );

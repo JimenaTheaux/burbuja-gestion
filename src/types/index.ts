@@ -148,29 +148,19 @@ export interface Pedido {
 
 // ─── Egresos ─────────────────────────────────────────────────────────────────
 
-export type CategoriaEgreso =
-  | 'sueldo'
-  | 'todo_droga'
-  | 'mym_fragancia'
-  | 'envases'
-  | 'casa'
-  | 'servicios'
-  | 'otros'
-
-export const CATEGORIA_EGRESO_LABELS: Record<CategoriaEgreso, string> = {
-  sueldo:        'Sueldo',
-  todo_droga:    'Todo droga',
-  mym_fragancia: 'MyM Fragancia',
-  envases:       'Envases',
-  casa:          'Casa',
-  servicios:     'Servicios',
-  otros:         'Otros',
+/** Categoría de egreso — fila de la tabla `categorias_egreso` en Supabase */
+export type CategoriaEgreso = {
+  id:     string
+  nombre: string
+  slug:   string
+  activo: boolean
+  orden:  number
 }
 
 export interface Egreso {
   id:             string
   fecha_egreso:   string
-  categoria:      CategoriaEgreso
+  categoria:      string   // slug de categorias_egreso — TEXT libre, sin CHECK
   concepto:       string
   monto:          number
   registrado_por: string | null

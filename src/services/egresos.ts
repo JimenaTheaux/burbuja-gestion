@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { queryKeys } from '@/lib/queryKeys'
 import { useAuthStore } from '@/store/authStore'
-import type { Egreso, CategoriaEgreso } from '@/types'
+import type { Egreso } from '@/types'
 
 const KEY = queryKeys.egresos.all()
 
@@ -26,7 +26,7 @@ function parseEgreso(row: any): Egreso {
 
 // ─── useEgresos ───────────────────────────────────────────────────────────────
 
-export const useEgresos = (mes: number, anio: number, categoria?: CategoriaEgreso) =>
+export const useEgresos = (mes: number, anio: number, categoria?: string) =>
   useQuery({
     queryKey:  [...KEY, mes, anio, categoria ?? null],
     staleTime: 1000 * 60 * 5,
@@ -55,7 +55,7 @@ export const useCrearEgreso = () => {
   return useMutation({
     mutationFn: async (datos: {
       fecha_egreso:   string
-      categoria:      CategoriaEgreso
+      categoria:      string
       concepto:       string
       monto:          number
       registrado_por?: string
