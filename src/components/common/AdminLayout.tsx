@@ -79,16 +79,9 @@ export function AdminLayout() {
 
       {/* Contenido principal */}
       <main style={{ flex: 1, overflowY: 'auto', background: '#F5F7F9' }}>
-        {/* Desktop */}
-        <div className="hidden md:block" style={{ padding: '24px 32px', minHeight: '100%' }}>
-          <Outlet />
-        </div>
-
-        {/* Mobile */}
-        <div
-          className="block md:hidden"
-          style={{ padding: '24px 16px', paddingBottom: 'calc(80px + env(safe-area-inset-bottom))' }}
-        >
+        {/* Un solo Outlet: padding responsive en vez de duplicar la página por breakpoint.
+            Mobile: 24px 16px + espacio para el bottom nav. Desktop: 24px 32px. */}
+        <div className="px-4 pt-6 pb-[calc(80px_+_env(safe-area-inset-bottom))] md:px-8 md:pb-6 md:min-h-full">
           <Outlet />
         </div>
       </main>
