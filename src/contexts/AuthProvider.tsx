@@ -7,6 +7,14 @@ import { AuthContext, type UsuarioActual } from './authContext'
 
 // Clave del cache de perfil anterior — reemplazado por authStore. Se borra al montar.
 const CACHE_KEY_LEGACY = 'burbuja-perfil-v2'
+// Cache del SW con respuestas de Supabase REST (vite.config.ts). Se borra al
+// cerrar sesión: el cache es por URL, no por usuario.
+const SW_CACHE_DATOS = 'supabase-api-v2'
+
+function borrarCacheDatos() {
+  if (typeof caches === 'undefined') return
+  caches.delete(SW_CACHE_DATOS).catch(() => {})
+}
 // Debe coincidir con auth.storageKey de src/lib/supabase.ts.
 const SESSION_KEY = 'burbuja-supabase-session'
 
@@ -107,7 +115,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!session?.user) {
         // SIGNED_OUT, o INITIAL_SESSION sin sesión guardada.
         limpiarLocal()
-        if (event === 'SIGNED_OUT') queryClient.clear()
+        if (event === 'SIGNED_OUT') {
+          queryClient.clear()
+          borrarCacheDatos()
+        }
         setCargando(false)
         return
       }
@@ -155,6 +166,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     sessionStorage.clear()
     limpiarLocal()
     queryClient.clear()
+    borrarCacheDatos()
     supabase.auth.signOut().catch(() => {})
   }, [limpiarLocal])
 
