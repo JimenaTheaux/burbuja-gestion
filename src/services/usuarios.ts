@@ -4,10 +4,14 @@ import { supabase } from '@/lib/supabase'
 import { queryKeys } from '@/lib/queryKeys'
 import type { Perfil, Rol } from '@/types'
 
-// Cliente admin — solo para listUsers (emails) si la service role key está configurada.
-// Si no está configurada, los emails aparecen vacíos pero el listado funciona igual.
+// Cliente admin — solo si la service role key está configurada. Hoy NO lo está:
+// la key se sacó del frontend (quedaba expuesta en el bundle) hasta migrar a una
+// Edge Function. Sin key: supabaseAdmin = null, el listado funciona sin emails y
+// crear/editar/resetear tiran ERROR_SIN_ADMIN.
 const SERVICE_KEY = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY as string | undefined
 const SERVICE_KEY_VALID = SERVICE_KEY && !SERVICE_KEY.startsWith('REEMPLAZAR')
+
+const ERROR_SIN_ADMIN = 'Gestión de usuarios no disponible temporalmente'
 
 const supabaseAdmin = SERVICE_KEY_VALID
   ? createClient(
@@ -70,7 +74,7 @@ export const useCrearUsuario = () => {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (data: { nombre: string; email: string; password: string; rol: string }) => {
-      if (!supabaseAdmin) throw new Error('Service role key no configurada — configurá VITE_SUPABASE_SERVICE_ROLE_KEY en .env.local')
+      if (!supabaseAdmin) throw new Error(ERROR_SIN_ADMIN)
 
       // 1. Crear en auth.users con email confirmado
       const { data: authUser, error: authErr } = await supabaseAdmin.auth.admin.createUser({
@@ -103,7 +107,7 @@ export const useEditarUsuario = () => {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async ({ id, ...data }: { id: string; nombre?: string; rol?: string; activo?: boolean }) => {
-      if (!supabaseAdmin) throw new Error('Service role key no configurada — configurá VITE_SUPABASE_SERVICE_ROLE_KEY en .env.local')
+      if (!supabaseAdmin) throw new Error(ERROR_SIN_ADMIN)
 
       const patch: Record<string, unknown> = {}
       if (data.nombre !== undefined) patch.nombre = data.nombre
@@ -153,8 +157,7 @@ export const useResetPasswordUsuario = () =>
       userId:        string
       passwordNuevo: string
     }) => {
-      if (!supabaseAdmin)
-        throw new Error('Service role key no configurada — verificá VITE_SUPABASE_SERVICE_ROLE_KEY')
+      if (!supabaseAdmin) throw new Error(ERROR_SIN_ADMIN)
 
       const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
         password: passwordNuevo,

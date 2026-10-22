@@ -298,9 +298,13 @@ function EditarUsuarioDrawer({ open, onClose, usuario, onSaved, selfId }: Editar
         <button
           type="button"
           onClick={async () => {
-            await editar.mutateAsync({ id: usuario.id, activo: !usuario.activo })
-            onSaved(`Usuario ${!usuario.activo ? 'activado' : 'desactivado'}`)
-            onClose()
+            try {
+              await editar.mutateAsync({ id: usuario.id, activo: !usuario.activo })
+              onSaved(`Usuario ${!usuario.activo ? 'activado' : 'desactivado'}`)
+              onClose()
+            } catch (e) {
+              onSaved((e instanceof Error ? e.message : 'Error al guardar') + '|error')
+            }
           }}
           className="btn-press btn-drawer-ghost"
           style={{
