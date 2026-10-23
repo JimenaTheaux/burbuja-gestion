@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { queryKeys } from '@/lib/queryKeys'
+import { STALE_CATALOGO } from '@/lib/queryClient'
 import type { Cliente } from '@/types'
 
 const KEY = queryKeys.clientes.all()
@@ -13,8 +14,7 @@ export const useClientes = (q?: string, activo: boolean | null = true) =>
   useQuery({
     queryKey:        [...KEY, q, activo],
     placeholderData: keepPreviousData,
-    refetchOnMount:  'always',
-    staleTime:       1000 * 60 * 2,
+    staleTime:       STALE_CATALOGO,
     queryFn: async () => {
       let query = supabase
         .from('clientes')
@@ -32,8 +32,9 @@ export const useClientes = (q?: string, activo: boolean | null = true) =>
 
 export const useCliente = (id: string) =>
   useQuery({
-    queryKey: [...KEY, id],
-    enabled:  !!id,
+    queryKey:  [...KEY, id],
+    enabled:   !!id,
+    staleTime: STALE_CATALOGO,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('clientes')
@@ -93,6 +94,10 @@ export const useEditarCliente = () => {
       if (error) throw new Error(error.message)
       return data as Cliente
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEY })
+      // el listado de pedidos muestra nombre/dirección/teléfono del cliente (join)
+      qc.invalidateQueries({ queryKey: queryKeys.pedidos.all() })
+    },
   })
 }

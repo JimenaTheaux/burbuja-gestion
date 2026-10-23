@@ -467,7 +467,7 @@ export function RepartidorView() {
   const { data: pedidos = [], isLoading } = usePedidos({
     fechaProduccion: HOY,
     estados: ['en_produccion', 'listo_reparto', 'en_reparto'],
-  })
+  }, { vivo: true })
 
   // Ordenar: listos primero, luego en_reparto, luego en_produccion
   const listos    = pedidos.filter(p => p.estado === 'listo_reparto').sort((a, b) => a.numero - b.numero)

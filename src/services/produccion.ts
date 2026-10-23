@@ -1,6 +1,7 @@
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { queryKeys } from '@/lib/queryKeys'
+import { STALE_VIVO, POLL_VIVO } from '@/lib/queryClient'
 import type { EstadoPedido } from '@/types'
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
@@ -96,7 +97,8 @@ export const usePedidosProduccion = (fecha?: string) =>
   useQuery({
     queryKey:        [...queryKeys.produccion.all(), fecha],
     placeholderData: keepPreviousData,
-    refetchOnMount:  'always',
+    staleTime:       STALE_VIVO,
+    refetchInterval: POLL_VIVO,
     queryFn: async () => {
       let q = supabase
         .from('pedidos')
@@ -143,14 +145,13 @@ export const usePedidosProduccion = (fecha?: string) =>
         })),
       }))
     },
-    refetchInterval: 30_000,
   })
 
 export const usePedidosListosHoy = () => {
   return useQuery({
     queryKey:        [...queryKeys.produccion.all(), 'listos'],
-    placeholderData: keepPreviousData,
-    refetchOnMount:  'always',
+    staleTime:       STALE_VIVO,
+    refetchInterval: POLL_VIVO,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('pedidos')
@@ -171,7 +172,6 @@ export const usePedidosListosHoy = () => {
         clientes:         row.clientes ?? null,
       }))
     },
-    refetchInterval: 30_000,
   })
 }
 
@@ -182,7 +182,8 @@ export const useResumenProduccion = (fecha?: string) => {
   return useQuery({
     queryKey:        [...queryKeys.produccion.all(), 'resumen', fechaTarget],
     placeholderData: keepPreviousData,
-    refetchOnMount:  'always',
+    staleTime:       STALE_VIVO,
+    refetchInterval: POLL_VIVO,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('pedidos')
@@ -241,7 +242,6 @@ export const useDashboard = () => {
   return useQuery({
     queryKey:        [...queryKeys.dashboard.all(), hoy],
     placeholderData: keepPreviousData,
-    refetchOnMount:  'always',
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_dashboard_stats', { p_fecha: hoy })
 
@@ -259,7 +259,6 @@ export const useDashboard = () => {
 
       return data as DashboardData
     },
-    refetchInterval: 60_000,
   })
 }
 

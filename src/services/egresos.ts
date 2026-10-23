@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { queryKeys } from '@/lib/queryKeys'
+import { STALE_OPERATIVO } from '@/lib/queryClient'
 import { useAuthStore } from '@/store/authStore'
 import type { Egreso } from '@/types'
 
@@ -29,7 +30,7 @@ function parseEgreso(row: any): Egreso {
 export const useEgresos = (mes: number, anio: number, categoria?: string) =>
   useQuery({
     queryKey:  [...KEY, mes, anio, categoria ?? null],
-    staleTime: 1000 * 60 * 5,
+    staleTime: STALE_OPERATIVO,
     queryFn: async () => {
       let q = supabase
         .from('egresos')

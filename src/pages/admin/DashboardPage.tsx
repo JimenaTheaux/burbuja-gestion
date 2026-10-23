@@ -91,12 +91,13 @@ function fmtDiaAno(d: Date): string {
 }
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
+// Sin polling ni staleTime propio: usan el default OPERATIVO (queryClient.ts).
+// Las mutaciones de pedidos/pagos/egresos invalidan estas keys por prefijo.
 
 function usePedidosPeriodo(inicio: string, fin: string) {
   return useQuery({
     queryKey:        [...queryKeys.pedidos.all(), 'dash-periodo-v2', inicio, fin],
     placeholderData: keepPreviousData,
-    refetchOnMount:  'always',
     queryFn: async () => {
       const { data, error } = await supabase
         .from('pedidos')
@@ -106,16 +107,12 @@ function usePedidosPeriodo(inicio: string, fin: string) {
       if (error) throw new Error(error.message)
       return (data ?? []) as PedidoRow[]
     },
-    refetchInterval: 30_000,
-    staleTime:       0,
   })
 }
 
 function usePendientesCierre() {
   return useQuery({
-    queryKey:        [...queryKeys.pedidos.all(), 'pendientes-cierre'],
-    placeholderData: keepPreviousData,
-    refetchOnMount:  'always',
+    queryKey: [...queryKeys.pedidos.all(), 'pendientes-cierre'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('pedidos')
@@ -124,8 +121,6 @@ function usePendientesCierre() {
       if (error) throw new Error(error.message)
       return (data ?? []).length
     },
-    refetchInterval: 30_000,
-    staleTime:       0,
   })
 }
 
@@ -136,7 +131,6 @@ function usePagosPeriodoDetalle(desde: string, hasta: string) {
   return useQuery({
     queryKey:        [...queryKeys.pedidos.all(), 'dash-pagos-detalle', desde, hasta],
     placeholderData: keepPreviousData,
-    refetchOnMount:  'always',
     queryFn: async () => {
       const { data: pagosRaw, error: e1 } = await supabase
         .from('pedido_pagos')
@@ -181,8 +175,6 @@ function usePagosPeriodoDetalle(desde: string, hasta: string) {
 
       return { pagos, pedidos }
     },
-    refetchInterval: 30_000,
-    staleTime:       0,
   })
 }
 
@@ -191,7 +183,6 @@ function useEvolucionRango(desde: string, hasta: string) {
   return useQuery({
     queryKey:        [...queryKeys.pedidos.all(), 'dash-evolucion-rango-v2', desde, hasta],
     placeholderData: keepPreviousData,
-    refetchOnMount:  'always',
     queryFn: async () => {
       const { data, error } = await supabase
         .from('pedido_pagos')
@@ -201,8 +192,6 @@ function useEvolucionRango(desde: string, hasta: string) {
       if (error) throw new Error(error.message)
       return (data ?? []).map(p => ({ monto: Number(p.monto), fecha_pago: p.fecha_pago as string })) as PagoEvol[]
     },
-    refetchInterval: 30_000,
-    staleTime:       0,
   })
 }
 
@@ -210,7 +199,6 @@ function useEgresosDashboard(desde: string, hasta: string) {
   return useQuery({
     queryKey:        [...queryKeys.egresos.all(), 'dashboard', desde, hasta],
     placeholderData: keepPreviousData,
-    refetchOnMount:  'always',
     queryFn: async () => {
       const { data } = await supabase
         .from('egresos')
@@ -219,7 +207,6 @@ function useEgresosDashboard(desde: string, hasta: string) {
         .lte('fecha_egreso', hasta)
       return (data ?? []) as EgresoItem[]
     },
-    staleTime: 1000 * 60 * 3,
   })
 }
 

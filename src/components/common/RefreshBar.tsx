@@ -1,8 +1,24 @@
+import { useEffect, useState } from 'react'
 import { useIsFetching } from '@tanstack/react-query'
+
+// Solo aparece si una carga sigue en curso después de este tiempo: los
+// refetch cortos (o en segundo plano rápidos) no muestran nada.
+const DEMORA_MS = 400
 
 export function RefreshBar() {
   const isFetching = useIsFetching() > 0
-  if (!isFetching) return null
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    if (!isFetching) return
+    const t = setTimeout(() => setVisible(true), DEMORA_MS)
+    return () => {
+      clearTimeout(t)
+      setVisible(false)
+    }
+  }, [isFetching])
+
+  if (!isFetching || !visible) return null
   return (
     <div style={{
       position: 'fixed',

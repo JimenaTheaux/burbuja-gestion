@@ -4,6 +4,8 @@ import {
   type OfflineAction,
 } from '@/lib/offlineQueue'
 import { supabase } from '@/lib/supabase'
+import { queryClient } from '@/lib/queryClient'
+import { queryKeys } from '@/lib/queryKeys'
 import { useAuthStore } from '@/store/authStore'
 import type { EstadoPedido } from '@/types'
 
@@ -41,6 +43,7 @@ export function useOffline() {
     syncingRef.current = true
     setSyncing(true)
 
+    let procesadas = 0
     try {
       const queue = (await getQueue()).sort((a, b) => a.timestamp - b.timestamp)
 
@@ -65,6 +68,7 @@ export function useOffline() {
             if (error) throw new Error(error.message)
           }
           await removeFromQueue(action.id)
+          procesadas++
         } catch (e) {
           // Error de red → parar para reintentar después
           if (e instanceof TypeError) break
@@ -76,6 +80,11 @@ export function useOffline() {
       syncingRef.current = false
       setSyncing(false)
       await refreshCount()
+      // Una sola invalidación al terminar la cola (no por acción).
+      if (procesadas > 0) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.pedidos.all() })
+        queryClient.invalidateQueries({ queryKey: queryKeys.produccion.all() })
+      }
     }
   }, [refreshCount])
 

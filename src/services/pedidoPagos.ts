@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { queryKeys } from '@/lib/queryKeys'
 import { useAuthStore } from '@/store/authStore'
@@ -75,9 +75,7 @@ export interface PedidoPendienteDetalle {
 
 export const usePendientesCobro = () =>
   useQuery({
-    queryKey:        [...KEY, 'pendientes-cobro'],
-    placeholderData: keepPreviousData,
-    refetchOnMount:  'always',
+    queryKey: [...KEY, 'pendientes-cobro'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('pedidos')
@@ -119,6 +117,4 @@ export const usePendientesCobro = () =>
         pedidos,
       }
     },
-    refetchInterval: 30_000,
-    staleTime:       0,
   })

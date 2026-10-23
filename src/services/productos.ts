@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { queryKeys } from '@/lib/queryKeys'
+import { STALE_CATALOGO } from '@/lib/queryClient'
 import type { Producto, CategoriaProducto } from '@/types'
 
 const KEY     = queryKeys.productos.all()
@@ -25,8 +26,7 @@ export const useProductos = (q?: string, categoriaId?: string, activo: boolean |
   useQuery({
     queryKey:        [...KEY, q, categoriaId, activo],
     placeholderData: keepPreviousData,
-    refetchOnMount:  'always',
-    staleTime:       1000 * 60 * 5,
+    staleTime:       STALE_CATALOGO,
     queryFn: async () => {
       let query = supabase
         .from('productos')
@@ -46,7 +46,7 @@ export const useProductos = (q?: string, categoriaId?: string, activo: boolean |
 export const useCategorias = () =>
   useQuery({
     queryKey:  CAT_KEY,
-    staleTime: 1000 * 60 * 30,
+    staleTime: STALE_CATALOGO,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('categorias_producto')
@@ -112,7 +112,12 @@ export const useEditarProducto = () => {
       if (error) throw new Error(error.message)
       return parseProducto(data)
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEY })
+      // detalle de pedido y Producción muestran nombre/presentación del producto (join)
+      qc.invalidateQueries({ queryKey: queryKeys.pedidos.all() })
+      qc.invalidateQueries({ queryKey: queryKeys.produccion.all() })
+    },
   })
 }
 

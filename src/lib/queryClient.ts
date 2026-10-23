@@ -5,10 +5,19 @@ function esErrorAuth(error: any): boolean {
   return error?.status === 401 || error?.code === 'PGRST301'
 }
 
+// staleTime por tipo de dato. Dentro de ese tiempo, volver a una pantalla usa
+// el cache sin pedir nada; pasado, se muestra el cache y se refresca en segundo
+// plano. Lo que cambia por una acción del usuario se invalida en la mutación.
+export const STALE_CATALOGO  = 1000 * 60 * 5 // productos, categorías, clientes, usuarios
+export const STALE_OPERATIVO = 1000 * 30     // pedidos, pagos, egresos, dashboard
+export const STALE_VIVO      = 1000 * 10     // producción y reparto del día
+// Polling solo en vistas VIVO (producción y reparto). Corre con la pestaña visible.
+export const POLL_VIVO       = 1000 * 30
+
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime:            1000 * 60 * 3,  // 3 min — no re-fetch si datos frescos
+      staleTime:            STALE_OPERATIVO,
       gcTime:               1000 * 60 * 10, // 10 min en memoria aunque no se use
       retry:                (failureCount, error) => !esErrorAuth(error) && failureCount < 1,
       retryDelay:           800,

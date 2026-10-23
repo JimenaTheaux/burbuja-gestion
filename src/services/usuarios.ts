@@ -1,7 +1,8 @@
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { queryKeys } from '@/lib/queryKeys'
+import { STALE_CATALOGO } from '@/lib/queryClient'
 import type { Perfil, Rol } from '@/types'
 
 // Cliente admin — solo si la service role key está configurada. Hoy NO lo está:
@@ -33,9 +34,8 @@ const KEY = queryKeys.usuarios.all()
 
 export const useUsuarios = () =>
   useQuery({
-    queryKey:        KEY,
-    placeholderData: keepPreviousData,
-    refetchOnMount:  'always',
+    queryKey:  KEY,
+    staleTime: STALE_CATALOGO,
     queryFn: async () => {
       // RPC con SECURITY DEFINER — bypasea RLS para devolver todos los perfiles.
       const { data: perfilesRaw, error } = await supabase.rpc('get_all_perfiles')
@@ -122,7 +122,11 @@ export const useEditarUsuario = () => {
 
       if (error) throw new Error(error.message)
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEY })
+      // selector de usuarios en Egresos (nombre / activo)
+      qc.invalidateQueries({ queryKey: queryKeys.perfilesActivos() })
+    },
   })
 }
 

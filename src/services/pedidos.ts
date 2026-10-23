@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { queryKeys } from '@/lib/queryKeys'
+import { STALE_OPERATIVO, STALE_VIVO, POLL_VIVO } from '@/lib/queryClient'
 import { useAuthStore } from '@/store/authStore'
 import { totalPedido } from '@/types'
 import type { Pedido, PedidoItem, PedidoHistorial, Cliente, Producto, EstadoPedido } from '@/types'
@@ -115,17 +116,20 @@ function invalidarDashboard(qc: ReturnType<typeof useQueryClient>) {
 
 // ─── usePedidos ───────────────────────────────────────────────────────────────
 
+// `vivo`: vista operativa en tiempo real (reparto) — staleTime corto + polling.
+// Pedidos e Historial usan el default (OPERATIVO, sin polling).
 export const usePedidos = (filtros?: {
   estado?:          EstadoPedido
   estados?:         EstadoPedido[]
   clienteId?:       string
   fechaProduccion?: string
   q?:               string
-}) =>
+}, { vivo = false }: { vivo?: boolean } = {}) =>
   useQuery({
     queryKey:        [...KEY, filtros],
     placeholderData: keepPreviousData,
-    refetchOnMount:  'always',
+    staleTime:       vivo ? STALE_VIVO : STALE_OPERATIVO,
+    refetchInterval: vivo ? POLL_VIVO : false,
     queryFn: async () => {
       let q = supabase
         .from('pedidos')
@@ -151,7 +155,6 @@ export const usePedidos = (filtros?: {
       }
       return pedidos
     },
-    refetchInterval: 30_000,
   })
 
 // ─── usePedidoDetalle ─────────────────────────────────────────────────────────
@@ -307,6 +310,8 @@ export const useCrearPedido = () => {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEY })
+      // 'confirmar' crea el pedido directo en_produccion
+      qc.invalidateQueries({ queryKey: queryKeys.produccion.all() })
       invalidarDashboard(qc)
     },
   })
@@ -371,6 +376,8 @@ export const useEditarPedido = () => {
     onSuccess: (_, { id }) => {
       qc.invalidateQueries({ queryKey: KEY })
       qc.invalidateQueries({ queryKey: [...KEY, id] })
+      // ítems, fecha y notas de producción se ven en Producción
+      qc.invalidateQueries({ queryKey: queryKeys.produccion.all() })
       invalidarDashboard(qc)
     },
   })

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import { STALE_CATALOGO } from '@/lib/queryClient'
 import type { CategoriaEgreso } from '@/types'
 
 const KEY = ['categorias-egreso']
@@ -9,7 +10,7 @@ const KEY = ['categorias-egreso']
 export function useCategoriasEgreso() {
   return useQuery({
     queryKey: KEY,
-    staleTime: 1000 * 60 * 10,
+    staleTime: STALE_CATALOGO,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('categorias_egreso')
@@ -27,7 +28,7 @@ export function useCategoriasEgreso() {
 export function useCategoriasEgresoAdmin() {
   return useQuery({
     queryKey: [...KEY, 'admin'],
-    staleTime: 1000 * 60 * 5,
+    staleTime: STALE_CATALOGO,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('categorias_egreso')
