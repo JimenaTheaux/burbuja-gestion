@@ -152,6 +152,10 @@ GRANT EXECUTE ON FUNCTION public.cambiar_estado_pedido(uuid, text, text, uuid, t
 -- Reemplaza la RPC legacy `registrar_entrega` (que dejaba el pedido en
 -- 'entregado' en vez de 'cerrado' — ver docs/06_estructura_de_datos.md).
 -- Solo admin/superadmin y repartidor pueden cerrar pedidos.
+--
+-- ⚠ DESACTUALIZADA (2026-10-26): la app usa la versión
+-- cerrar_pedido(uuid, uuid, jsonb, text) — ver sección "Fecha local" al final.
+-- Correr esta definición crea un overload de 8 parámetros que la app no usa.
 
 CREATE OR REPLACE FUNCTION public.cerrar_pedido(
   p_pedido_id       uuid,
@@ -414,6 +418,184 @@ REVOKE ALL     ON FUNCTION public.contar_pedidos_por_estado() FROM public, anon;
 GRANT  EXECUTE ON FUNCTION public.contar_pedidos_por_estado() TO authenticated;
 
 
+-- ═══════════════════════════════════════════════════════════════════════════
+-- FECHA LOCAL (Argentina) — aplicado en producción 2026-10-26
+-- ═══════════════════════════════════════════════════════════════════════════
+-- La base corre en UTC: CURRENT_DATE después de las 21 h de Argentina ya es
+-- el día siguiente. Pagos registrados de noche quedaban con fecha_pago de
+-- mañana y el repartidor dejaba de ver los pedidos del día. Todo "hoy" del
+-- lado del servidor pasa por hoy_local().
+--
+-- Pendiente (Fase 7): registrar_pago y cerrar_pedido son SECURITY DEFINER sin
+-- control de rol y toman p_usuario_id del cliente.
+
+begin;
+
+-- 1. Helper: fecha de hoy en Argentina
+create or replace function public.hoy_local()
+returns date
+language sql
+stable
+set search_path to 'public'
+as $$
+  select (now() at time zone 'America/Argentina/Cordoba')::date;
+$$;
+
+grant execute on function public.hoy_local() to authenticated;
+
+-- 2. Default de columna
+alter table public.pedido_pagos
+  alter column fecha_pago set default public.hoy_local();
+
+-- 3. Políticas repartidor (mantiene roles y comando)
+alter policy repartidor_pedidos_select on public.pedidos
+using (
+  exists (select 1 from perfiles
+          where perfiles.id = auth.uid() and perfiles.rol = 'repartidor')
+  and estado = any (array['listo_reparto','en_reparto','entrega_fallida']::estado_pedido[])
+  and fecha_produccion = public.hoy_local()
+);
+
+alter policy repartidor_pedidos_update on public.pedidos
+using (
+  exists (select 1 from perfiles
+          where perfiles.id = auth.uid() and perfiles.rol = 'repartidor')
+  and estado = any (array['listo_reparto','en_reparto','entrega_fallida']::estado_pedido[])
+  and fecha_produccion = public.hoy_local()
+);
+
+-- 4. registrar_pago: default local
+create or replace function public.registrar_pago(
+  p_pedido_id uuid,
+  p_usuario_id uuid,
+  p_forma_pago text,
+  p_monto numeric,
+  p_fecha_pago date default null
+)
+returns void
+language plpgsql
+security definer
+set search_path to 'public'
+as $function$
+declare
+  v_total_pedido numeric;
+  v_total_pagado numeric;
+  v_estado_pago  text;
+begin
+  select coalesce(total_manual, total_calculado)
+  into   v_total_pedido
+  from   pedidos where id = p_pedido_id;
+
+  if not found then
+    raise exception 'Pedido no encontrado: %', p_pedido_id;
+  end if;
+
+  insert into pedido_pagos (pedido_id, forma_pago, monto, fecha_pago)
+  values (p_pedido_id, p_forma_pago, p_monto, coalesce(p_fecha_pago, public.hoy_local()));
+
+  select coalesce(sum(monto), 0)
+  into   v_total_pagado
+  from   pedido_pagos
+  where  pedido_id = p_pedido_id;
+
+  v_estado_pago := case when v_total_pagado >= v_total_pedido then 'cobrado' else 'pendiente' end;
+
+  update pedidos
+  set estado_pago   = v_estado_pago,
+      monto_cobrado = v_total_pagado,
+      updated_at    = now()
+  where id = p_pedido_id;
+end;
+$function$;
+
+-- 5. cerrar_pedido (jsonb): fecha local
+create or replace function public.cerrar_pedido(
+  p_pedido_id uuid,
+  p_usuario_id uuid,
+  p_pagos jsonb,
+  p_notas text default null
+)
+returns void
+language plpgsql
+security definer
+set search_path to 'public'
+as $function$
+declare
+  v_estado_anterior estado_pedido;
+  v_total_pedido    numeric;
+  v_total_pagado    numeric;
+  v_estado_pago     text;
+  pago              jsonb;
+begin
+  select estado, coalesce(total_manual, total_calculado)
+  into   v_estado_anterior, v_total_pedido
+  from   pedidos
+  where  id = p_pedido_id;
+
+  if not found then
+    raise exception 'Pedido no encontrado: %', p_pedido_id;
+  end if;
+
+  v_total_pagado := 0;
+  for pago in select * from jsonb_array_elements(p_pagos) loop
+    v_total_pagado := v_total_pagado + (pago->>'monto')::numeric;
+  end loop;
+
+  for pago in select * from jsonb_array_elements(p_pagos) loop
+    insert into pedido_pagos (pedido_id, forma_pago, monto, fecha_pago)
+    values (
+      p_pedido_id,
+      pago->>'forma_pago',
+      (pago->>'monto')::numeric,
+      coalesce((pago->>'fecha_pago')::date, public.hoy_local())
+    );
+  end loop;
+
+  v_estado_pago := case when v_total_pagado >= v_total_pedido then 'cobrado' else 'pendiente' end;
+
+  update pedidos
+  set estado        = 'cerrado',
+      estado_pago   = v_estado_pago,
+      monto_cobrado = v_total_pagado,
+      updated_at    = now()
+  where id = p_pedido_id;
+
+  insert into pedido_historial (pedido_id, estado_anterior, estado_nuevo, usuario_id, notas)
+  values (
+    p_pedido_id,
+    v_estado_anterior,
+    'cerrado',
+    p_usuario_id,
+    coalesce(p_notas, 'Pagado $' || v_total_pagado || ' de $' || v_total_pedido)
+  );
+end;
+$function$;
+
+commit;
+
+-- ─── Corrección de datos (UNA SOLA VEZ — ya ejecutada 2026-10-26) ──────────
+-- 25 pagos cargados entre 21 y 24 h (Argentina) habían quedado con fecha_pago
+-- del día siguiente (default UTC). Backup en public._backup_pedido_pagos_fecha_20261026.
+-- Comentada para que correr este archivo no la repita.
+--
+-- begin;
+--
+-- create table if not exists public._backup_pedido_pagos_fecha_20261026 as
+-- select id, fecha_pago, created_at
+-- from public.pedido_pagos
+-- where fecha_pago = (created_at at time zone 'UTC')::date
+--   and fecha_pago <> (created_at at time zone 'America/Argentina/Cordoba')::date;
+--
+-- select count(*) from public._backup_pedido_pagos_fecha_20261026;  -- esperado: 25
+--
+-- update public.pedido_pagos p
+-- set fecha_pago = (p.created_at at time zone 'America/Argentina/Cordoba')::date
+-- from public._backup_pedido_pagos_fecha_20261026 b
+-- where p.id = b.id;
+--
+-- commit;
+
+
 -- ─── Verificar que las funciones existen ────────────────────────────────────
 SELECT
   proname   AS funcion,
@@ -426,6 +608,8 @@ WHERE proname IN (
   'get_dashboard_stats',
   'get_all_perfiles',
   'contar_pedidos_por_estado',
+  'registrar_pago',
+  'hoy_local',
   '_rol_actual'
 )
 AND pronamespace = 'public'::regnamespace
