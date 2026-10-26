@@ -12,8 +12,9 @@ import { queryKeys } from '@/lib/queryKeys'
 import { fetchPedidoDetalle } from '@/services/pedidos'
 import { useRegistrarPago, usePendientesCobro, type PedidoPendienteDetalle } from '@/services/pedidoPagos'
 import { useCompartirFactura } from '@/hooks/useCompartirFactura'
-import { formatNumero, type EstadoPedido } from '@/types'
+import { formatNumero } from '@/types'
 import { supabase } from '@/lib/supabase'
+import { fetchAllPages } from '@/lib/fetchAllPages'
 
 Chart.register(...registerables)
 
@@ -40,12 +41,6 @@ interface ItemConCosto {
 interface PedidoConItems {
   id:           string
   pedido_items: ItemConCosto[]
-}
-
-interface PedidoRow {
-  id:               string
-  estado:           EstadoPedido
-  fecha_produccion: string | null
 }
 
 type EgresoItem = {
@@ -94,18 +89,19 @@ function fmtDiaAno(d: Date): string {
 // Sin polling ni staleTime propio: usan el default OPERATIVO (queryClient.ts).
 // Las mutaciones de pedidos/pagos/egresos invalidan estas keys por prefijo.
 
+// Solo se usa la cantidad: conteo en el servidor, sin traer filas.
 function usePedidosPeriodo(inicio: string, fin: string) {
   return useQuery({
-    queryKey:        [...queryKeys.pedidos.all(), 'dash-periodo-v2', inicio, fin],
+    queryKey:        [...queryKeys.pedidos.all(), 'dash-periodo-count', inicio, fin],
     placeholderData: keepPreviousData,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { count, error } = await supabase
         .from('pedidos')
-        .select('id, estado, fecha_produccion')
+        .select('id', { count: 'exact', head: true })
         .gte('fecha_produccion', inicio)
         .lte('fecha_produccion', fin)
       if (error) throw new Error(error.message)
-      return (data ?? []) as PedidoRow[]
+      return count ?? 0
     },
   })
 }
@@ -114,12 +110,12 @@ function usePendientesCierre() {
   return useQuery({
     queryKey: [...queryKeys.pedidos.all(), 'pendientes-cierre'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { count, error } = await supabase
         .from('pedidos')
-        .select('id')
+        .select('id', { count: 'exact', head: true })
         .not('estado', 'in', '("cerrado","anulado")')
       if (error) throw new Error(error.message)
-      return (data ?? []).length
+      return count ?? 0
     },
   })
 }
@@ -127,42 +123,53 @@ function usePendientesCierre() {
 // Pagos del período + los pedidos (con items/costo) que generaron esos pagos.
 // Se usa para KPIs de cobro, costo de producción, top ventas y resumen quincenal —
 // todo se ancla a pedido_pagos.fecha_pago en vez de pedidos.fecha_cobro.
+// Las dos consultas van en paralelo: los pedidos se filtran por tener al menos un
+// pago en el rango (pedido_pagos!inner), el mismo conjunto que antes salía de los ids.
 function usePagosPeriodoDetalle(desde: string, hasta: string) {
   return useQuery({
     queryKey:        [...queryKeys.pedidos.all(), 'dash-pagos-detalle', desde, hasta],
     placeholderData: keepPreviousData,
     queryFn: async () => {
-      const { data: pagosRaw, error: e1 } = await supabase
-        .from('pedido_pagos')
-        .select('pedido_id, monto, forma_pago, fecha_pago')
-        .gte('fecha_pago', desde)
-        .lte('fecha_pago', hasta)
-      if (e1) throw new Error(e1.message)
+      const [pagosRes, pedidosRes] = await Promise.all([
+        fetchAllPages<{ pedido_id: string; monto: number | string; forma_pago: PagoPeriodo['forma_pago']; fecha_pago: string }>(
+          (from, to) => supabase
+            .from('pedido_pagos')
+            .select('pedido_id, monto, forma_pago, fecha_pago')
+            .gte('fecha_pago', desde)
+            .lte('fecha_pago', hasta)
+            .order('id')
+            .range(from, to),
+        ),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        fetchAllPages<any>(
+          (from, to) => supabase
+            .from('pedidos')
+            .select(`
+              id,
+              pedido_items (
+                cantidad, costo_snapshot, precio_unitario,
+                productos ( nombre, fragancia, categorias_producto (nombre) )
+              ),
+              pedido_pagos!inner ( fecha_pago )
+            `)
+            .gte('pedido_pagos.fecha_pago', desde)
+            .lte('pedido_pagos.fecha_pago', hasta)
+            .order('id')
+            .range(from, to),
+        ),
+      ])
+      if (pagosRes.error)   throw new Error(pagosRes.error)
+      if (pedidosRes.error) throw new Error(pedidosRes.error)
 
-      const pagos: PagoPeriodo[] = (pagosRaw ?? []).map(p => ({
+      const pagos: PagoPeriodo[] = pagosRes.data.map(p => ({
         pedido_id:  p.pedido_id,
         monto:      Number(p.monto),
         forma_pago: p.forma_pago,
         fecha_pago: p.fecha_pago,
       }))
 
-      const ids = [...new Set(pagos.map(p => p.pedido_id))]
-      if (ids.length === 0) return { pagos, pedidos: [] as PedidoConItems[] }
-
-      const { data: pedidosRaw, error: e2 } = await supabase
-        .from('pedidos')
-        .select(`
-          id,
-          pedido_items (
-            cantidad, costo_snapshot, precio_unitario,
-            productos ( nombre, fragancia, categorias_producto (nombre) )
-          )
-        `)
-        .in('id', ids)
-      if (e2) throw new Error(e2.message)
-
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const pedidos = (pedidosRaw ?? []).map((p: any): PedidoConItems => ({
+      const pedidos = pedidosRes.data.map((p: any): PedidoConItems => ({
         id: p.id,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         pedido_items: (p.pedido_items ?? []).map((i: any): ItemConCosto => ({
@@ -184,13 +191,17 @@ function useEvolucionRango(desde: string, hasta: string) {
     queryKey:        [...queryKeys.pedidos.all(), 'dash-evolucion-rango-v2', desde, hasta],
     placeholderData: keepPreviousData,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('pedido_pagos')
-        .select('monto, fecha_pago')
-        .gte('fecha_pago', mesAnteriorDesde)
-        .lte('fecha_pago', hasta)
-      if (error) throw new Error(error.message)
-      return (data ?? []).map(p => ({ monto: Number(p.monto), fecha_pago: p.fecha_pago as string })) as PagoEvol[]
+      const { data, error } = await fetchAllPages<{ monto: number | string; fecha_pago: string }>(
+        (from, to) => supabase
+          .from('pedido_pagos')
+          .select('monto, fecha_pago')
+          .gte('fecha_pago', mesAnteriorDesde)
+          .lte('fecha_pago', hasta)
+          .order('id')
+          .range(from, to),
+      )
+      if (error) throw new Error(error)
+      return data.map(p => ({ monto: Number(p.monto), fecha_pago: p.fecha_pago })) as PagoEvol[]
     },
   })
 }
@@ -200,12 +211,17 @@ function useEgresosDashboard(desde: string, hasta: string) {
     queryKey:        [...queryKeys.egresos.all(), 'dashboard', desde, hasta],
     placeholderData: keepPreviousData,
     queryFn: async () => {
-      const { data } = await supabase
-        .from('egresos')
-        .select('monto, fecha_egreso, categoria')
-        .gte('fecha_egreso', desde)
-        .lte('fecha_egreso', hasta)
-      return (data ?? []) as EgresoItem[]
+      // Igual que antes: un error no rompe el dashboard (egresos queda en lo que haya llegado).
+      const { data } = await fetchAllPages<EgresoItem>(
+        (from, to) => supabase
+          .from('egresos')
+          .select('monto, fecha_egreso, categoria')
+          .gte('fecha_egreso', desde)
+          .lte('fecha_egreso', hasta)
+          .order('id')
+          .range(from, to),
+      )
+      return data
     },
   })
 }
@@ -625,7 +641,7 @@ export default function DashboardPage() {
   const [sheetPend, setSheetPend] = useState(false)
   const [tabTop,    setTabTop]   = useState<'categoria' | 'producto'>('categoria')
 
-  const { data: pedidos,    isLoading }              = usePedidosPeriodo(desde, hasta)
+  const { data: cantPeriodo, isLoading }             = usePedidosPeriodo(desde, hasta)
   const { data: pendCierre }                         = usePendientesCierre()
   const { data: pagosDetalle }                       = usePagosPeriodoDetalle(desde, hasta)
   const { data: pendientes, refetch: refetchPend }   = usePendientesCobro()
@@ -634,7 +650,7 @@ export default function DashboardPage() {
 
   // ── Derivados ───────────────────────────────────────────────────────────────
 
-  const countPedidos      = pedidos?.length ?? 0
+  const countPedidos      = cantPeriodo ?? 0
   const pendientesCierre  = pendCierre ?? 0
 
   const pagosPeriodo    = pagosDetalle?.pagos ?? []

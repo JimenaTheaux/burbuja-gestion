@@ -35,6 +35,14 @@ CREATE INDEX IF NOT EXISTS idx_perfiles_id
 CREATE INDEX IF NOT EXISTS idx_clientes_nombre
   ON clientes(nombre text_pattern_ops);   -- acelera ilike '%texto%'
 
+-- Listado paginado de /admin/pedidos (filtro por estado + orden created_at desc)
+CREATE INDEX IF NOT EXISTS pedidos_estado_created_idx
+  ON pedidos(estado, created_at DESC);
+
+-- Rangos de pagos del dashboard (pedido_pagos.fecha_pago)
+CREATE INDEX IF NOT EXISTS pedido_pagos_fecha_idx
+  ON pedido_pagos(fecha_pago);
+
 
 -- ─── Limpieza de versiones previas ──────────────────────────────────────────
 -- Las firmas en producción no coinciden con las nuevas (distintos parámetros),
@@ -385,6 +393,27 @@ GRANT EXECUTE ON FUNCTION public.get_all_perfiles()
   TO authenticated;
 
 
+-- ─── RPC 6: contar_pedidos_por_estado ───────────────────────────────────────
+-- Conteos de las píldoras de estado en /admin/pedidos (la lista está paginada,
+-- no se puede contar en el cliente). SECURITY INVOKER: respeta RLS, cada rol
+-- cuenta solo los pedidos que puede ver. (Aplicada en producción 2026-10-26.)
+
+CREATE OR REPLACE FUNCTION public.contar_pedidos_por_estado()
+RETURNS TABLE (estado text, cantidad bigint)
+LANGUAGE sql
+STABLE
+SECURITY INVOKER
+SET search_path = public
+AS $$
+  SELECT p.estado::text AS estado, count(*)::bigint AS cantidad
+  FROM public.pedidos p
+  GROUP BY p.estado
+$$;
+
+REVOKE ALL     ON FUNCTION public.contar_pedidos_por_estado() FROM public, anon;
+GRANT  EXECUTE ON FUNCTION public.contar_pedidos_por_estado() TO authenticated;
+
+
 -- ─── Verificar que las funciones existen ────────────────────────────────────
 SELECT
   proname   AS funcion,
@@ -396,6 +425,7 @@ WHERE proname IN (
   'anular_pedido',
   'get_dashboard_stats',
   'get_all_perfiles',
+  'contar_pedidos_por_estado',
   '_rol_actual'
 )
 AND pronamespace = 'public'::regnamespace

@@ -1,4 +1,6 @@
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
+import {
+  useQuery, useInfiniteQuery, useMutation, useQueryClient, keepPreviousData, type InfiniteData,
+} from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { queryKeys } from '@/lib/queryKeys'
 import { STALE_OPERATIVO, STALE_VIVO, POLL_VIVO } from '@/lib/queryClient'
@@ -116,14 +118,14 @@ function invalidarDashboard(qc: ReturnType<typeof useQueryClient>) {
 
 // ─── usePedidos ───────────────────────────────────────────────────────────────
 
+// Listas acotadas por fecha y estados (Reparto, Historial del repartidor).
 // `vivo`: vista operativa en tiempo real (reparto) — staleTime corto + polling.
-// Pedidos e Historial usan el default (OPERATIVO, sin polling).
+// Historial usa el default (OPERATIVO, sin polling).
 export const usePedidos = (filtros?: {
   estado?:          EstadoPedido
   estados?:         EstadoPedido[]
   clienteId?:       string
   fechaProduccion?: string
-  q?:               string
 }, { vivo = false }: { vivo?: boolean } = {}) =>
   useQuery({
     queryKey:        [...KEY, filtros],
@@ -143,19 +145,87 @@ export const usePedidos = (filtros?: {
 
       const { data, error } = await q
       if (error) throw new Error(error.message)
-
-      let pedidos = (data ?? []).map(parsePedido)
-
-      if (filtros?.q) {
-        const lower = filtros.q.toLowerCase()
-        pedidos = pedidos.filter(p =>
-          String(p.numero).includes(filtros.q!) ||
-          (p.clientes?.nombre ?? '').toLowerCase().includes(lower)
-        )
-      }
-      return pedidos
+      return (data ?? []).map(parsePedido)
     },
   })
+
+// ─── usePedidosLista — listado paginado de la página Pedidos ──────────────────
+
+export const PEDIDOS_POR_PAGINA = 50
+
+export interface PaginaPedidos {
+  pedidos: PedidoConCliente[]
+  total:   number | null  // solo en la primera página (count exact)
+}
+
+// "165", "P-00165", "p165" → 165. Cualquier otro texto se busca por nombre de cliente.
+function numeroBuscado(texto: string): number | null {
+  const m = texto.match(/^(?:p-?)?0*(\d+)$/i)
+  return m ? Number(m[1]) : null
+}
+
+export const usePedidosLista = (filtros: { estado?: EstadoPedido; q?: string }) =>
+  useInfiniteQuery({
+    queryKey:         [...KEY, 'lista', filtros],
+    placeholderData:  keepPreviousData,
+    initialPageParam: 0,
+    queryFn: async ({ pageParam }): Promise<PaginaPedidos> => {
+      const desde = pageParam * PEDIDOS_POR_PAGINA
+      let q = supabase
+        .from('pedidos')
+        .select(LIST_SELECT, pageParam === 0 ? { count: 'exact' } : undefined)
+        .order('created_at', { ascending: false })
+        .order('id',         { ascending: false })
+        .range(desde, desde + PEDIDOS_POR_PAGINA - 1)
+
+      if (filtros.estado) q = q.eq('estado', filtros.estado)
+
+      const texto = filtros.q?.trim()
+      if (texto) {
+        const numero = numeroBuscado(texto)
+        q = numero !== null
+          ? q.eq('numero', numero)
+          : q.ilike('clientes.nombre', `%${texto}%`) // clientes!inner: filtra pedidos
+      }
+
+      const { data, error, count } = await q
+      if (error) throw new Error(error.message)
+      return { pedidos: (data ?? []).map(parsePedido), total: count ?? null }
+    },
+    getNextPageParam: (ultima, paginas) =>
+      ultima.pedidos.length === PEDIDOS_POR_PAGINA ? paginas.length : undefined,
+  })
+
+// ─── useConteoPedidosPorEstado — píldoras de estado de la página Pedidos ──────
+// RPC contar_pedidos_por_estado (SECURITY INVOKER, supabase/rpcs_and_indexes.sql).
+// Bajo el prefijo 'pedidos': toda mutación de pedidos la invalida.
+
+export const useConteoPedidosPorEstado = () =>
+  useQuery({
+    queryKey: [...KEY, 'conteo-estados'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('contar_pedidos_por_estado')
+      if (error) throw new Error(error.message)
+      const conteos: Partial<Record<EstadoPedido, number>> = {}
+      for (const fila of (data ?? []) as { estado: EstadoPedido; cantidad: number | string }[]) {
+        conteos[fila.estado] = Number(fila.cantidad)
+      }
+      return conteos
+    },
+  })
+
+// Actualización optimista sobre cualquier query de pedidos: listas planas
+// (usePedidos) y páginas infinitas (usePedidosLista). Otras formas (detalle,
+// queries del dashboard bajo el prefijo 'pedidos') quedan igual.
+function actualizarPedidoEnCache(old: unknown, id: string, cambio: Partial<PedidoConCliente>): unknown {
+  const aplicar = (lista: PedidoConCliente[]) => lista.map(p => p.id === id ? { ...p, ...cambio } : p)
+  if (Array.isArray(old)) return aplicar(old as PedidoConCliente[])
+  const inf = old as InfiniteData<PaginaPedidos> | undefined
+  if (inf && Array.isArray(inf.pages) && inf.pages.every(pg => Array.isArray(pg?.pedidos))) {
+    return { ...inf, pages: inf.pages.map(pg => ({ ...pg, pedidos: aplicar(pg.pedidos) })) }
+  }
+  return old
+}
 
 // ─── usePedidoDetalle ─────────────────────────────────────────────────────────
 
@@ -417,11 +487,8 @@ export const useCambiarEstado = () => {
 
     onMutate: async ({ id, estado }) => {
       await qc.cancelQueries({ queryKey: KEY })
-      const snapshots = qc.getQueriesData<PedidoConCliente[]>({ queryKey: KEY })
-      qc.setQueriesData<PedidoConCliente[]>({ queryKey: KEY }, (old) => {
-        if (!Array.isArray(old)) return old
-        return old.map(p => p.id === id ? { ...p, estado } : p)
-      })
+      const snapshots = qc.getQueriesData<unknown>({ queryKey: KEY })
+      qc.setQueriesData<unknown>({ queryKey: KEY }, (old: unknown) => actualizarPedidoEnCache(old, id, { estado }))
       return { snapshots }
     },
     onError: (_, __, ctx) => {
@@ -466,11 +533,8 @@ export const useAnularPedido = () => {
 
     onMutate: async ({ id }) => {
       await qc.cancelQueries({ queryKey: KEY })
-      const snapshots = qc.getQueriesData<PedidoConCliente[]>({ queryKey: KEY })
-      qc.setQueriesData<PedidoConCliente[]>({ queryKey: KEY }, (old) => {
-        if (!Array.isArray(old)) return old
-        return old.map(p => p.id === id ? { ...p, estado: 'anulado' } : p)
-      })
+      const snapshots = qc.getQueriesData<unknown>({ queryKey: KEY })
+      qc.setQueriesData<unknown>({ queryKey: KEY }, (old: unknown) => actualizarPedidoEnCache(old, id, { estado: 'anulado' }))
       return { snapshots }
     },
     onError: (_, __, ctx) => {
@@ -531,11 +595,8 @@ export const useCerrarPedido = () => {
 
     onMutate: async ({ id }) => {
       await qc.cancelQueries({ queryKey: KEY })
-      const snapshots = qc.getQueriesData<PedidoConCliente[]>({ queryKey: KEY })
-      qc.setQueriesData<PedidoConCliente[]>({ queryKey: KEY }, (old) => {
-        if (!Array.isArray(old)) return old
-        return old.map(p => p.id === id ? { ...p, estado: 'cerrado' as EstadoPedido } : p)
-      })
+      const snapshots = qc.getQueriesData<unknown>({ queryKey: KEY })
+      qc.setQueriesData<unknown>({ queryKey: KEY }, (old: unknown) => actualizarPedidoEnCache(old, id, { estado: 'cerrado' }))
       return { snapshots }
     },
     onError: (_, __, ctx) => {

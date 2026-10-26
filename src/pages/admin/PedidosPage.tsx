@@ -5,11 +5,12 @@ import { Skeleton }         from '@/components/ui/skeleton'
 import { ToastContainer }   from '@/components/common/ToastContainer'
 import { BtnWhatsapp }      from '@/components/common/BtnWhatsapp'
 import { useToast }         from '@/hooks/useToast'
+import { useDebounce }      from '@/hooks/useDebounce'
 import { useCompartirFactura } from '@/hooks/useCompartirFactura'
 import { DrawerPedido }     from '@/components/pedidos/DrawerPedido'
 import { DrawerDetalle }    from '@/components/pedidos/DrawerDetalle'
 import {
-  usePedidos, useCambiarEstado, useAnularPedido, useEliminarPedido, totalPedido,
+  usePedidosLista, useConteoPedidosPorEstado, useCambiarEstado, useAnularPedido, useEliminarPedido, totalPedido,
   fetchPedidoDetalle, type PedidoListItem, type PedidoDetalle,
 } from '@/services/pedidos'
 import { ESTADO_CONFIG, ESTADOS_FACTURABLES, type EstadoPedido, formatNumero } from '@/types'
@@ -774,8 +775,8 @@ function CardMobile({ pedido, expandida, onToggle, onVerDetalle, onAnularRequest
 
 // ─── Pills de filtro ──────────────────────────────────────────────────────────
 
-function PillsFiltro({ pedidos, estadoFiltro, setEstado }: {
-  pedidos:      PedidoListItem[] | undefined
+function PillsFiltro({ conteos, estadoFiltro, setEstado }: {
+  conteos:      Partial<Record<EstadoPedido, number>> | undefined
   estadoFiltro: EstadoPedido | ''
   setEstado:    (v: EstadoPedido | '') => void
 }) {
@@ -806,8 +807,9 @@ function PillsFiltro({ pedidos, estadoFiltro, setEstado }: {
 
   const masActivo = PILLS_MAS.some(p => p.value === estadoFiltro)
 
+  // Conteos del servidor (la lista está paginada, no se puede contar en cliente).
   const getCount = (value: EstadoPedido | '') =>
-    value && pedidos ? pedidos.filter(p => p.estado === value).length : null
+    value && conteos ? conteos[value] ?? 0 : null
 
   const pillBase = (active: boolean): React.CSSProperties => ({
     flexShrink: 0, height: 32,
@@ -908,6 +910,26 @@ function PillsFiltro({ pedidos, estadoFiltro, setEstado }: {
   )
 }
 
+// ─── Cargar más (mismo estilo que el botón secundario "Imprimir") ─────────────
+
+function BotonCargarMas({ onClick, cargando }: { onClick: () => void; cargando: boolean }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={cargando}
+      style={{
+        background: '#fff', color: '#8E8E93',
+        border: '1.5px solid #E5E5EA', borderRadius: 10,
+        padding: '8px 14px', minHeight: 40, fontSize: 13,
+        fontWeight: 600, cursor: cargando ? 'default' : 'pointer',
+        display: 'flex', alignItems: 'center', gap: 6,
+      }}
+    >
+      {cargando ? 'Cargando…' : 'Cargar más'}
+    </button>
+  )
+}
+
 // ─── Página ───────────────────────────────────────────────────────────────────
 
 export default function PedidosPage() {
@@ -929,13 +951,16 @@ export default function PedidosPage() {
   const anular = useAnularPedido()
   const eliminar = useEliminarPedido()
 
-  const { data: pedidos, isLoading } = usePedidos({
-    q: q || undefined,
+  // Búsqueda y estado se filtran en el servidor; 50 por página con "Cargar más".
+  const qDebounced = useDebounce(q.trim(), 300)
+  const lista = usePedidosLista({
+    estado: estadoFiltro || undefined,
+    q:      qDebounced || undefined,
   })
-
-  const pedidosFiltrados = estadoFiltro
-    ? (pedidos ?? []).filter(p => p.estado === estadoFiltro)
-    : pedidos
+  const isLoading        = lista.isLoading
+  const pedidosFiltrados = lista.data?.pages.flatMap(pg => pg.pedidos)
+  const totalPedidos     = lista.data?.pages[0]?.total ?? pedidosFiltrados?.length ?? 0
+  const { data: conteos } = useConteoPedidosPorEstado()
 
   const handleNuevo     = () => { setPedidoEdit(null); setDrawerForm(true) }
   const handleVerDetalle = (id: string) => { setSelId(id); setDrawerDet(true) }
@@ -1081,7 +1106,7 @@ export default function PedidosPage() {
         {/* Filtros desktop: pills + buscador en la misma fila */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <PillsFiltro pedidos={pedidos} estadoFiltro={estadoFiltro} setEstado={setEstado} />
+            <PillsFiltro conteos={conteos} estadoFiltro={estadoFiltro} setEstado={setEstado} />
           </div>
           <div style={{ position: 'relative', flexShrink: 0, width: 240 }}>
             <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#8E8E93' }} />
@@ -1163,10 +1188,13 @@ export default function PedidosPage() {
           </table>
 
           {!isLoading && !!pedidosFiltrados?.length && (
-            <div style={{ padding: '10px 12px', borderTop: '0.5px solid #F5F7F9' }}>
+            <div style={{ padding: '10px 12px', borderTop: '0.5px solid #F5F7F9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
               <span style={{ fontSize: 12, color: '#8E8E93' }}>
-                {pedidosFiltrados.length} {pedidosFiltrados.length === 1 ? 'pedido' : 'pedidos'}
+                {totalPedidos} {totalPedidos === 1 ? 'pedido' : 'pedidos'}
               </span>
+              {lista.hasNextPage && (
+                <BotonCargarMas onClick={() => lista.fetchNextPage()} cargando={lista.isFetchingNextPage} />
+              )}
             </div>
           )}
         </div>
@@ -1190,7 +1218,7 @@ export default function PedidosPage() {
         </div>
 
         <div style={{ marginBottom: 16 }}>
-          <PillsFiltro pedidos={pedidos} estadoFiltro={estadoFiltro} setEstado={setEstado} />
+          <PillsFiltro conteos={conteos} estadoFiltro={estadoFiltro} setEstado={setEstado} />
         </div>
 
         {isLoading ? (
@@ -1232,8 +1260,13 @@ export default function PedidosPage() {
                 }}
               />
             ))}
+            {lista.hasNextPage && (
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: 4 }}>
+                <BotonCargarMas onClick={() => lista.fetchNextPage()} cargando={lista.isFetchingNextPage} />
+              </div>
+            )}
             <p style={{ fontSize: 12, color: '#8E8E93', textAlign: 'center', marginTop: 4 }}>
-              {pedidosFiltrados.length} {pedidosFiltrados.length === 1 ? 'pedido' : 'pedidos'}
+              {totalPedidos} {totalPedidos === 1 ? 'pedido' : 'pedidos'}
             </p>
           </div>
         )}
