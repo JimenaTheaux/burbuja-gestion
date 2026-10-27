@@ -1,6 +1,7 @@
 -- ═══════════════════════════════════════════════════════════════════════════
 -- BURBUJA — cierres/pagos idempotentes + 11 pagos duplicados
--- ⚠ NO APLICADO. Revisar y ejecutar en Supabase → SQL Editor, en orden.
+-- ✓ APLICADO 2026-10-27 (partes 1, 2a, 2b, 2c). setval no corrido.
+--   2c devolvió solo P-00011 ($29.001 sobre $29.000): pago real, confirmado, no se toca.
 -- ═══════════════════════════════════════════════════════════════════════════
 --
 -- Hallazgos (auditoría 2026-10-27, confirmado por Facu como error de doble toque
