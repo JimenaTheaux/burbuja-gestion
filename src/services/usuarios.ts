@@ -1,26 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { createClient } from '@supabase/supabase-js'
+import { FunctionsHttpError } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { queryKeys } from '@/lib/queryKeys'
 import { STALE_CATALOGO } from '@/lib/queryClient'
-import type { Perfil, Rol } from '@/types'
+import type { Perfil } from '@/types'
 
-// Cliente admin — solo si la service role key está configurada. Hoy NO lo está:
-// la key se sacó del frontend (quedaba expuesta en el bundle) hasta migrar a una
-// Edge Function. Sin key: supabaseAdmin = null, el listado funciona sin emails y
-// crear/editar/resetear tiran ERROR_SIN_ADMIN.
-const SERVICE_KEY = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY as string | undefined
-const SERVICE_KEY_VALID = SERVICE_KEY && !SERVICE_KEY.startsWith('REEMPLAZAR')
-
-const ERROR_SIN_ADMIN = 'Gestión de usuarios no disponible temporalmente'
-
-const supabaseAdmin = SERVICE_KEY_VALID
-  ? createClient(
-      import.meta.env.VITE_SUPABASE_URL as string,
-      SERVICE_KEY,
-      { auth: { autoRefreshToken: false, persistSession: false } },
-    )
-  : null
+// Gestión de usuarios vía Edge Function admin-usuarios (supabase/functions/).
+// La clave secreta vive solo en la función; la función valida que el llamador
+// sea admin/superadmin activo. El frontend no tiene ninguna clave privilegiada.
 
 export interface UsuarioConEmail extends Omit<Perfil, 'updatedAt'> {
   email:     string
@@ -30,42 +17,27 @@ export interface UsuarioConEmail extends Omit<Perfil, 'updatedAt'> {
 
 const KEY = queryKeys.usuarios.all()
 
-// ─── Listar usuarios ──────────────────────────────────────────────────────────
+// Llama a la función y devuelve el mensaje de error que ella misma arma
+// ("No autorizado", "Rol inválido", errores de Auth…) en vez del genérico.
+async function adminUsuarios<T>(body: Record<string, unknown>): Promise<T> {
+  const { data, error } = await supabase.functions.invoke<T>('admin-usuarios', { body })
+  if (error) {
+    if (error instanceof FunctionsHttpError) {
+      const detalle = await error.context.json().catch(() => null) as { error?: string } | null
+      throw new Error(detalle?.error ?? 'Error en la gestión de usuarios')
+    }
+    throw new Error('Gestión de usuarios no disponible temporalmente')
+  }
+  return data as T
+}
+
+// ─── Listar usuarios (con emails) ─────────────────────────────────────────────
 
 export const useUsuarios = () =>
   useQuery({
     queryKey:  KEY,
     staleTime: STALE_CATALOGO,
-    queryFn: async () => {
-      // RPC con SECURITY DEFINER — bypasea RLS para devolver todos los perfiles.
-      const { data: perfilesRaw, error } = await supabase.rpc('get_all_perfiles')
-
-      if (error) throw new Error(error.message)
-
-      const perfiles = (perfilesRaw ?? []) as {
-        id: string; nombre: string; rol: string; activo: boolean; created_at: string
-      }[]
-
-      // Emails via service role (opcional — solo si la key está configurada)
-      let emailMap = new Map<string, string>()
-      if (supabaseAdmin) {
-        const { data: authData } = await supabaseAdmin.auth.admin.listUsers()
-        if (authData?.users) {
-          emailMap = new Map(authData.users.map(u => [u.id, u.email ?? '']))
-        }
-      }
-
-      return perfiles.map((p): UsuarioConEmail => ({
-        id:         p.id,
-        user_id:    p.id,
-        nombre:     p.nombre,
-        rol:        p.rol as Rol,
-        activo:     p.activo,
-        created_at: p.created_at,
-        updatedAt:  p.created_at,
-        email:      emailMap.get(p.id) ?? '',
-      }))
-    },
+    queryFn:   () => adminUsuarios<UsuarioConEmail[]>({ accion: 'listar' }),
   })
 
 // ─── Crear usuario ────────────────────────────────────────────────────────────
@@ -73,55 +45,20 @@ export const useUsuarios = () =>
 export const useCrearUsuario = () => {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async (data: { nombre: string; email: string; password: string; rol: string }) => {
-      if (!supabaseAdmin) throw new Error(ERROR_SIN_ADMIN)
-
-      // 1. Crear en auth.users con email confirmado
-      const { data: authUser, error: authErr } = await supabaseAdmin.auth.admin.createUser({
-        email:         data.email,
-        password:      data.password,
-        email_confirm: true,
-        user_metadata: { nombre: data.nombre, rol: data.rol },
-      })
-
-      if (authErr) throw new Error(authErr.message)
-      const userId = authUser.user.id
-
-      // 2. Insertar perfil (con supabaseAdmin: no hay policy RLS de INSERT en perfiles)
-      const { error: perfilErr } = await supabaseAdmin
-        .from('perfiles')
-        .insert({ id: userId, nombre: data.nombre, rol: data.rol, activo: true })
-
-      if (perfilErr) {
-        await supabaseAdmin.auth.admin.deleteUser(userId)
-        throw new Error(perfilErr.message)
-      }
-    },
+    mutationFn: (data: { nombre: string; email: string; password: string; rol: string }) =>
+      adminUsuarios({ accion: 'crear', ...data }),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
   })
 }
 
-// ─── Editar usuario ───────────────────────────────────────────────────────────
+// ─── Editar usuario (nombre, rol, activo) ─────────────────────────────────────
+// Desactivar también bloquea el usuario en Auth; reactivar lo desbloquea.
 
 export const useEditarUsuario = () => {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async ({ id, ...data }: { id: string; nombre?: string; rol?: string; activo?: boolean }) => {
-      if (!supabaseAdmin) throw new Error(ERROR_SIN_ADMIN)
-
-      const patch: Record<string, unknown> = {}
-      if (data.nombre !== undefined) patch.nombre = data.nombre
-      if (data.rol    !== undefined) patch.rol    = data.rol
-      if (data.activo !== undefined) patch.activo = data.activo
-
-      // supabaseAdmin: no hay policy RLS de UPDATE en perfiles (solo perfil_propio SELECT)
-      const { error } = await supabaseAdmin
-        .from('perfiles')
-        .update(patch)
-        .eq('id', id)
-
-      if (error) throw new Error(error.message)
-    },
+    mutationFn: ({ id, ...data }: { id: string; nombre?: string; rol?: string; activo?: boolean }) =>
+      adminUsuarios({ accion: 'editar', id, ...data }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEY })
       // selector de usuarios en Egresos (nombre / activo)
@@ -157,15 +94,6 @@ export const useCambiarPasswordPropio = () =>
 
 export const useResetPasswordUsuario = () =>
   useMutation({
-    mutationFn: async ({ userId, passwordNuevo }: {
-      userId:        string
-      passwordNuevo: string
-    }) => {
-      if (!supabaseAdmin) throw new Error(ERROR_SIN_ADMIN)
-
-      const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-        password: passwordNuevo,
-      })
-      if (error) throw new Error(error.message)
-    },
+    mutationFn: ({ userId, passwordNuevo }: { userId: string; passwordNuevo: string }) =>
+      adminUsuarios({ accion: 'resetear_password', id: userId, password: passwordNuevo }),
   })
