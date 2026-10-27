@@ -17,7 +17,7 @@ export type PedidoConCliente = Pedido & {
 }
 
 export type ItemDetalle = PedidoItem & {
-  productos: Pick<Producto, 'nombre' | 'fragancia' | 'presentacion' | 'precio_minorista' | 'precio_mayorista'>
+  productos: Pick<Producto, 'nombre' | 'fragancia' | 'presentacion' | 'unidad_medida' | 'precio_minorista' | 'precio_mayorista'>
 }
 
 export type HistorialDetalle = PedidoHistorial & {
@@ -89,6 +89,7 @@ function parseItemDetalle(item: any): ItemDetalle {
           nombre:           item.productos.nombre,
           fragancia:        item.productos.fragancia   ?? null,
           presentacion:     Number(item.productos.presentacion),
+          unidad_medida:    item.productos.unidad_medida ?? null,
           precio_minorista: Number(item.productos.precio_minorista),
           precio_mayorista: Number(item.productos.precio_mayorista),
         }

@@ -198,6 +198,14 @@ export const formatUnidad = (presentacion: number, unidadMedida: string): string
   return `${presentacion} un.`
 }
 
+/** Presentación de un producto para facturas, ej: "5 L". null si falta algún dato */
+export const formatPresentacion = (
+  producto: { presentacion?: number | string | null; unidad_medida?: string | null } | null | undefined
+): string | null =>
+  producto?.presentacion != null && producto.unidad_medida
+    ? formatUnidad(Number(producto.presentacion), producto.unidad_medida)
+    : null
+
 /** Retorna el total a mostrar: manual si existe, calculado si no */
 export const totalPedido = (
   pedido: Pick<Pedido, 'total_manual' | 'total_calculado'>

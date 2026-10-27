@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { Printer, X } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { ZONA_LOCAL } from '@/lib/fechas'
-import { formatUnidad, type EstadoPedido } from '@/types'
+import { formatPresentacion, type EstadoPedido } from '@/types'
 
 // ─── Tipos locales (la página fetchea directamente y mapea a camelCase) ─────────
 
@@ -217,9 +217,7 @@ export default function FacturasPage() {
         items: (items ?? []).map((item: any): FacturaItem => ({
           id:                   item.id,
           productoNombre:       item.productos?.nombre ?? '',
-          productoPresentacion: item.productos?.presentacion != null && item.productos?.unidad_medida
-            ? formatUnidad(Number(item.productos.presentacion), item.productos.unidad_medida)
-            : null,
+          productoPresentacion: formatPresentacion(item.productos),
           cantidad:             String(item.cantidad),
           precioUnitario:       String(item.precio_unitario),
           bidonNuevo:           item.bidon_nuevo ?? false,
