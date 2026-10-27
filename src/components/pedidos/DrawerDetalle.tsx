@@ -47,12 +47,21 @@ const ACCION_LABEL: Partial<Record<EstadoPedido, string>> = {
 }
 
 // ─── Modales ─────────────────────────────────────────────────────────────────
+// Se renderizan fuera del Sheet (Radix). Con el Sheet abierto, Radix pone
+// document.body.style.pointerEvents = 'none' y estos modales lo heredaban:
+// se veían pero no recibían clicks (Cancelar / Eliminar / Confirmar). Mismo
+// override que Drawer.tsx.
+const MODAL_OVERLAY: React.CSSProperties = {
+  position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 400,
+  display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
+  pointerEvents: 'auto',
+}
 
 function ConfirmModal({ mensaje, onConfirm, onCancel }: {
   mensaje: string; onConfirm: () => void; onCancel: () => void
 }) {
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+    <div style={MODAL_OVERLAY}>
       <div style={{ background: '#fff', borderRadius: 20, padding: 24, maxWidth: 380, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
         <p style={{ fontSize: 15, color: '#1C1C1E', margin: '0 0 20px', lineHeight: 1.5 }}>{mensaje}</p>
         <div style={{ display: 'flex', gap: 10 }}>
@@ -67,7 +76,7 @@ function ConfirmModal({ mensaje, onConfirm, onCancel }: {
 function ModalAnular({ onConfirm, onCancel }: { onConfirm: (motivo: string) => void; onCancel: () => void }) {
   const [motivo, setMotivo] = useState('')
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+    <div style={MODAL_OVERLAY}>
       <div style={{ background: '#fff', borderRadius: 20, padding: 24, maxWidth: 380, width: '100%' }}>
         <p style={{ fontWeight: 700, fontSize: 16, margin: '0 0 8px' }}>Anular pedido</p>
         <p style={{ fontSize: 13, color: '#8E8E93', margin: '0 0 16px' }}>Esta acción no se puede deshacer. Ingresá el motivo.</p>
@@ -90,7 +99,7 @@ function ModalMotivo({ titulo, onConfirm, onCancel }: {
 }) {
   const [motivo, setMotivo] = useState('')
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+    <div style={MODAL_OVERLAY}>
       <div style={{ background: '#fff', borderRadius: 20, padding: 24, maxWidth: 380, width: '100%' }}>
         <p style={{ fontWeight: 700, fontSize: 16, margin: '0 0 8px' }}>{titulo}</p>
         <textarea value={motivo} onChange={e => setMotivo(e.target.value)} placeholder="Motivo…" rows={3}
@@ -111,7 +120,7 @@ function ModalEliminar({ numero, onConfirm, onCancel, loading }: {
   numero: number; onConfirm: () => void; onCancel: () => void; loading: boolean
 }) {
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+    <div style={MODAL_OVERLAY}>
       <div style={{ background: '#fff', borderRadius: 20, padding: 24, maxWidth: 380, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
         <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: 16, color: '#1C1C1E' }}>
           ¿Eliminar el pedido P-{String(numero).padStart(5, '0')}?
@@ -244,7 +253,10 @@ export function DrawerDetalle({ pedidoId, open, onClose, onEditar, onSaved }: Pr
       <Sheet open={open} onOpenChange={v => { if (!v) onClose() }}>
         <SheetContent
           side="right"
-          style={{ width: '100%', maxWidth: 500, overflowY: 'auto', paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}
+          // zIndex 201 (como Drawer.tsx): el Sheet trae z-50 y el bottom nav mobile
+          // (z 100) lo tapaba — "Eliminar pedido" quedaba debajo del nav.
+          // Los modales del detalle (z 400) y los toasts (z 9999) siguen arriba.
+          style={{ width: '100%', maxWidth: 500, overflowY: 'auto', paddingBottom: 'max(24px, env(safe-area-inset-bottom))', zIndex: 201 }}
           onPointerDownOutside={e => { if (confirmando || anulando || cerrando || eliminando) e.preventDefault() }}
           onInteractOutside={e => { if (confirmando || anulando || cerrando || eliminando) e.preventDefault() }}
         >
