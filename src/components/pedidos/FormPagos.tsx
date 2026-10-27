@@ -33,18 +33,28 @@ export function FormPagos({ totalPedido, onConfirmar, onCancelar, loading }: Pro
   const diferencia  = totalPedido - totalPagado
   const completo    = Math.abs(diferencia) < 0.01
 
+  // Sobrepago: se permite (el RPC lo acepta), pero pide confirmación explícita
+  const excedente   = totalPagado - totalPedido
+  const [confirmandoExceso, setConfirmandoExceso] = useState(false)
+
   const setFila = (i: number, patch: Partial<FilaPago>) => {
     setPagos(prev => prev.map((p, idx) => idx === i ? { ...p, ...patch } : p))
+    setConfirmandoExceso(false)
   }
 
-  const agregarFila = () => setPagos(prev => [...prev, { forma_pago: 'efectivo', monto: '' }])
-  const quitarFila   = (i: number) => setPagos(prev => prev.filter((_, idx) => idx !== i))
+  const agregarFila = () => { setPagos(prev => [...prev, { forma_pago: 'efectivo', monto: '' }]); setConfirmandoExceso(false) }
+  const quitarFila   = (i: number) => { setPagos(prev => prev.filter((_, idx) => idx !== i)); setConfirmandoExceso(false) }
 
-  const handleConfirmar = () => {
+  const enviar = () => {
     const validos = pagos
       .map(p => ({ forma_pago: p.forma_pago, monto: parseFloat(p.monto) || 0 }))
       .filter(p => p.monto > 0)
     onConfirmar(validos)
+  }
+
+  const handleConfirmar = () => {
+    if (excedente >= 0.01) setConfirmandoExceso(true)
+    else enviar()
   }
 
   return (
@@ -131,6 +141,44 @@ export function FormPagos({ totalPedido, onConfirmar, onCancelar, loading }: Pro
         </div>
       </div>
 
+      {confirmandoExceso ? (
+        <div role="alertdialog" aria-label="Confirmar pago mayor al saldo"
+          style={{ background: '#EBF4FF', border: '1.5px solid #2B6CB0', borderRadius: 10, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: '#1C1C1E' }}>
+            Supera el saldo por {pesos(excedente)}. ¿Registrar igual?
+          </span>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              type="button"
+              onClick={enviar}
+              disabled={loading}
+              aria-disabled={loading}
+              style={{
+                flex: 1, height: 44, border: 'none', borderRadius: 10,
+                background: loading ? 'rgba(43,108,176,0.5)' : '#2B6CB0',
+                color: '#fff', fontSize: 14, fontWeight: 700,
+                cursor: loading ? 'not-allowed' : 'pointer',
+                fontFamily: 'Inter Variable, sans-serif',
+              }}
+            >
+              {loading ? 'Guardando…' : 'Registrar igual'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmandoExceso(false)}
+              disabled={loading}
+              style={{
+                flex: 1, height: 44, border: '1.5px solid #E5E5EA', borderRadius: 10,
+                background: '#fff', color: '#8E8E93', fontSize: 14, fontWeight: 600,
+                cursor: loading ? 'not-allowed' : 'pointer',
+                fontFamily: 'Inter Variable, sans-serif',
+              }}
+            >
+              Revisar
+            </button>
+          </div>
+        </div>
+      ) : (
       <div style={{ display: 'flex', gap: 8 }}>
         <button
           type="button"
@@ -161,6 +209,7 @@ export function FormPagos({ totalPedido, onConfirmar, onCancelar, loading }: Pro
           Cancelar
         </button>
       </div>
+      )}
     </div>
   )
 }
