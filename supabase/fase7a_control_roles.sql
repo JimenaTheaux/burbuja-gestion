@@ -29,7 +29,7 @@
 -- where p.pronamespace = 'public'::regnamespace
 --   and p.proname in ('_rol_actual', 'cambiar_estado_pedido', 'anular_pedido',
 --                     'get_all_perfiles', 'get_dashboard_stats', 'cerrar_pedido', 'registrar_pago')
--- order by p.proname, funcion::text;
+-- order by p.proname, p.oid::regprocedure::text;
 
 begin;
 
@@ -336,7 +336,7 @@ from pg_proc p
 where p.pronamespace = 'public'::regnamespace
   and p.proname in ('_rol_actual', 'cambiar_estado_pedido', 'anular_pedido', 'registrar_pago',
                     'cerrar_pedido', 'get_all_perfiles', 'get_dashboard_stats')
-order by p.proname, funcion::text;
+order by p.proname, p.oid::regprocedure::text;
 
 -- Chequeo de los textos: deben aparecer auth.uid() y el control de rol.
 select p.proname,
