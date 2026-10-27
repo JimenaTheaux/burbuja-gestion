@@ -10,7 +10,8 @@ export interface OfflineAction {
   estadoNuevo?:  EstadoPedido
   notas?:        string
   // cerrarPedido
-  pagos?:        { forma_pago: string; monto: number }[]
+  // fecha_pago se fija al encolar (cerrar_pedido la respeta; si falta usa hoy_local())
+  pagos?:        { forma_pago: string; monto: number; fecha_pago?: string }[]
   timestamp:     number
 }
 

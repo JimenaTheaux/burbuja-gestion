@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { queryKeys } from '@/lib/queryKeys'
 import { STALE_OPERATIVO } from '@/lib/queryClient'
+import { ultimoDiaDelMes } from '@/lib/fechas'
 import { useAuthStore } from '@/store/authStore'
 import type { Egreso } from '@/types'
 
@@ -9,9 +10,7 @@ const KEY = queryKeys.egresos.all()
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function ultimoDiaMes(anio: number, mes: number): string {
-  return new Date(anio, mes, 0).toISOString().split('T')[0]
-}
+const ultimoDiaMes = ultimoDiaDelMes
 
 function primerDiaMes(anio: number, mes: number): string {
   return `${anio}-${String(mes).padStart(2, '0')}-01`

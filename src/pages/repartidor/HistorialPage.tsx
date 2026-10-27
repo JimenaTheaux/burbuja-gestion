@@ -4,14 +4,13 @@ import {
 } from 'lucide-react'
 import { BadgeEstado }   from '@/components/common/BadgeEstado'
 import { SelectorFecha } from '@/components/common/SelectorFecha'
+import { useHoyLocal }   from '@/hooks/useHoyLocal'
+import { hoyLocal }      from '@/lib/fechas'
 import { Skeleton }      from '@/components/ui/skeleton'
 import { usePedidos, usePedidoDetalle, totalPedido } from '@/services/pedidos'
 import { ESTADO_CONFIG } from '@/types'
 
 // ─── Date helpers ──────────────────────────────────────────────────────────────
-
-const _d  = new Date()
-const HOY = `${_d.getFullYear()}-${String(_d.getMonth() + 1).padStart(2, '0')}-${String(_d.getDate()).padStart(2, '0')}`
 
 const DIAS_CORTO  = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
 const MESES_LARGO = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto',
@@ -167,8 +166,9 @@ function CardHistorial({ pedido }: { pedido: any }) {
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function HistorialPage() {
-  const [fechaHistorial, setFechaHistorial] = useState(HOY)
-  const esHoy = fechaHistorial === HOY
+  const hoy = useHoyLocal()
+  const [fechaHistorial, setFechaHistorial] = useState(hoyLocal)
+  const esHoy = fechaHistorial === hoy
 
   const { data: pedidos = [], isLoading } = usePedidos({
     fechaProduccion: fechaHistorial,
@@ -198,7 +198,7 @@ export default function HistorialPage() {
           </p>
           {!esHoy && (
             <button
-              onClick={() => setFechaHistorial(HOY)}
+              onClick={() => setFechaHistorial(hoy)}
               className="btn-press"
               style={{
                 background: 'none', border: '1px solid #E5E5EA', color: '#3DD6B5',

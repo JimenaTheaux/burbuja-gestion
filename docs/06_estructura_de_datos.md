@@ -569,16 +569,29 @@ CREATE POLICY "produccion_pedidos" ON pedidos
     AND estado IN ('en_produccion', 'listo_reparto')
   );
 
--- Repartidor: solo lectura de pedidos del día en estados relevantes
-CREATE POLICY "repartidor_pedidos" ON pedidos
+-- Repartidor: pedidos del día (hora de Argentina) en estados de reparto.
+-- Estado real en producción (2026-10-26): dos policies, _select y _update.
+-- "Hoy" es public.hoy_local() — CURRENT_DATE es UTC y después de las 21 h
+-- de Argentina ya da el día siguiente (ver supabase/rpcs_and_indexes.sql,
+-- sección "Fecha local").
+CREATE POLICY "repartidor_pedidos_select" ON pedidos
   FOR SELECT USING (
-    EXISTS (SELECT 1 FROM perfiles WHERE id = auth.uid() AND rol = 'repartidor')
-    AND estado IN ('listo_reparto', 'en_reparto', 'entrega_fallida')
-    AND fecha_produccion = CURRENT_DATE
+    EXISTS (SELECT 1 FROM perfiles WHERE perfiles.id = auth.uid() AND perfiles.rol = 'repartidor')
+    AND estado = ANY (ARRAY['listo_reparto','en_reparto','entrega_fallida']::estado_pedido[])
+    AND fecha_produccion = public.hoy_local()
+  );
+
+CREATE POLICY "repartidor_pedidos_update" ON pedidos
+  FOR UPDATE USING (
+    EXISTS (SELECT 1 FROM perfiles WHERE perfiles.id = auth.uid() AND perfiles.rol = 'repartidor')
+    AND estado = ANY (ARRAY['listo_reparto','en_reparto','entrega_fallida']::estado_pedido[])
+    AND fecha_produccion = public.hoy_local()
   );
 ```
 
-**Nota de seguridad:** estas policies son `FOR SELECT` únicamente — Producción y Repartidor nunca tienen `UPDATE` directo sobre `pedidos`. Todos los cambios de estado pasan por las RPCs `cambiar_estado_pedido` y `cerrar_pedido` (`SECURITY DEFINER` en `supabase/rpcs_and_indexes.sql`), que se ejecutan con privilegios elevados y bypasean RLS internamente. Esas RPCs (y `anular_pedido`) validan el rol del caller contra la transición pedida vía la función `public._rol_actual()` y ya no están otorgadas a `anon`, solo a `authenticated`. La cola offline del repartidor (`src/hooks/useOffline.ts`) también pasa por estas RPCs en vez de hacer `UPDATE` directo, así queda registrada en `pedido_historial` igual que el flujo online. **Recordatorio:** el SQL de `supabase/rpcs_and_indexes.sql` no se aplica solo — hay que ejecutarlo en el SQL Editor de Supabase para que el proyecto en producción quede sincronizado con el repo. (2026-06-29: al aplicarlo se confirmó que `anular_pedido` y `get_dashboard_stats` no existían todavía en la base — es decir, anular un pedido no funcionaba en producción antes de este SQL. `get_dashboard_stats` ya tenía fallback en `src/services/produccion.ts`, por eso no se notaba.)
+> **Actualizado 2026-10-26.** Antes este documento describía una sola policy `repartidor_pedidos` de solo lectura con `CURRENT_DATE`. En producción existen `repartidor_pedidos_select` y `repartidor_pedidos_update`; se les cambió solo el `USING` (roles y comando se mantienen) para usar `hoy_local()`. La app no hace `UPDATE` directo sobre `pedidos` desde el rol repartidor (usa RPCs); revisar en Fase 7 si `repartidor_pedidos_update` sigue siendo necesaria.
+
+**Nota de seguridad (2026-10-26):** la descripción original de este párrafo quedó parcialmente desactualizada — el repartidor sí tiene una policy de `UPDATE` (`repartidor_pedidos_update`, arriba), y la versión vigente de `cerrar_pedido(uuid, uuid, jsonb, text)` y `registrar_pago` son `SECURITY DEFINER` **sin** validación de rol y toman `p_usuario_id` del cliente (pendiente Fase 7). Texto original: estas policies son `FOR SELECT` únicamente — Producción y Repartidor nunca tienen `UPDATE` directo sobre `pedidos`. Todos los cambios de estado pasan por las RPCs `cambiar_estado_pedido` y `cerrar_pedido` (`SECURITY DEFINER` en `supabase/rpcs_and_indexes.sql`), que se ejecutan con privilegios elevados y bypasean RLS internamente. Esas RPCs (y `anular_pedido`) validan el rol del caller contra la transición pedida vía la función `public._rol_actual()` y ya no están otorgadas a `anon`, solo a `authenticated`. La cola offline del repartidor (`src/hooks/useOffline.ts`) también pasa por estas RPCs en vez de hacer `UPDATE` directo, así queda registrada en `pedido_historial` igual que el flujo online. **Recordatorio:** el SQL de `supabase/rpcs_and_indexes.sql` no se aplica solo — hay que ejecutarlo en el SQL Editor de Supabase para que el proyecto en producción quede sincronizado con el repo. (2026-06-29: al aplicarlo se confirmó que `anular_pedido` y `get_dashboard_stats` no existían todavía en la base — es decir, anular un pedido no funcionaba en producción antes de este SQL. `get_dashboard_stats` ya tenía fallback en `src/services/produccion.ts`, por eso no se notaba.)
 
 **Gestión de usuarios (`perfiles`):** a diferencia de `pedidos`/`clientes`/`productos`/`egresos`, `perfiles` **no tiene** policy `admin_todo_*` — solo tiene `perfil_propio` (`SELECT` de la fila propia). Esto es intencional para no dar `SELECT`/`UPDATE` abierto sobre roles vía RLS, pero implica que el admin necesita otro camino para listar y editar usuarios:
 - **Listar** (`useUsuarios` en `src/services/usuarios.ts`): usa la RPC `get_all_perfiles` (RPC 5 en `supabase/rpcs_and_indexes.sql`, `SECURITY DEFINER`, valida `admin`/`superadmin` vía `_rol_actual()`). Esta RPC no existía en la base de producción hasta el 2026-07-01 (mismo problema que `anular_pedido`/`get_dashboard_stats` arriba) — la página de Usuarios mostraba la lista vacía sin ningún error visible.

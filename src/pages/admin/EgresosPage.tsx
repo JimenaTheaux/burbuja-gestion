@@ -13,6 +13,7 @@ import { supabase }       from '@/lib/supabase'
 import { useQuery }       from '@tanstack/react-query'
 import { queryKeys }      from '@/lib/queryKeys'
 import { STALE_CATALOGO } from '@/lib/queryClient'
+import { hoyLocal }       from '@/lib/fechas'
 import {
   useEgresos, useCrearEgreso, useEditarEgreso, useEliminarEgreso,
 } from '@/services/egresos'
@@ -74,12 +75,10 @@ function formatMonto(n: number): string {
   return '$' + n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-function hoy(): string {
-  return new Date().toISOString().split('T')[0]
-}
+const hoy = hoyLocal
 
 function aniosDisponibles(): number[] {
-  const actual = new Date().getFullYear()
+  const actual = Number(hoyLocal().slice(0, 4))
   return [actual - 2, actual - 1, actual, actual + 1].filter(y => y <= actual)
 }
 
@@ -627,9 +626,8 @@ function CategoriasDrawer({ open, onClose }: CategoriasDrawerProps) {
 // ─── Página principal ─────────────────────────────────────────────────────────
 
 export default function EgresosPage() {
-  const hoyDate  = new Date()
-  const [mes,  setMes]  = useState(hoyDate.getMonth() + 1)
-  const [anio, setAnio] = useState(hoyDate.getFullYear())
+  const [mes,  setMes]  = useState(() => Number(hoyLocal().slice(5, 7)))
+  const [anio, setAnio] = useState(() => Number(hoyLocal().slice(0, 4)))
   const [categoriaFiltro, setCategoriaFiltro] = useState<string>('')
 
   const [drawerOpen, setDrawer]   = useState(false)

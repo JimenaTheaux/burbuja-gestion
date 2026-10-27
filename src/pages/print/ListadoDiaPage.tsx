@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Printer, MapPin } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { hoyLocal } from '@/lib/fechas'
 
 interface ItemDia {
   pedidoId:      string
@@ -32,7 +33,7 @@ const ESTADOS_REPARTO = new Set(['listo_reparto', 'en_reparto', 'en_produccion']
 
 export default function ListadoDiaPage() {
   const [searchParams] = useSearchParams()
-  const fechaInit = searchParams.get('fecha') ?? new Date().toISOString().split('T')[0]
+  const fechaInit = searchParams.get('fecha') ?? hoyLocal()
 
   const [fecha,   setFecha]   = useState(fechaInit)
   const [pedidos, setPedidos] = useState<PedidoDia[]>([])

@@ -6,11 +6,11 @@ import { SelectorFecha }   from '@/components/common/SelectorFecha'
 import { useToast }        from '@/hooks/useToast'
 import { usePedidosProduccion, useResumenProduccion, type PedidoProduccion } from '@/services/produccion'
 import { useCambiarEstado } from '@/services/pedidos'
+import { hoyLocal } from '@/lib/fechas'
+import { useHoyLocal } from '@/hooks/useHoyLocal'
 
 // ─── Helpers de fecha ─────────────────────────────────────────────────────────
 
-const _d  = new Date()
-const HOY = `${_d.getFullYear()}-${String(_d.getMonth() + 1).padStart(2, '0')}-${String(_d.getDate()).padStart(2, '0')}`
 
 const DIAS_CORTO  = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
 const MESES_CORTO = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
@@ -20,8 +20,9 @@ const MESES_LARGO = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'jul
 function labelFecha(fecha: string | null): string {
   if (!fecha) return 'Sin fecha'
   const d    = new Date(fecha + 'T00:00:00')
-  if (fecha === HOY) return 'Hoy'
-  const diff = Math.round((d.getTime() - new Date(HOY + 'T00:00:00').getTime()) / 86400000)
+  const hoy  = hoyLocal()
+  if (fecha === hoy) return 'Hoy'
+  const diff = Math.round((d.getTime() - new Date(hoy + 'T00:00:00').getTime()) / 86400000)
   if (diff === 1)  return 'Mañana'
   if (diff === -1) return 'Ayer'
   return d.toLocaleDateString('es-AR', { weekday: 'short', day: '2-digit', month: 'short' })
@@ -43,7 +44,7 @@ function labelFechaLarga(fecha: string): string {
 function PanelResumen({ fecha }: { fecha: string }) {
   const [open, setOpen] = useState(false)
   const { data, isLoading } = useResumenProduccion(fecha)
-  const esHoy  = fecha === HOY
+  const esHoy  = fecha === hoyLocal()
   const titulo = esHoy ? 'Resumen de hoy' : `Resumen · ${labelFechaCorta(fecha)}`
 
   return (
@@ -273,7 +274,7 @@ function KanbanDesktop({ grupos, onMarcarListo }: {
   return (
     <div style={{ display: 'flex', gap: 16, overflowX: 'auto', paddingBottom: 16, minHeight: 400 }}>
       {Array.from(grupos.entries()).map(([fecha, pedidosFecha]) => {
-        const esHoy = fecha === HOY
+        const esHoy = fecha === hoyLocal()
         return (
           <div key={fecha} style={{
             minWidth: 300, maxWidth: 340, flexShrink: 0,
@@ -309,7 +310,7 @@ function ListaMobile({ grupos, onMarcarListo }: {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {Array.from(grupos.entries()).map(([fecha, pedidosFecha]) => {
-        const esHoy    = fecha === HOY
+        const esHoy    = fecha === hoyLocal()
         const d        = fecha ? new Date(fecha + 'T00:00:00') : null
         const subtitulo = d ? d.toLocaleDateString('es-AR', { weekday: 'long', day: '2-digit', month: 'short' }) : ''
 
@@ -343,10 +344,11 @@ function ListaMobile({ grupos, onMarcarListo }: {
 // ─── Vista principal — reusada por /produccion (rol producción) y /admin/produccion ─
 
 export function ProduccionView() {
-  const [fechaSeleccionada, setFechaSeleccionada] = useState<string>(HOY)
+  const hoy                                       = useHoyLocal()
+  const [fechaSeleccionada, setFechaSeleccionada] = useState<string>(hoyLocal)
   const { toasts, show, dismiss }                 = useToast()
   const cambiarEstado                             = useCambiarEstado()
-  const esHoy                                     = fechaSeleccionada === HOY
+  const esHoy                                     = fechaSeleccionada === hoy
 
   const { data: pedidosProd, isLoading, refetch, isFetching } = usePedidosProduccion(fechaSeleccionada)
 
@@ -419,7 +421,7 @@ export function ProduccionView() {
           </p>
           {!esHoy && (
             <button
-              onClick={() => setFechaSeleccionada(HOY)}
+              onClick={() => setFechaSeleccionada(hoy)}
               style={{
                 background: 'none', border: 'none', color: '#3DD6B5',
                 fontSize: 13, cursor: 'pointer', textDecoration: 'underline', padding: 0,

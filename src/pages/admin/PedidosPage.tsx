@@ -6,6 +6,7 @@ import { ToastContainer }   from '@/components/common/ToastContainer'
 import { BtnWhatsapp }      from '@/components/common/BtnWhatsapp'
 import { useToast }         from '@/hooks/useToast'
 import { useDebounce }      from '@/hooks/useDebounce'
+import { hoyLocal }         from '@/lib/fechas'
 import { useCompartirFactura } from '@/hooks/useCompartirFactura'
 import { DrawerPedido }     from '@/components/pedidos/DrawerPedido'
 import { DrawerDetalle }    from '@/components/pedidos/DrawerDetalle'
@@ -42,10 +43,9 @@ const PRIMARY_ACTION: Partial<Record<EstadoPedido, { label: string; labelCorto: 
   entrega_fallida: { label: 'Reagendar',           labelCorto: 'Reagendar',    next: 'listo_reparto' },
 }
 
-const hoy = new Date().toISOString().slice(0, 10)
-
 function fechaColor(fecha: string | null, estado: EstadoPedido): string {
   if (!fecha) return '#8E8E93'
+  const hoy = hoyLocal()
   if (fecha === hoy) return '#3DD6B5'
   const activo = !['cerrado', 'anulado', 'entregado'].includes(estado)
   if (fecha < hoy && activo) return '#D32F2F'
@@ -416,6 +416,7 @@ function FilaPedido({ pedido, onVerDetalle, onEditar, onAnularRequest, onElimina
   const total   = Number(totalPedido(pedido))
   const action  = PRIMARY_ACTION[pedido.estado]
   const nextCfg = action ? ESTADO_CONFIG[action.next] : null
+  const hoy     = hoyLocal()
   const vencida = pedido.fecha_produccion && pedido.fecha_produccion < hoy &&
     !['cerrado', 'anulado', 'entregado'].includes(pedido.estado)
 
@@ -673,7 +674,7 @@ function CardMobile({ pedido, expandida, onToggle, onVerDetalle, onAnularRequest
           <span style={{
             fontSize: 11, flexShrink: 0, marginLeft: 8,
             color: fechaColor(pedido.fecha_produccion, pedido.estado),
-            fontWeight: pedido.fecha_produccion === hoy ? 600 : 400,
+            fontWeight: pedido.fecha_produccion === hoyLocal() ? 600 : 400,
           }}>
             {fechaLabel(pedido.fecha_produccion)}
           </span>

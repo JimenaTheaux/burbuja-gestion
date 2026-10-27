@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Printer, X } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { ZONA_LOCAL } from '@/lib/fechas'
 import { formatUnidad, type EstadoPedido } from '@/types'
 
 // ─── Tipos locales (la página fetchea directamente y mapea a camelCase) ─────────
@@ -39,9 +40,15 @@ function formatPeso(n: number | string | null | undefined) {
   return Number(n).toLocaleString('es-AR', { minimumFractionDigits: 2 })
 }
 
+// fecha_produccion es DATE ('YYYY-MM-DD'): new Date() la tomaría como medianoche
+// UTC y mostraría el día anterior. created_at (timestamptz) se muestra en hora local.
 function formatFecha(s: string | null | undefined) {
   if (!s) return '—'
-  return new Date(s).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    const [a, m, d] = s.split('-')
+    return `${d}/${m}/${a}`
+  }
+  return new Date(s).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: ZONA_LOCAL })
 }
 
 // ─── Factura individual (1/2 de A4 landscape) ────────────────────────────────

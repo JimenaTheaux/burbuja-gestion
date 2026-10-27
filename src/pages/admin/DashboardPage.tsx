@@ -15,6 +15,7 @@ import { useCompartirFactura } from '@/hooks/useCompartirFactura'
 import { formatNumero } from '@/types'
 import { supabase } from '@/lib/supabase'
 import { fetchAllPages } from '@/lib/fetchAllPages'
+import { hoyLocal, primerDiaDelMes, sumarDias, sumarMeses, ZONA_LOCAL } from '@/lib/fechas'
 
 Chart.register(...registerables)
 
@@ -56,26 +57,10 @@ type PagoEvol = {
 
 // ─── Date helpers ─────────────────────────────────────────────────────────────
 
-function fmtDate(d: Date): string {
-  return d.toISOString().split('T')[0]
-}
-
-function primerDiaMes(): string {
-  const hoy = new Date()
-  return fmtDate(new Date(hoy.getFullYear(), hoy.getMonth(), 1))
-}
-
-function restarUnMes(fecha: string): string {
-  const d = new Date(fecha + 'T12:00:00')
-  d.setMonth(d.getMonth() - 1)
-  return d.toISOString().split('T')[0]
-}
-
-function addDays(dateStr: string, days: number): string {
-  const d = new Date(dateStr + 'T12:00:00')
-  d.setDate(d.getDate() + days)
-  return d.toISOString().split('T')[0]
-}
+// Fechas de día en hora de Argentina (src/lib/fechas.ts) — nunca toISOString().
+const primerDiaMes = () => primerDiaDelMes(hoyLocal())
+const restarUnMes  = (fecha: string) => sumarMeses(fecha, -1)
+const addDays      = sumarDias
 
 function fmtDia(d: Date): string {
   return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`
@@ -637,7 +622,7 @@ function SheetPendientes({ open, onClose, pendientes, onRefetch }: {
 
 export default function DashboardPage() {
   const [desde,     setDesde]    = useState<string>(primerDiaMes())
-  const [hasta,     setHasta]    = useState<string>(fmtDate(new Date()))
+  const [hasta,     setHasta]    = useState<string>(hoyLocal)
   const [sheetPend, setSheetPend] = useState(false)
   const [tabTop,    setTabTop]   = useState<'categoria' | 'producto'>('categoria')
 
@@ -693,11 +678,11 @@ export default function DashboardPage() {
   const evolucion = evolData ? calcEvolucionRango(evolData, desde, hasta) : null
   const quincenas = generarQuincenas(desde, hasta)
 
-  const todayStr = fmtDate(new Date())
+  const todayStr = hoyLocal()
 
   const fechaDisplay = (() => {
     const f = new Date().toLocaleDateString('es-AR', {
-      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: ZONA_LOCAL,
     })
     return f.charAt(0).toUpperCase() + f.slice(1)
   })()

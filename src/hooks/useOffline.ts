@@ -6,6 +6,7 @@ import {
 import { supabase } from '@/lib/supabase'
 import { queryClient } from '@/lib/queryClient'
 import { queryKeys } from '@/lib/queryKeys'
+import { hoyLocal } from '@/lib/fechas'
 import { useAuthStore } from '@/store/authStore'
 import type { EstadoPedido } from '@/types'
 
@@ -16,7 +17,7 @@ import type { EstadoPedido } from '@/types'
 
 export type AddActionInput =
   | { type: 'cambiarEstado'; pedidoId: string; estadoActual: EstadoPedido; estadoNuevo: EstadoPedido; notas?: string }
-  | { type: 'cerrarPedido';  pedidoId: string; estadoActual: EstadoPedido; pagos: { forma_pago: string; monto: number }[]; notas?: string }
+  | { type: 'cerrarPedido';  pedidoId: string; estadoActual: EstadoPedido; pagos: { forma_pago: string; monto: number; fecha_pago?: string }[]; notas?: string }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
@@ -108,8 +109,13 @@ export function useOffline() {
   // ── Agregar acción a la cola ────────────────────────────────────────────────
 
   const addAction = useCallback(async (input: AddActionInput) => {
+    // La fecha de cada pago se fija al encolar (momento del cobro), no al
+    // sincronizar: una cola que se vacía al día siguiente no cambia el día.
+    const conFecha: AddActionInput = input.type === 'cerrarPedido'
+      ? { ...input, pagos: input.pagos.map(p => ({ ...p, fecha_pago: p.fecha_pago ?? hoyLocal() })) }
+      : input
     const action: OfflineAction = {
-      ...input,
+      ...conFecha,
       id:        crypto.randomUUID(),
       timestamp: Date.now(),
     }

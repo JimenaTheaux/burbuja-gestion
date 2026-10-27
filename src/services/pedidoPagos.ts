@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { queryKeys } from '@/lib/queryKeys'
+import { hoyLocal } from '@/lib/fechas'
 import { useAuthStore } from '@/store/authStore'
 import type { FormaPago, PedidoPago } from '@/types'
 
@@ -48,7 +49,8 @@ export const useRegistrarPago = () => {
         p_usuario_id: usuario?.id ?? null,
         p_forma_pago: forma_pago,
         p_monto:      monto,
-        p_fecha_pago: fecha_pago ?? new Date().toISOString().split('T')[0],
+        // La app fija la fecha (hoy en Argentina); hoy_local() del servidor es solo respaldo.
+        p_fecha_pago: fecha_pago ?? hoyLocal(),
       })
       if (error) throw new Error(error.message)
     },

@@ -2,6 +2,7 @@ import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { queryKeys } from '@/lib/queryKeys'
 import { STALE_VIVO, POLL_VIVO } from '@/lib/queryClient'
+import { hoyLocal } from '@/lib/fechas'
 import type { EstadoPedido } from '@/types'
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
@@ -136,8 +137,7 @@ export const usePedidosListosHoy = () => {
 }
 
 export const useResumenProduccion = (fecha?: string) => {
-  const hoy = new Date().toISOString().split('T')[0]
-  const fechaTarget = fecha ?? hoy
+  const fechaTarget = fecha ?? hoyLocal()
 
   return useQuery({
     queryKey:        [...queryKeys.produccion.all(), 'resumen', fechaTarget],

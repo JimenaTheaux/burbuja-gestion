@@ -7,6 +7,7 @@ import { ToastContainer }   from '@/components/common/ToastContainer'
 import { FormPagos }        from '@/components/pedidos/FormPagos'
 import { useToast }         from '@/hooks/useToast'
 import { useOffline }       from '@/hooks/useOffline'
+import { useHoyLocal }      from '@/hooks/useHoyLocal'
 import {
   usePedidos, usePedidoDetalle, useCambiarEstado, useCerrarPedido, totalPedido,
   type PedidoListItem,
@@ -16,8 +17,6 @@ import type { AddActionInput } from '@/hooks/useOffline'
 
 // ─── Date helper ──────────────────────────────────────────────────────────────
 
-const _d  = new Date()
-const HOY = `${_d.getFullYear()}-${String(_d.getMonth() + 1).padStart(2, '0')}-${String(_d.getDate()).padStart(2, '0')}`
 
 // ─── Expanded items — lazy load ───────────────────────────────────────────────
 
@@ -463,9 +462,11 @@ export function RepartidorView() {
   const { toasts, show, dismiss } = useToast()
   const { isOnline, addAction }   = useOffline()
   const cambiar                   = useCambiarEstado()
+  // Día local que cambia solo a la medianoche (mismo día que filtra el RLS con hoy_local())
+  const hoy                       = useHoyLocal()
 
   const { data: pedidos = [], isLoading } = usePedidos({
-    fechaProduccion: HOY,
+    fechaProduccion: hoy,
     estados: ['en_produccion', 'listo_reparto', 'en_reparto'],
   }, { vivo: true })
 

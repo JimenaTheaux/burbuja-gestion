@@ -1,18 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { hoyLocal, sumarDias } from '@/lib/fechas'
 
 const DIAS  = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
 
-function hoyISO(): string {
-  return new Date().toISOString().split('T')[0]
-}
-
-function navegar(fecha: string, dias: number): string {
-  const d = new Date(fecha + 'T00:00:00')
-  d.setDate(d.getDate() + dias)
-  return d.toISOString().split('T')[0]
-}
+const hoyISO  = hoyLocal
+const navegar = sumarDias
 
 function etiquetaCorta(fecha: string): string {
   const d   = new Date(fecha + 'T00:00:00')
