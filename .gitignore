@@ -39,3 +39,6 @@ public/workbox-*.js.map
 *.sw?
 
 .vercel
+
+# Supabase CLI (estado local: proyecto vinculado, cache de versión)
+supabase/.temp/
