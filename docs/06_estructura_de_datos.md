@@ -2,27 +2,41 @@
 
 ## Cliente Supabase (src/lib/supabase.ts)
 
+Un único cliente con la **publishable key** (`sb_publishable_…`). El frontend no
+tiene ninguna clave con privilegios: todo lo que necesita la clave secreta
+(gestión de usuarios) pasa por la Edge Function `admin-usuarios`.
+
 ```typescript
-import { createClient } from '@supabase/supabase-js'
-
-export const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-)
-
-// Cliente admin — solo para gestión de usuarios (resetear contraseñas)
-export const supabaseAdmin = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY
-)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession:     true,
+    detectSessionInUrl: false,
+    autoRefreshToken:   true,
+    storageKey:         'burbuja-supabase-session',
+  },
+  global: {
+    // timeout de 20 s: un fetch colgado no deja la UI "cargando" para siempre
+    fetch: (input, init) =>
+      fetch(input, { ...init, signal: AbortSignal.timeout(20_000) }),
+  },
+})
 ```
 
-Variables de entorno necesarias:
+Sin `lock` custom (auth-js usa el default lockless; uno custom activaba un camino
+que se trababa). La sesión la maneja un único `AuthProvider`.
+
+Variables de entorno (`.env.local` y Vercel):
 ```env
 VITE_SUPABASE_URL=https://xxxx.supabase.co
-VITE_SUPABASE_ANON_KEY=tu-anon-key
-VITE_SUPABASE_SERVICE_ROLE_KEY=tu-service-role-key
+VITE_SUPABASE_ANON_KEY=sb_publishable_xxxx   # publishable key (el nombre de la var es histórico)
 ```
+
+**No** agregar ninguna `VITE_*` con la clave secreta o la `service_role`: Vite
+mete toda variable `VITE_*` en el bundle que descarga el navegador.
+
+Las keys legacy (`anon` / `service_role` en formato JWT `eyJ…`) no se usan. El
+workflow `.github/workflows/keep-alive.yml` usa el secret de GitHub
+`SUPABASE_ANON_KEY`, que también debe tener la publishable key.
 
 ---
 
@@ -589,16 +603,21 @@ CREATE POLICY "repartidor_pedidos_update" ON pedidos
   );
 ```
 
-> **Actualizado 2026-10-26.** Antes este documento describía una sola policy `repartidor_pedidos` de solo lectura con `CURRENT_DATE`. En producción existen `repartidor_pedidos_select` y `repartidor_pedidos_update`; se les cambió solo el `USING` (roles y comando se mantienen) para usar `hoy_local()`. La app no hace `UPDATE` directo sobre `pedidos` desde el rol repartidor (usa RPCs); revisar en Fase 7 si `repartidor_pedidos_update` sigue siendo necesaria.
+> **Actualizado 2026-10-26.** Antes este documento describía una sola policy `repartidor_pedidos` de solo lectura con `CURRENT_DATE`. En producción existen `repartidor_pedidos_select` y `repartidor_pedidos_update`; se les cambió solo el `USING` (roles y comando se mantienen) para usar `hoy_local()`. La app no hace `UPDATE` directo sobre `pedidos` desde el rol repartidor (usa RPCs). Abierto: evaluar si `repartidor_pedidos_update` sigue siendo necesaria.
 
-**Nota de seguridad (2026-10-26):** la descripción original de este párrafo quedó parcialmente desactualizada — el repartidor sí tiene una policy de `UPDATE` (`repartidor_pedidos_update`, arriba), y la versión vigente de `cerrar_pedido(uuid, uuid, jsonb, text)` y `registrar_pago` son `SECURITY DEFINER` **sin** validación de rol y toman `p_usuario_id` del cliente (pendiente Fase 7). Texto original: estas policies son `FOR SELECT` únicamente — Producción y Repartidor nunca tienen `UPDATE` directo sobre `pedidos`. Todos los cambios de estado pasan por las RPCs `cambiar_estado_pedido` y `cerrar_pedido` (`SECURITY DEFINER` en `supabase/rpcs_and_indexes.sql`), que se ejecutan con privilegios elevados y bypasean RLS internamente. Esas RPCs (y `anular_pedido`) validan el rol del caller contra la transición pedida vía la función `public._rol_actual()` y ya no están otorgadas a `anon`, solo a `authenticated`. La cola offline del repartidor (`src/hooks/useOffline.ts`) también pasa por estas RPCs en vez de hacer `UPDATE` directo, así queda registrada en `pedido_historial` igual que el flujo online. **Recordatorio:** el SQL de `supabase/rpcs_and_indexes.sql` no se aplica solo — hay que ejecutarlo en el SQL Editor de Supabase para que el proyecto en producción quede sincronizado con el repo. (2026-06-29: al aplicarlo se confirmó que `anular_pedido` y `get_dashboard_stats` no existían todavía en la base — es decir, anular un pedido no funcionaba en producción antes de este SQL. `get_dashboard_stats` ya tenía fallback en `src/services/produccion.ts`, por eso no se notaba.)
+**Cambios de estado y cobros (RPCs, actualizado 2026-10-27):** todos pasan por RPCs `SECURITY DEFINER` de `supabase/rpcs_and_indexes.sql` (fuente de verdad del lado servidor; no se aplica sola, hay que correrla en el SQL Editor):
+- `cambiar_estado_pedido`, `cerrar_pedido`, `anular_pedido` y `registrar_pago` validan el rol con `public._rol_actual()`, que devuelve `NULL` si no hay sesión, no hay perfil o el perfil está desactivado (todos los chequeos son NULL-safe). Matriz: ver `02_roles_y_permisos.md`.
+- El historial registra `auth.uid()`; el parámetro `p_usuario_id` se acepta por compatibilidad pero se ignora.
+- `cerrar_pedido` rechaza un pedido ya cerrado o anulado, y calcula `monto_cobrado`/`estado_pago` con **todos** los pagos del pedido. `registrar_pago` rechaza si el pedido ya está cobrado del todo (bloquea la fila con `FOR UPDATE`). Un pago que supera el saldo se acepta; la app pide confirmación antes de enviarlo.
+- Solo `authenticated` tiene `EXECUTE` (revocado de `public` y `anon`), incluido `_rol_actual()`.
+- La cola offline del repartidor (`src/hooks/useOffline.ts`) usa las mismas RPCs, así queda registrada en `pedido_historial` igual que el flujo online. Errores de red/sesión dejan la acción en cola; "ya está cerrado" cuenta como hecha; otros rechazos van a una lista de fallidas visible, con descarte manual.
 
-**Gestión de usuarios (`perfiles`):** a diferencia de `pedidos`/`clientes`/`productos`/`egresos`, `perfiles` **no tiene** policy `admin_todo_*` — solo tiene `perfil_propio` (`SELECT` de la fila propia). Esto es intencional para no dar `SELECT`/`UPDATE` abierto sobre roles vía RLS, pero implica que el admin necesita otro camino para listar y editar usuarios:
-- **Listar** (`useUsuarios` en `src/services/usuarios.ts`): usa la RPC `get_all_perfiles` (RPC 5 en `supabase/rpcs_and_indexes.sql`, `SECURITY DEFINER`, valida `admin`/`superadmin` vía `_rol_actual()`). Esta RPC no existía en la base de producción hasta el 2026-07-01 (mismo problema que `anular_pedido`/`get_dashboard_stats` arriba) — la página de Usuarios mostraba la lista vacía sin ningún error visible.
-- **Crear** (`useCrearUsuario`) y **editar** (`useEditarUsuario`): usan el cliente `supabaseAdmin` (con `service_role_key`) en vez del cliente normal para el `INSERT`/`UPDATE` sobre `perfiles`, ya que no hay policy de escritura que se lo permita al cliente normal.
-- **`supabaseAdmin`** (`src/services/usuarios.ts`) también se usa para `auth.admin.createUser`, `listUsers`, `updateUserById` y `deleteUser` — operaciones que solo existen en la Admin API de Supabase Auth, no en SQL.
-- **Riesgo aceptado:** la `service_role_key` se carga como `VITE_SUPABASE_SERVICE_ROLE_KEY`, y por ser una var `VITE_*`, Vite la incluye en el bundle de JS servido al navegador. Cualquiera que inspeccione el bundle puede extraerla y obtener acceso total de lectura/escritura a **toda** la base (bypasea RLS en todas las tablas, no solo `perfiles`). Se optó por esto para no montar una Supabase Edge Function todavía. Si se quiere sacar ese riesgo más adelante, mover `crear/editar perfil` y las llamadas a `auth.admin.*` a una Edge Function server-side (la key nunca sale del servidor).
-- (2026-07-01: RPC `get_all_perfiles` creada y ejecutada en producción, `service_role_key` configurada en `.env.local` y Vercel. Confirmado funcionando: listar, crear y editar usuarios desde `/admin/usuarios`.)
+**Gestión de usuarios (`perfiles`) — Edge Function `admin-usuarios`:** `perfiles` **no tiene** policy `admin_todo_*`, solo `perfil_propio` (`SELECT` de la fila propia). Es intencional: no dar `SELECT`/`UPDATE` abierto sobre roles vía RLS. Todo lo de `/admin/usuarios` pasa por la Edge Function `supabase/functions/admin-usuarios`, llamada desde `src/services/usuarios.ts` con `supabase.functions.invoke('admin-usuarios', { body: { accion, … } })`:
+- **Acciones:** `listar`, `crear` (usuario de auth con `email_confirm` + perfil), `editar` (nombre/rol/activo; desactivar = ban en auth, reactivar = quitar el ban), `resetear_password`, `eliminar` (la UI no la usa: los usuarios se desactivan).
+- **Seguridad:** valida cada request con el token de sesión (`auth.getUser`) y exige perfil `admin`/`superadmin` activo — sin token **401**, otro rol o inactivo **403**. Un admin no puede desactivarse, cambiar su propio rol ni eliminarse a sí mismo.
+- **Clave secreta:** vive solo en la función (secret automático `SUPABASE_SECRET_KEYS`, con respaldo a `SUPABASE_SERVICE_ROLE_KEY` legacy). Nunca llega al navegador.
+- **CORS:** orígenes permitidos en el secret `ADMIN_USUARIOS_ORIGINS` (hoy `https://burbuja-gestion.vercel.app,http://localhost:5173`). Otro origen — por ejemplo `vite preview` en el puerto 4173 — recibe error de CORS.
+- **Deploy:** `supabase functions deploy admin-usuarios --no-verify-jwt`. La verificación de JWT de la plataforma solo entiende las keys legacy; con publishable/secret keys y JWT ES256 la validación la hace la propia función.
 
 ---
 
