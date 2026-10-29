@@ -8,13 +8,14 @@ import { BottomNav }          from './BottomNav'
 import { RefreshBar }         from './RefreshBar'
 import { useAuth }            from '@/hooks/useAuth'
 import { useOffline }         from '@/hooks/useOffline'
+import { AvisoFallidas }      from '@/components/repartidor/AvisoFallidas'
 import { useScrollDirection } from '@/hooks/useScrollDirection'
 
 export function RepartidorLayout() {
   const { cerrarSesion }                            = useAuth()
   const navigate                                    = useNavigate()
   const queryClient                                 = useQueryClient()
-  const { isOnline, pendingCount, syncing, sync }   = useOffline()
+  const { isOnline, pendingCount, syncing, sync, fallidas, descartar } = useOffline()
   const [logoutHover, setLogoutHover]               = useState(false)
   const scrollDir                                   = useScrollDirection()
 
@@ -191,6 +192,9 @@ export function RepartidorLayout() {
           Sin conexión — {pendingCount} cambio{pendingCount !== 1 ? 's' : ''} en espera
         </div>
       )}
+
+      {/* Banner: acciones offline rechazadas por el servidor */}
+      <AvisoFallidas fallidas={fallidas} onDescartar={descartar} />
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
